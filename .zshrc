@@ -28,5 +28,6 @@ ZSH_HIGHLIGHT_STYLES[alias]=fg=green,underline
 alias ez='nvr ~/.zshrc'
 alias ev='nvr ~/.config/nvim/init.vim'
 alias sz='source ~/.zshrc'
+alias lsa='ls -a'
 
 alias h='cd $HOME'
