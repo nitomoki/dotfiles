@@ -26,6 +26,9 @@ softwares=(
     pip3
 )
 
+softwares_pip=(
+    msgpack
+)
 
 for software in "${softwares[@]}"; do
     sudo apt install $software || sudo apt upgrade $software

@@ -125,7 +125,7 @@ endif
 if dein#load_state(s:dein_dir)
 	call dein#begin(s:dein_dir)
     call dein#load_toml(s:config_dir.'/dein.toml', {'lazy':0})
-    call dein#load_toml(s:config_dir.'/dein_lazy.toml', {'lazy':0})
+"    call dein#load_toml(s:config_dir.'/dein_lazy.toml', {'lazy':0})
 
 "    call dein#load_toml(s:toml_dir.'/general.toml', {'lazy':0})
 "    call dein#load_toml(s:toml_dir.'/lightline.toml', {'lazy':0})
@@ -154,8 +154,17 @@ endif
 syntax on
 
 
+" language server protocol
+if executable('clangd')
+    au User lsp_setup call lsp#register_server({
+        \ 'name': 'clangd',
+        \ 'cmd': '{server_info->['clangd', '-background-index']},
+        \ 'whitelist': ['c', 'cpp', 'objcpp'],
+        \})
+endif
 
-
+" LSP C++
+lua require'nvim_lsp'.clangd.setup{}
 
 " Open terminal on new buffer
 
