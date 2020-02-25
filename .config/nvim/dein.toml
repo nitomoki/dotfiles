@@ -217,21 +217,6 @@ hook_add = '''
 [[plugins]]
 repo = 'ncm2/float-preview.nvim.git'
 
-# [[plugins]]
-# repo = 'zchee/deoplete-clang'
-# hook_add = '''
-#     let g:deoplete#sources#clang#libclang_path = '/usr/lib/llvm-6.0/lib/libclang-6.0.so.1'
-#     let g:deoplete#sources#clang#clang_header = '/usr/include/clang'
-#     '''
-# on_ft = ['c', 'cpp', 'cmake']
-# depends = ['deoplete.nvim']
-# 
-# 
-# [[plugins]]
-# repo = 'deoplete-plugins/deoplete-jedi'
-# on_event = 'InsertEnter'
-# on_ft = ['python', 'py']
-
 [[plugins]]
 repo = 'neovim/nvim-lsp'
 
@@ -242,7 +227,6 @@ repo = 'Shougo/deoplete-lsp'
 [[plugins]]
 repo = 'Shougo/denite.nvim'
 hook_add = '''
-    autocmd FileType denite call s:denite_my_settings()
     function! s:denite_my_settings() abort
         nnoremap <silent><buffer><expr> <CR> denite#do_map('do_action')
         nnoremap <silent><buffer><expr> d denite#do_map('do_action', 'delete')
@@ -251,6 +235,7 @@ hook_add = '''
         nnoremap <silent><buffer><expr> q denite#do_map('quit')
         nnoremap <silent><buffer><expr> <space> denite#do_map('toggle_select').'j'
     endfunction
+    autocmd FileType denite call s:denite_my_settings()
     let s:denite_win_width_percent = 0.5
     let s:denite_win_height_percent = 0.35
     let s:denite_default_options = {

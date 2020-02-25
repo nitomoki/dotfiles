@@ -1,6 +1,3 @@
-" highlight Normal ctermbg=black ctermfg=grey
-" highlight StatusLine term=none cterm=none ctermfg=black ctermbg=black
-" highlight CursorLine term=none cterm=none ctermfg=none ctermbg=darkgrey
 " 検索キーワードをハイライトしないように設定
 set nohlsearch
 " カーソルラインの強調表示を有効化
@@ -91,6 +88,23 @@ inoremap <expr> <Tab> pumvisible() ? "\<DOWN>" : "\<Tab>"
 inoremap <expr> <S-Tab> pumvisible() ? "\<UP>" : "\<S-Tab>"
 
 
+" text objects mapping
+onoremap 8 i(
+onoremap 2 i"
+onoremap 7 i'
+onoremap @ i`
+onoremap [ i[
+onoremap { i{
+
+onoremap a8 a(
+onoremap a2 a"
+onoremap a7 a'
+onoremap a@ a`
+onoremap a[ a[
+onoremap a{ a{
+
+
+
 " command!
 
 augroup MyAutoCmd
@@ -125,21 +139,6 @@ endif
 if dein#load_state(s:dein_dir)
 	call dein#begin(s:dein_dir)
     call dein#load_toml(s:config_dir.'/dein.toml', {'lazy':0})
-"    call dein#load_toml(s:config_dir.'/dein_lazy.toml', {'lazy':0})
-
-"    call dein#load_toml(s:toml_dir.'/general.toml', {'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/lightline.toml', {'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/denite.toml', {'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/defx.toml', {'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/deoplete.toml', {'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/neosnippet.toml', {'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/slimv.toml',{'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/im_control.toml',{'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/vim-markdown.toml',{'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/memo.toml',{'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/haskell.toml',{'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/quickrun.toml',{'lazy':0})
-"    call dein#load_toml(s:toml_dir.'/deol.toml', {'lazy':0})
     call dein#remote_plugins()
 	call dein#end()
 	call dein#save_state()
