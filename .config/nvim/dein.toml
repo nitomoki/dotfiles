@@ -246,7 +246,7 @@ hook_add = '''
         \ 'winrow': float2nr((&lines - (&lines * s:denite_win_height_percent))/2),
         \ 'highlight_filter_background': 'DeniteFilter',
         \ 'prompt': '$ ',
-        \ 'start_filter': v:true,
+        \ 'start_filter': v:false,
         \ }
     let s:denite_option_array = []
     for [key, value] in items(s:denite_default_options)
