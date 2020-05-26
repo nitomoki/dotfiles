@@ -63,6 +63,7 @@ nnoremap <silent><leader>b :Denite buffer<CR>
 nnoremap <silent><leader>h :Denite help<CR>
 nnoremap <silent><leader>m :make
 nnoremap <silent><leader>w :w<CR>
+nnoremap <silent><leader>n :<C-u>setlocal relativenumber!<CR>
 function! InitDefx()
     call dein#source('defx.vim')
     :Defx -listed -resume
@@ -81,7 +82,6 @@ noremap ZZ <Nop>
 noremap ZQ <Nop>
 noremap Q <Nop>
 noremap <C-space> <Nop>
-nnoremap <F3> :<C-u>setlocal relativenumber!<CR>
 inoremap <silent>jj <ESC>
 inoremap <silent>っｊ <ESC>
 inoremap <expr> <Tab> pumvisible() ? "\<DOWN>" : "\<Tab>"
@@ -164,6 +164,10 @@ endif
 
 " LSP C++
 lua require'nvim_lsp'.clangd.setup{}
+lua require'nvim_lsp'.ghcide.setup{}
+
+
+
 
 " Open terminal on new buffer
 
@@ -178,7 +182,12 @@ function! s:GetBufByte()
 endfunction
 
 function! Term()
-    call termopen(&shell, {'on_exit': 'OnExit'})
+    if dein#check_install('neoterm')==0
+        execute ":Tnew"
+    else
+        call termopen(&shell, {'on_exit': 'OnExit'})
+        set filetype=terminal
+    endif
     call deoplete#enable()
 endfunction
 
@@ -206,6 +215,8 @@ endfunction
 nnoremap <silent> <leader>q :up!<CR>:call CloseBuf()<CR>
 
 autocmd BufLeave * if exists('b:term_title') && exists('b:terminal_job_pid') | execute ":file term" . b:terminal_job_pid . "/" . b:term_title
+
+
 
 
 " vimscriptsyntax in toml

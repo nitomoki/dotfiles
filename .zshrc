@@ -21,6 +21,8 @@ colors
 ## ZSH_SYNTAX_HIGHLIGHTING
 ZSH_HIGHLIGHT_STYLES[alias]=fg=green,underline
 
+# PATH
+export PATH=$PATH:$HOME/.local/bin/
 
 # settings
 
@@ -28,6 +30,14 @@ ZSH_HIGHLIGHT_STYLES[alias]=fg=green,underline
 alias ez='nvr ~/.zshrc'
 alias ev='nvr ~/.config/nvim/init.vim'
 alias sz='source ~/.zshrc'
-alias lsa='ls -a'
-
+alias lsa='ls -A'
 alias h='cd $HOME'
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+alias grep='grep --color=auto'
+
+
+# alias ghci='stack ghci'
+# alias ghc='stack ghc'
+source /opt/ros/melodic/setup.zsh

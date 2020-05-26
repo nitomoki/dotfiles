@@ -83,6 +83,9 @@ install_pip3
 install_neovim
 install_nerdfonts
 
+# install haskell
+curl -sSL https://get.haskellstack.org/ | sh | stack upgrade | stack update
+
 echo "clangd setting"
 sudo update-altanatives --install /usr/bin/clangd clangd usr/bin/clangd-8 100
 
