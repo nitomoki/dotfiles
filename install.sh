@@ -25,7 +25,8 @@ softwares=(
     nodejs
     npm
     pip3
-    clang-tools-8
+    clangd-9
+    libclang-8-dev
 )
 
 softwares_pip3=(
@@ -42,6 +43,19 @@ function install_neovim(){
     make CMAKE_BUILD_TYPE=Release 
     sudo make install 
     cd /$HOME 
+    echo "done"
+}
+
+function install_ccls(){
+    echo "ccls install start..."
+    git clone --depth=1 --recursive https://github.com/MaskRay/ccls /$HOME/ccls
+    cd /$HOME/ccls
+    wget -c http://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+    tar xf clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+    cmake -H. -BRelease -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$PWD/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-18.04
+    cmake --build Release
+    cmake --build Release --target install
+    cd /$HOME
     echo "done"
 }
 
@@ -81,12 +95,13 @@ function install_pip3-softwares(){
 install_apt
 install_pip3
 install_neovim
+install_ccls
 install_nerdfonts
 
 # install haskell
-curl -sSL https://get.haskellstack.org/ | sh | stack upgrade | stack update
+# curl -sSL https://get.haskellstack.org/ | sh | stack upgrade | stack update
 
-echo "clangd setting"
-sudo update-altanatives --install /usr/bin/clangd clangd usr/bin/clangd-8 100
+# echo "clangd setting"
+# sudo update-alternatives --install /usr/bin/clangd clangd usr/bin/clangd-9 100
 
 

@@ -41,6 +41,7 @@ set encoding=utf-8
 set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8
 set autochdir
 set hidden
+set completeopt-=popup
 
 "shortcut keys
 "
@@ -154,18 +155,18 @@ syntax on
 
 
 " language server protocol
-if executable('clangd')
-    au User lsp_setup call lsp#register_server({
-        \ 'name': 'clangd',
-        \ 'cmd': '{server_info->['clangd', '-background-index']},
-        \ 'whitelist': ['c', 'cpp', 'objcpp'],
-        \})
-endif
+" if executable('clangd')
+"     au User lsp_setup call lsp#register_server({
+"         \ 'name': 'clangd',
+"         \ 'cmd': '{server_info->['clangd', '-background-index']},
+"         \ 'whitelist': ['c', 'cpp', 'objcpp'],
+"         \})
+" endif
 
 " LSP C++
-lua require'nvim_lsp'.clangd.setup{}
-lua require'nvim_lsp'.ghcide.setup{}
-
+lua << EOF
+require'nvim_lsp'.ccls.setup{}
+EOF
 
 
 

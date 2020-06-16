@@ -26,6 +26,12 @@ export PATH=$PATH:$HOME/.local/bin/
 
 # settings
 
+# ros settings ={
+ros_catkin_dir=~/catkin_ws
+if [ -e $ros_catkin_dir ]; then
+    source $ros_catkin_dir/devel/setup.zsh
+fi
+# } 
 
 alias ez='nvr ~/.zshrc'
 alias ev='nvr ~/.config/nvim/init.vim'
@@ -40,4 +46,6 @@ alias grep='grep --color=auto'
 
 # alias ghci='stack ghci'
 # alias ghc='stack ghc'
-source /opt/ros/melodic/setup.zsh
+
+
+
