@@ -1,3 +1,4 @@
+echo "loading init.vim"
 " 検索キーワードをハイライトしないように設定
 set nohlsearch
 " カーソルラインの強調表示を有効化
@@ -59,17 +60,9 @@ nnoremap <silent>[window]n gt
 nnoremap <silent>[window]p g<S-t>
 nnoremap <silent><leader>k :bnext<CR>
 nnoremap <silent><leader>j :bprev<CR>
-nnoremap <silent><leader>p :Denite buffer file/rec buffer<CR>
-nnoremap <silent><leader>b :Denite buffer<CR>
-nnoremap <silent><leader>h :Denite help<CR>
 nnoremap <silent><leader>m :make
 nnoremap <silent><leader>w :w<CR>
 nnoremap <silent><leader>n :<C-u>setlocal relativenumber!<CR>
-function! InitDefx()
-    call dein#source('defx.vim')
-    :Defx -listed -resume
-endfunction
-nnoremap <silent><leader>f :call InitDefx()<CR>
 " nnoremap <leader>
 " nnoremap <leader>
 " nnoremap <leader>
@@ -87,7 +80,6 @@ inoremap <silent>jj <ESC>
 inoremap <silent>っｊ <ESC>
 inoremap <expr> <Tab> pumvisible() ? "\<DOWN>" : "\<Tab>"
 inoremap <expr> <S-Tab> pumvisible() ? "\<UP>" : "\<S-Tab>"
-
 
 " text objects mapping
 onoremap 8 i(
@@ -112,6 +104,8 @@ augroup MyAutoCmd
   autocmd!
 augroup END
 
+" syntax
+autocmd BufRead,BufNewFile *.launch set filetype=xml
 
 " pulugins
 
@@ -140,10 +134,14 @@ endif
 if dein#load_state(s:dein_dir)
 	call dein#begin(s:dein_dir)
     call dein#load_toml(s:config_dir.'/dein.toml', {'lazy':0})
+    call dein#load_toml(s:config_dir.'/dein_lazy.toml', {'lazy':1})
     call dein#remote_plugins()
 	call dein#end()
 	call dein#save_state()
 endif
+
+call dein#add('tomasr/molokai')
+colorscheme molokai
 
 filetype plugin indent on
 
@@ -154,19 +152,6 @@ endif
 syntax on
 
 
-" language server protocol
-" if executable('clangd')
-"     au User lsp_setup call lsp#register_server({
-"         \ 'name': 'clangd',
-"         \ 'cmd': '{server_info->['clangd', '-background-index']},
-"         \ 'whitelist': ['c', 'cpp', 'objcpp'],
-"         \})
-" endif
-
-" LSP C++
-lua << EOF
-require'nvim_lsp'.ccls.setup{}
-EOF
 
 
 
@@ -189,7 +174,6 @@ function! Term()
         call termopen(&shell, {'on_exit': 'OnExit'})
         set filetype=terminal
     endif
-    call deoplete#enable()
 endfunction
 
 function! CloseLastTerm()
@@ -218,10 +202,6 @@ nnoremap <silent> <leader>q :up!<CR>:call CloseBuf()<CR>
 autocmd BufLeave * if exists('b:term_title') && exists('b:terminal_job_pid') | execute ":file term" . b:terminal_job_pid . "/" . b:term_title
 
 
-
-
-" vimscriptsyntax in toml
-
 au MyAutoCmd BufNewFile,BufRead *.toml call s:Syntax_range_dein()
 function! s:Syntax_range_dein() abort
     let start = '^\s*hook_\%('.
@@ -230,6 +210,9 @@ function! s:Syntax_range_dein() abort
     call SyntaxRange#Include(printf(start, "'''"), "'''", 'vim', '')
     call SyntaxRange#Include(printf(start, '"""'), '"""', 'vim', '')
 endfunction
+
+
+
 
 
 
