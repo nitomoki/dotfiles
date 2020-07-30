@@ -1,4 +1,4 @@
-echo "loading init.vim"
+echomsg "loading init.vim"
 " 検索キーワードをハイライトしないように設定
 set nohlsearch
 " カーソルラインの強調表示を有効化
@@ -42,7 +42,7 @@ set encoding=utf-8
 set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8
 set autochdir
 set hidden
-set completeopt-=popup
+set completeopt-=preview
 
 "shortcut keys
 "
@@ -215,4 +215,4 @@ endfunction
 
 
 
-
+echomsg "end init.vim"

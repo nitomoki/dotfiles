@@ -49,7 +49,7 @@ hook_post_source = '''
 hook_add = '''
     function! InitDefx()
         "call dein#source('defx.vim')
-        :Defx -listed -resume
+        :Defx -listed -resume -toggle
     endfunction
     nnoremap <silent><leader>f :call InitDefx()<CR>
 
@@ -96,15 +96,18 @@ endfunction
 repo = 'Shougo/deoplete.nvim'
 on_event = 'InsertEnter'
 
-hook_post_source = '''
+hook_add = '''
+    echomsg "add deoplete"
     let g:deoplete#enable_at_startup = 1
     let g:deoplete#enable_camel_case = 0
     let g:deoplete#enable_ignore_case = 0
-"    let g:deoplete#enable_refresh_always = 0
-"    let g:deoplete#file#enable_buffer_path = 1
+'''
+hook_post_source = '''
+    echomsg "load deoplete"
     call deoplete#custom#option({
         \ 'auto_complete': v:true,
         \ 'auto_complete_delay': 0,
+        \ 'refresh_always': v:true,
         \ 'smart_case': v:true,
         \ 'camel_case': v:true,
         \ 'max_list': 10000,
@@ -114,29 +117,24 @@ hook_post_source = '''
 [[plugins]]
 repo = 'ncm2/float-preview.nvim.git'
 on_source = ['deoplete.nvim']
-
-[[plugins]]
-repo = 'prabirshrestha/vim-lsp'
-on_source = ['deoplete.nvim']
-hook_post_source = '''
-    if executable('ccls')
-       au User lsp_setup call lsp#register_server({
-          \ 'name': 'ccls',
-          \ 'cmd': {server_info->['ccls']},
-          \ 'root_uri': {server_info->lsp#utils#path_to_uri(lsp#utils#find_nearest_parent_file_directory(lsp#utils#get_buffer_path(), 'compile_commands.json'))},
-          \ 'initialization_options': {'cache': {'directory': '/tmp/ccls/cache' }},
-          \ 'whitelist': ['c', 'cpp', 'objc', 'objcpp', 'cc'],
-          \ })
-endif
+hook_add = '''
+    let g:float_preview#docked = 0
 '''
 
 [[plugins]]
-repo = 'lighttiger2505/deoplete-vim-lsp'
+repo = 'neovim/nvim-lsp'
 on_source = ['deoplete.nvim']
+hook_add = '''
+    echomsg "add nvim-lsp"
+'''
+hook_post_source = '''
+    echomsg "load nvim-lsp"
+    lua require'nvim_lsp'.ccls.setup{}
+'''
 
-# [[plugins]]
-# repo = 'Shougo/deoplete-lsp'
-# on_source = ['deoplete.vim']
+[[plugins]]
+repo = 'Shougo/deoplete-lsp'
+on_source = ['deoplete.nvim']
 
 # denite
 [[plugins]]
@@ -158,7 +156,7 @@ hook_post_source = '''
     endfunction
     autocmd FileType denite call s:denite_my_settings()
     let s:denite_win_width_percent = 0.5
-    let s:denite_win_height_percent = 0.35
+    let s:denite_win_height_percent = 0.5
     let s:denite_default_options = {
         \ 'split': 'floating',
         \ 'winwidth': float2nr(&columns * s:denite_win_width_percent),
