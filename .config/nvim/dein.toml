@@ -40,7 +40,7 @@ hook_add = '''
             \   'left': [ [ 'mode', 'paste' ], [ 'fugitive', 'filename' ] ]
             \ },
             \ 'tabline': {
-            \   'left': [ [ 'test' , 'tabs' ] ],
+            \   'left': [ [ 'date' , 'tabs' ] ],
             \   'right': [ [ 'close' ] ]
             \ },
             \ 'separator': { 'left': "\ue0b0", 'right': "\ue0b2" },
@@ -56,7 +56,8 @@ hook_add = '''
             \   'fileformat': 'LightlineFileformat',
             \   'filetype': 'LightlineFiletype',
             \   'fileencoding': 'LightlineFileencoding',
-            \   'mode': 'LightlineMode'
+            \   'mode': 'LightlineMode',
+            \   'date': 'LightlineDate',
             \ }
             \ }
     
@@ -99,6 +100,16 @@ hook_add = '''
     function! LightlineMode()
       return winwidth(0) > 60 ? lightline#mode() : ''
     endfunction
+
+    function! LightlineDate()
+        return strftime("%Y/%m/%d")
+    endfunction
+
+    let s:counter = {"count": 0}
+
+
+
+    
 '''
 
 
