@@ -130,6 +130,7 @@ hook_add = '''
 hook_post_source = '''
     echomsg "load nvim-lsp"
     lua require'nvim_lsp'.ccls.setup{}
+    lua require'nvim_lsp'.texlab.setup{}
     nnoremap <silent> gd    <cmd>lua vim.lsp.buf.declaration()<CR>
     nnoremap <silent> <c-]> <cmd>lua vim.lsp.buf.definition()<CR>
     nnoremap <silent> K     <cmd>lua vim.lsp.buf.hover()<CR>
@@ -142,6 +143,24 @@ hook_post_source = '''
 [[plugins]]
 repo = 'Shougo/deoplete-lsp'
 on_source = ['deoplete.nvim']
+
+[[plugins]]
+repo = 'Shougo/neosnippet.vim'
+on_source = ['deoplete.nvim']
+depends = 'neosnippet-snippets'
+hook_post_source = '''
+    imap <C-k>     <Plug>(neosnippet_expand_or_jump)
+    smap <C-k>     <Plug>(neosnippet_expand_or_jump)
+    xmap <C-k>     <Plug>(neosnippet_expand_target)
+    let g:neosnippet#enable_snipmate_compatibility = 1
+    let g:neosnippet#snippets_directory='~/.config/nvim/snippets'
+'''
+
+[[plugins]]
+repo = 'Shougo/neosnippet-snippets'
+on_source = ['deoplete.nvim']
+
+
 
 # denite
 [[plugins]]
@@ -190,3 +209,24 @@ hook_post_source = '''
     call denite#custom#var('grep', 'final_opts',[])
 
 '''
+
+# tex
+[[plugins]]
+repo = 'lervag/vimtex'
+on_ft = ['tex']
+hook_post_source = '''
+    echom "load vimtex"
+    let g:vimtex_fold_envs = 0
+    let g:vimtex_compiler_latexmk = {
+        \ 'options': [
+        \   '-verbose',
+        \   '-file-line-error',
+        \   '-synctex=1',
+        \   '-interaction=nonstopmode',
+        \   ]}
+    let g:vimtex_copiler_programs = 'nvr'
+'''
+
+
+
+

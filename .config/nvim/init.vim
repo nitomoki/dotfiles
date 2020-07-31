@@ -74,11 +74,12 @@ nnoremap gj j
 nnoremap gk k
 noremap ZZ <Nop>
 noremap ZQ <Nop>
-noremap Q <Nop>
+noremap q <Nop>
+noremap Q q
 noremap <C-space> <Nop>
 inoremap <silent>jj <ESC>
 inoremap <silent>っｊ <ESC>
-inoremap <expr> <Tab> pumvisible() ? "\<DOWN>" : "\<Tab>"
+inoremap <expr><tab> pumvisible() ? "\<C-n>" : "\<tab>"
 inoremap <expr> <S-Tab> pumvisible() ? "\<UP>" : "\<S-Tab>"
 
 " text objects mapping
