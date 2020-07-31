@@ -55,9 +55,7 @@ nnoremap <silent>[window]j <C-w>j
 nnoremap <silent>[window]k <C-w>k
 nnoremap <silent>[window]l <C-w>l
 nnoremap <silent>[window]w <C-w>w
-nnoremap <silent>[window]t :tabnew<Enter>
-nnoremap <silent>[window]n gt
-nnoremap <silent>[window]p g<S-t>
+nnoremap <silent>[window]m :resize<CR>
 nnoremap <silent><leader>k :bnext<CR>
 nnoremap <silent><leader>j :bprev<CR>
 nnoremap <silent><leader>m :make
