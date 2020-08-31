@@ -25,7 +25,7 @@ softwares=(
     nodejs
     npm
     pip3
-    clangd-9
+    cargo
     libclang-8-dev
 )
 
@@ -87,6 +87,17 @@ function install_pip3-softwares(){
     echo "done"
 }
 
+function install_texlab(){
+    echo "texlab install start..."
+    sudo apt update -y
+    git clone https://github.com/latex-lsp/texlab /$HOME/texlab
+    cd /$HOME/texlab
+    cargo build --release
+    cd /$HOME
+    rm -rf texlab
+    echo "done"
+}
+
 
 # }}}
 
@@ -96,6 +107,7 @@ install_apt
 install_pip3
 install_neovim
 install_ccls
+install_texlab
 install_nerdfonts
 
 # install haskell
