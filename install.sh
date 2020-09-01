@@ -69,9 +69,32 @@ function install_nerdfonts(){
     echo "done"
 }
 
+function install_powerlinefonts(){
+    echo "powerline-fonts install start.."
+    git clone https://github.com/powerline/fonts.git --depth=1 /$HOME/fonts
+    cd /$HOME/fonts
+    ./install.sh
+    cd /$HOME
+    rm -rf fonts
+    echo "done."
+}
+
+function install_hackgen-fonts(){
+    cd /$HOME/Downloads
+    curl https://github.com/yuru7/HackGen/releases/download/v2.1.1/HackGenNerd_v2.1.1.zip
+    unzip HackGenNerd_v2.1.1.zip
+    cd HackGenNerd_v2.1.1/
+    if [ ! -e {/$HOME/.fonts} ]; then
+        mkdir /$HOME/.fonts
+    fi
+    cp *.ttf /$HOME/.fonts
+    cd /$HOME
+    fc-cache -fv
+}
+
 function install_apt-softwares(){
     echo "apt install start..."
-    sudo apt update -y
+    sudo apt update
     for software in "${softwares[@]}"; do
         sudo apt install -y $software || sudo apt update $software
     done
@@ -80,9 +103,9 @@ function install_apt-softwares(){
 
 function install_pip3-softwares(){
     echo "pip3 install start..."
-    sudo pip3 update -y
+    sudo pip3 install -U
     for software_pip3 in "${softwares_pip3[@]}"; do
-        sudo pip3 install -y $software_pip3 || sudo pip3 update
+        sudo pip3 install  $software_pip3 || sudo pip3 install -U
     done
     echo "done"
 }
@@ -103,13 +126,20 @@ function install_texlab(){
 
 
 # installing
-install_apt
-install_pip3
+install_apt-softwares
+install_pip3-softwares
 install_neovim
 install_ccls
 install_texlab
-install_nerdfonts
+install_hackgen
 
+
+read -nl -p "change login shell to zsh? (y/n): " yn
+if [[ $yn = [yY] ]]; then
+    chsh -s $(which zsh) 
+else
+    echo abort
+fi
 # install haskell
 # curl -sSL https://get.haskellstack.org/ | sh | stack upgrade | stack update
 
