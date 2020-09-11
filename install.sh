@@ -24,7 +24,6 @@ softwares=(
     gem
     nodejs
     npm
-    pip3
     cargo
     libclang-8-dev
 )
@@ -131,10 +130,10 @@ install_pip3-softwares
 install_neovim
 install_ccls
 install_texlab
-install_hackgen
+install_hackgen-fonts
 
 
-read -nl -p "change login shell to zsh? (y/n): " yn
+read -n1 -p "change login shell to zsh? (y/n): " yn
 if [[ $yn = [yY] ]]; then
     chsh -s $(which zsh) 
 else
