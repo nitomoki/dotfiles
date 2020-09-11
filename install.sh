@@ -20,7 +20,7 @@ softwares=(
     python3-pip
     fontconfig
     ruby
-    lua
+    lua5.4
     gem
     nodejs
     npm
