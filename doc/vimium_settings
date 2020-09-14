@@ -1,0 +1,34 @@
+# Insert your preferred key mappings here.
+unmapAll
+map j scrollDown
+map k scrollUp
+map J scrollPageDown
+map K scrollPageUp
+map gg scrollToTop
+map G scrollToBottom
+map h goBack
+map l goForward
+
+map f LinkHints.activateMode
+map F LinkHints.activateModeToOpenInNewTab
+map d LinkHints.activateModeWithQueue
+
+map r reload
+# map t createTab
+map . nextTab
+map , previousTab
+map $, firstTab
+map $. lastTab
+map > moveTabRight
+map < moveTabLeft
+map x removeTab
+map T Vomnibar.activateTavSelection
+map o Vomnibar.activate
+map O Vomnibar.activateInNewTab
+
+map / enterFindMode
+map n performFind
+map N performBackwardsFind
+map b Vomnibar.activateBookmarks
+map B Vomnibar.activateBookmarksInNewTab
+map ? showHelp
