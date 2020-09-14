@@ -12,7 +12,7 @@ fi
 
 # Customize to your needs...
 # environment variables
-export LANG=ja_JP,UTF-8
+export LANG=ja_JP.UTF-8
 
 # colors
 autoload -Uz colors

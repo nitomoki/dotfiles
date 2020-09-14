@@ -26,6 +26,7 @@ softwares=(
     npm
     cargo
     libclang-8-dev
+    silversearcher-ag
 )
 
 softwares_pip3=(
@@ -39,8 +40,8 @@ function install_neovim(){
     echo "neovim install start..."
     git clone https://github.com/neovim/neovim /$HOME/neovim
     cd /$HOME/neovim
-    make CMAKE_BUILD_TYPE=Release 
-    sudo make install 
+#     make CMAKE_BUILD_TYPE=Release 
+#     sudo make install 
     cd /$HOME 
     echo "done"
 }
