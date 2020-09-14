@@ -21,10 +21,12 @@ ZSH_HIGHLIGHT_STYLES[alias]=fg=green,underline
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=238'
 
 # PATH
-export PATH=$PATH:$HOME/.local/bin/
+export PATH=$PATH:$HOME/.local/bin/:$HOME/dotfiles/bin/
 
 # settings
-
+#
+# bindkey
+bindkey '^K' autosuggest-accept
 # ros settings ={
 ros_catkin_dir=~/catkin_ws
 if [ -e $ros_catkin_dir ]; then
