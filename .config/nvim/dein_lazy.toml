@@ -131,6 +131,7 @@ hook_post_source = '''
     echomsg "load nvim-lsp"
     lua require'nvim_lsp'.ccls.setup{}
     lua require'nvim_lsp'.texlab.setup{}
+    lua require'nvim_lsp'.omnisharp.setup{}
     nnoremap <silent> gd    <cmd>lua vim.lsp.buf.declaration()<CR>
     nnoremap <silent> <c-]> <cmd>lua vim.lsp.buf.definition()<CR>
     nnoremap <silent> K     <cmd>lua vim.lsp.buf.hover()<CR>
