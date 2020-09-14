@@ -1,8 +1,6 @@
 #
 # Executes commands at the start of an interactive session.
 #
-# Authors:
-#   Sorin Ionescu <sorin.ionescu@gmail.com>
 #
 
 # Source Prezto.
@@ -20,6 +18,7 @@ colors
 
 ## ZSH_SYNTAX_HIGHLIGHTING
 ZSH_HIGHLIGHT_STYLES[alias]=fg=green,underline
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=238'
 
 # PATH
 export PATH=$PATH:$HOME/.local/bin/

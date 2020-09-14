@@ -26,11 +26,14 @@ packages=(
     cargo
     libclang-8-dev
     silversearcher-ag
+    ccls
 )
 
 sudo apt update
 for package in "${packages[@]}"; do
     sudo apt install -y $package || sudo apt update $package
 done
+sudo apt upgrade
+sudo apt autoremove
 
 
