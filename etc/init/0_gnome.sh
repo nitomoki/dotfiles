@@ -8,3 +8,7 @@ LANG=C xdg-user-dirs-gtk-update
 
 # change caps-lock to ctrl
 gsettings set org.gnome.libgnomekbd.keyboard options "['ctrl\tctrl:nocaps']"
+
+# emacs keybinding
+gsettings set org.gnome.desktop.interface gtk-key-theme Emacs
+
