@@ -27,6 +27,7 @@ packages=(
     libclang-8-dev
     silversearcher-ag
     ccls
+    latexmk
 )
 
 sudo apt update

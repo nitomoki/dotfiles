@@ -21,7 +21,7 @@ ZSH_HIGHLIGHT_STYLES[alias]=fg=green,underline
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=238'
 
 # PATH
-export PATH=$PATH:$HOME/.local/bin/:$HOME/dotfiles/bin/
+export PATH=$PATH:$HOME/.local/bin/:$HOME/dotfiles/bin/:$HOME/.cargo/bin/
 
 # settings
 #
