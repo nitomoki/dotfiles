@@ -28,6 +28,7 @@ packages=(
     silversearcher-ag
     ccls
     latexmk
+    nkf
 )
 
 sudo apt update

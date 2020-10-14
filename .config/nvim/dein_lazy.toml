@@ -122,6 +122,10 @@ hook_add = '''
 '''
 
 [[plugins]]
+repo = 'Omnisharp/omnisharp-vim'
+on_source = ['deoplete.nvim']
+
+[[plugins]]
 repo = 'neovim/nvim-lspconfig'
 on_source = ['deoplete.nvim']
 hook_add = '''

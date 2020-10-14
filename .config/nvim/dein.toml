@@ -129,14 +129,15 @@ hook_add = '''
     \   'tex': {
     \       'command': 'latexmk',
     \       'outputter': 'error',
-    \       'outputter/error/success': 'null',
-    \       'outputter/error/error': 'quickfix',
-    \       'srcfile': expand("%"),
-    \       'cmdopt': '-pdfdvi',
-    \       'exec': '%c %o %a %s',
+    \       'exec': ['%c -gg -pdfdvi %s', 'xdg-open %s:r.pdf']
+    \   },
+    \   'cs': {
+    \       'command': 'mcs',
+    \       'cmdopt': '-pkg:dotnet'
     \   },
     \}
 '''
+
 
 
 
