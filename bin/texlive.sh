@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt install texlive-latex-recommended \
+sudo apt install -y texlive-latex-recommended \
    texlive-latex-extra \
    texlive-fonts-recommended \
    texlive-fonts-extra \
