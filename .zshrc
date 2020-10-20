@@ -23,6 +23,12 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=238'
 # PATH
 export PATH=$PATH:$HOME/.local/bin/:$HOME/dotfiles/bin/:$HOME/.cargo/bin/
 
+# source local zsh setting
+if [ ! -f ~/.zshrc.local ]; then
+    touch ~/.zshrc.local
+fi
+source ~/.zshrc.local
+
 # settings
 #
 # bindkey
