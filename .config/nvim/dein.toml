@@ -113,7 +113,7 @@ hook_add = '''
 '''
 
 
-# neoterm
+# terminal
 [[plugins]]
 repo = 'kassio/neoterm'
 
