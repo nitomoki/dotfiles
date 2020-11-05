@@ -29,6 +29,7 @@ packages=(
     ccls
     latexmk
     nkf
+    perl
 )
 
 sudo apt update
