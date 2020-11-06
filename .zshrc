@@ -29,6 +29,8 @@ if [ ! -f ~/.zshrc.local ]; then
 fi
 source ~/.zshrc.local
 
+source ~/.cacheaaa/dein/repos/github.com/tyru/sync-term-cwd.vim/macros/synctermcwd.sh
+
 # settings
 #
 # bindkey
