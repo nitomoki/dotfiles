@@ -5,3 +5,5 @@ cd /$HOME/neovim
 sudo make CMAKE_BUILD_TYPE=Release 
 sudo make install 
 cd /$HOME 
+sudo rm -rf /$HOME/neovim
+

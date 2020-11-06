@@ -66,8 +66,8 @@ nnoremap <silent><leader>n :<C-u>setlocal relativenumber!<CR>
 " nnoremap <leader>
 " nnoremap <leader>
 tnoremap <silent>jj <C-\><C-n>
-nnoremap j gj
-nnoremap k gk
+nnoremap <silent>j gj
+nnoremap <silent>k gk
 nnoremap gj j
 nnoremap gk k
 noremap ZZ <Nop>
