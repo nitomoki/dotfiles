@@ -117,9 +117,6 @@ hook_add = '''
 [[plugins]]
 repo = 'kassio/neoterm'
 
-[[plugins]]
-repo = 'tyru/sync-term-cwd.vim'
-
 # quickrun
 [[plugins]]
 repo = 'thinca/vim-quickrun'
