@@ -128,8 +128,8 @@ hook_add = '''
     \   },
     \   'tex': {
     \       'command': 'latexmk',
-    \       'outputter': 'error',
-    \       'exec': ['%c -gg -pdfdvi %s', 'xdg-open %s:r.pdf']
+    \       'outputter': 'message',
+    \       'exec': ['%c -gg -pdfdvi %s', '%c -c %s', 'xdg-open %s:r.pdf']
     \   },
     \   'cs': {
     \       'command': 'mcs',
