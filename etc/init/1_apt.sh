@@ -30,6 +30,7 @@ packages=(
     latexmk
     nkf
     perl
+    xclip
 )
 
 sudo apt update

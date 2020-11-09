@@ -1,3 +1,4 @@
+
 echomsg "loading init.vim"
 " 検索キーワードをハイライトしないように設定
 set nohlsearch
@@ -211,6 +212,17 @@ function! s:Syntax_range_dein() abort
 endfunction
 
 
+fu Tapi_lcd(buf, cwd) abort
+    if has('nvim')
+        exe 'lcd '..a:cwd
+        return ''
+    endif
+    let winid = bufwinid(a:buf)
+    if winid == -1 || empty(a:cwd)
+        return
+    endif
+    call win_execute(winid, 'lcd '..a:cwd)
+endfu
 
 
 
