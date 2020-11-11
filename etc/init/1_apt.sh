@@ -31,6 +31,7 @@ packages=(
     nkf
     perl
     xclip
+    qt5-default
 )
 
 sudo apt update
