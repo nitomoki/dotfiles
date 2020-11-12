@@ -17,6 +17,7 @@ packages=(
     automake
     unzip
     python3-pip
+    python-pip
     fontconfig
     ruby
     lua5.4
@@ -32,6 +33,7 @@ packages=(
     perl
     xclip
     qt5-default
+    vim
 )
 
 sudo apt update
