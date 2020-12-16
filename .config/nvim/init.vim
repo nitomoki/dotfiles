@@ -1,4 +1,3 @@
-
 echomsg "loading init.vim"
 " 検索キーワードをハイライトしないように設定
 set nohlsearch
@@ -80,6 +79,8 @@ inoremap <silent>jj <ESC>
 inoremap <expr><tab> pumvisible() ? "\<C-n>" : "\<tab>"
 inoremap <expr> <S-Tab> pumvisible() ? "\<UP>" : "\<S-Tab>"
 vnoremap <silent> <C-j><C-j> <ESC>
+inoremap <silent> <C-j><C-j> <ESC>
+
 
 " text objects mapping
 onoremap 8 i(
@@ -224,6 +225,29 @@ fu Tapi_lcd(buf, cwd) abort
     call win_execute(winid, 'lcd '..a:cwd)
 endfu
 
+
+" japanese insert mode
+nnoremap <F6> :call JapaneseInserfOn()<CR>
+nnoremap <F7> :call JapaneseInsertOff()<CR>
+nnoremap <A-i> :call JapaneseInserfOn()<CR>i
+nnoremap <A-I> :call JapaneseInserfOn()<CR>I
+nnoremap <A-a> :call JapaneseInserfOn()<CR>a
+nnoremap <A-A> :call JapaneseInserfOn()<CR>A
+
+let s:japanese_mode = 0
+function! JapaneseInsertOff() abort
+    if s:japanese_mode == 1
+        call system("ibus engine 'xkb:jp::jpn'")
+        let s:japanese_mode = 0
+    endif
+endfunction
+
+function! JapaneseInserfOn() abort
+    call system("ibus engine 'mozc-jp'")
+    let s:japanese_mode = 1
+endfunction
+
+autocmd InsertLeave * call JapaneseInsertOff()
 
 
 echomsg "end init.vim"
