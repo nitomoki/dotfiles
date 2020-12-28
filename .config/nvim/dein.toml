@@ -25,6 +25,8 @@ on_ft = 'toml'
 [[plugins]]
 repo = 'tpope/vim-surround'
 
+[[plugins]]
+repo = 'nvim-treesitter/nvim-treesitter'
 
 # lightline
 [[plugins]]

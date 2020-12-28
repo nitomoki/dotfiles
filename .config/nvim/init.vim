@@ -59,7 +59,7 @@ nnoremap <silent>[window]m :resize<CR>
 nnoremap <silent><leader>k :bnext<CR>
 nnoremap <silent><leader>j :bprev<CR>
 nnoremap <silent><leader>m :make
-nnoremap <silent><leader>w :w<CR>
+nnoremap <silent><leader>w :w!<CR>
 nnoremap <silent><leader>n :<C-u>setlocal relativenumber!<CR>
 " nnoremap <leader>
 " nnoremap <leader>
@@ -152,7 +152,21 @@ endif
 
 syntax on
 
-
+lua <<EOF
+require'nvim-treesitter.configs'.setup {
+  highlight = {
+    enable = true,
+    disable = {
+      'lua',
+      'ruby',
+      'toml',
+      'c_sharp',
+      'vue',
+    }
+  },
+  ensure_installed = 'all',
+}
+EOF
 
 
 
