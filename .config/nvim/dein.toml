@@ -130,7 +130,8 @@ hook_add = '''
     \   },
     \   'tex': {
     \       'command': 'latexmk',
-    \       'outputter': 'message',
+    \       'outputter': 'buffer',
+    \       'outputter/buffer/split': '""',
     \       'exec': ['%c -gg -pdfdvi %s', '%c -c %s', 'xdg-open %s:r.pdf']
     \   },
     \   'cs': {
