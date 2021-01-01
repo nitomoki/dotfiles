@@ -2,7 +2,7 @@ DOTFILES_EXCLUDES := .git .gitmodules .travis.yml
 DOTFILES_TARGET   := $(wildcard .??*) bin
 DOTFILES_DIR      := $(PWD)
 DOTFILES_FILES    := $(filter-out $(DOTFILES_EXCLUDES), $(DOTFILES_TARGET))
-NVIM_CONFIG_FILES := ~/.config/nvim
+NVIM_CONFIG_FILES := .config/nvim
 
 deploy: $(NVIM_CONFIG_FILES)
 	@$(foreach val, $(DOTFILES_FILES), ln -sfnv $(abspath $(val)) $(HOME)/$(val);)
