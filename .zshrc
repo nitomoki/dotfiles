@@ -1,8 +1,3 @@
-#
-# Executes commands at the start of an interactive session.
-#
-#
-
 # Source Prezto.
 #if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
 #    source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
@@ -12,14 +7,8 @@
 
 DOTFILES_DIR=$HOME/dotfiles
 
-# Customize to your needs...
-# environment variables
 export LANG=ja_JP.UTF-8
 
-# colors
-autoload -Uz colors && colors
-
-## ZSH_SYNTAX_HIGHLIGHTING
 
 # PATH
 export PATH=$PATH:$HOME/.local/bin/:$HOME/dotfiles/bin/:$HOME/.cargo/bin/
@@ -31,10 +20,6 @@ fi
 source ~/.zshrc.local
 
 
-# settings
-#
-# bindkey
-bindkey '^K' autosuggest-accept
 # ros settings ={
 ros_catkin_dir=~/catkin_ws
 if [ -e $ros_catkin_dir ]; then
@@ -42,20 +27,6 @@ if [ -e $ros_catkin_dir ]; then
 fi
 # } 
 
-
-
-autoload -Uz add-zsh-hook
-if [[ -n "$VIM_TERMINAL" ]]; then
-  add-zsh-hook -Uz chpwd cdv
-  cdv() {
-    printf -- '\033]51;["call", "Tapi_lcd", "%q"]\007' "$(pwd)"
-  }
-elif [[ -n "$NVIM_LISTEN_ADDRESS" ]]; then
-  add-zsh-hook -Uz chpwd cdv
-  cdv() {
-    nvr --servername "$VIM_SERVERNAME" --remote-expr "$(printf -- 'Tapi_lcd(0, "%q")' "$(pwd)")"
-  }
-fi
 
 
 
@@ -76,3 +47,4 @@ autoload -Uz _zinit
 source $DOTFILES_DIR/zsh/alias.zsh
 source $DOTFILES_DIR/zsh/config.zsh
 source $DOTFILES_DIR/zsh/plugins.zsh
+

@@ -9,5 +9,6 @@ alias mv='mv -i'
 alias grep='grep --color=auto'
 alias bat='upower -i /org/freedesktop/UPower/devices/battery_BAT1'
 
-# alias ghci='stack ghci'
-# alias ghc='stack ghc'
+if builtin command -v bat > /dev/null; then
+  alias cat="bat"
+fi
