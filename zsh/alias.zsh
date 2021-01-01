@@ -1,6 +1,7 @@
 alias ez='nvr ~/.zshrc'
 alias ev='nvr ~/.config/nvim/init.vim'
 alias sz='source ~/.zshrc'
+alias ls='ls --color'
 alias lsa='ls -A'
 alias h='cd $HOME'
 alias rm='rm -i'
