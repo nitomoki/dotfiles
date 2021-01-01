@@ -4,21 +4,22 @@
 #
 
 # Source Prezto.
-if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
-  source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
-fi
+#if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
+#    source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
+#    ZSH_HIGHLIGHT_STYLES[alias]=fg=green,underline
+#    ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=238'
+#fi
+
+DOTFILES_DIR=$HOME/dotfiles
 
 # Customize to your needs...
 # environment variables
 export LANG=ja_JP.UTF-8
 
 # colors
-autoload -Uz colors
-colors
+autoload -Uz colors && colors
 
 ## ZSH_SYNTAX_HIGHLIGHTING
-ZSH_HIGHLIGHT_STYLES[alias]=fg=green,underline
-ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=238'
 
 # PATH
 export PATH=$PATH:$HOME/.local/bin/:$HOME/dotfiles/bin/:$HOME/.cargo/bin/
@@ -41,19 +42,6 @@ if [ -e $ros_catkin_dir ]; then
 fi
 # } 
 
-alias ez='nvr ~/.zshrc'
-alias ev='nvr ~/.config/nvim/init.vim'
-alias sz='source ~/.zshrc'
-alias lsa='ls -A'
-alias h='cd $HOME'
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
-alias grep='grep --color=auto'
-alias bat='upower -i /org/freedesktop/UPower/devices/battery_BAT1'
-
-# alias ghci='stack ghci'
-# alias ghc='stack ghc'
 
 
 autoload -Uz add-zsh-hook
@@ -70,3 +58,21 @@ elif [[ -n "$NVIM_LISTEN_ADDRESS" ]]; then
 fi
 
 
+
+##########zinit installer##########
+if [[ ! -f $HOME/.zinit/bin/zinit.zsh ]]; then
+    print -P "%F{33}▓▒░ %F{220}Installing %F{33}DHARMA%F{220} Initiative Plugin Manager (%F{33}zdharma/zinit%F{220})…%f"
+    command mkdir -p "$HOME/.zinit" && command chmod g-rwX "$HOME/.zinit"
+    command git clone https://github.com/zdharma/zinit "$HOME/.zinit/bin" && \
+        print -P "%F{33}▓▒░ %F{34}Installation successful.%f%b" || \
+        print -P "%F{160}▓▒░ The clone has failed.%f%b"
+fi
+
+source "$HOME/.zinit/bin/zinit.zsh"
+autoload -Uz _zinit
+(( ${+_comps} )) && _comps[zinit]=_zinit
+
+
+source $DOTFILES_DIR/zsh/alias.zsh
+source $DOTFILES_DIR/zsh/config.zsh
+source $DOTFILES_DIR/zsh/plugins.zsh

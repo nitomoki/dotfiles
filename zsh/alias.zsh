@@ -1,0 +1,13 @@
+alias ez='nvr ~/.zshrc'
+alias ev='nvr ~/.config/nvim/init.vim'
+alias sz='source ~/.zshrc'
+alias lsa='ls -A'
+alias h='cd $HOME'
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+alias grep='grep --color=auto'
+alias bat='upower -i /org/freedesktop/UPower/devices/battery_BAT1'
+
+# alias ghci='stack ghci'
+# alias ghc='stack ghc'
