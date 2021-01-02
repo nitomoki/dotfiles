@@ -1,3 +1,7 @@
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 # Source Prezto.
 #if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
 #    source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
@@ -8,9 +12,6 @@
 DOTFILES_DIR=$HOME/dotfiles
 
 export LANG=ja_JP.UTF-8
-
-
-# PATH
 export PATH=$PATH:$HOME/.local/bin/:$HOME/dotfiles/bin/:$HOME/.cargo/bin/
 
 # source local zsh setting
@@ -47,4 +48,5 @@ autoload -Uz _zinit
 source $DOTFILES_DIR/zsh/alias.zsh
 source $DOTFILES_DIR/zsh/config.zsh
 source $DOTFILES_DIR/zsh/plugins.zsh
+source $DOTFILES_DIR/zsh/extract.zsh
 
