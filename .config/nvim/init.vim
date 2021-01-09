@@ -43,6 +43,7 @@ set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8
 set autochdir
 set hidden
 set completeopt-=preview
+let g:tex_flavor = "latex"
 
 "shortcut keys
 "
