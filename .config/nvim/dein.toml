@@ -28,6 +28,13 @@ repo = 'tpope/vim-surround'
 [[plugins]]
 repo = 'nvim-treesitter/nvim-treesitter'
 
+[[plugins]]
+repo = 'tpope/vim-fugitive'
+hook_add = '''
+    nnoremap <leader>gc :Gcommit<CR>
+    nnoremap <leader>ga :Gwrite<CR>
+'''
+
 # lightline
 [[plugins]]
 repo = 'powerline/powerline-fonts'
