@@ -8,6 +8,7 @@ alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
 alias grep='grep --color=auto'
+alias gcm='git commit -m'
 #alias bat='upower -i /org/freedesktop/UPower/devices/battery_BAT1'
 
 if builtin command -v bat > /dev/null; then
