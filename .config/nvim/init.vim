@@ -66,7 +66,8 @@ nnoremap <silent><leader>n :<C-u>setlocal relativenumber!<CR>
 " nnoremap <leader>
 " nnoremap <leader>
 " nnoremap <leader>
-tnoremap <silent><C-j> <C-\><C-n>
+" tnoremap <silent><C-j> <C-\><C-n>
+tnoremap <silent><C-[> <C-\><C-n>
 nnoremap <silent>j gj
 nnoremap <silent>k gk
 nnoremap gj j
@@ -79,8 +80,8 @@ noremap <C-space> <Nop>
 " inoremap <silent>jj <ESC>
 inoremap <expr><tab> pumvisible() ? "\<C-n>" : "\<tab>"
 inoremap <expr> <S-Tab> pumvisible() ? "\<UP>" : "\<S-Tab>"
-vnoremap <silent><C-j> <ESC>
-inoremap <silent><C-j> <ESC>
+" vnoremap <silent><C-j> <ESC>
+" inoremap <silent><C-j> <ESC>
 
 
 
