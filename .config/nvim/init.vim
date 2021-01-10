@@ -39,7 +39,7 @@ set virtualedit=block
 set t_Co=256
 scriptencoding utf-8
 set encoding=utf-8
-set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8
+" set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8
 set autochdir
 set hidden
 set completeopt-=preview
@@ -66,7 +66,7 @@ nnoremap <silent><leader>n :<C-u>setlocal relativenumber!<CR>
 " nnoremap <leader>
 " nnoremap <leader>
 " nnoremap <leader>
-tnoremap <silent><C-j><C-j> <C-\><C-n>
+tnoremap <silent><C-j> <C-\><C-n>
 nnoremap <silent>j gj
 nnoremap <silent>k gk
 nnoremap gj j
@@ -76,11 +76,12 @@ noremap ZQ <Nop>
 noremap q <Nop>
 noremap Q q
 noremap <C-space> <Nop>
-inoremap <silent>jj <ESC>
+" inoremap <silent>jj <ESC>
 inoremap <expr><tab> pumvisible() ? "\<C-n>" : "\<tab>"
 inoremap <expr> <S-Tab> pumvisible() ? "\<UP>" : "\<S-Tab>"
-vnoremap <silent> <C-j><C-j> <ESC>
-inoremap <silent> <C-j><C-j> <ESC>
+vnoremap <silent><C-j> <ESC>
+inoremap <silent><C-j> <ESC>
+
 
 
 " text objects mapping
