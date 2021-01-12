@@ -1,26 +1,16 @@
 echomsg "loading init.vim"
-" 検索キーワードをハイライトしないように設定
 set nohlsearch
-" カーソルラインの強調表示を有効化
 set cursorline
-" 行番号を表示
 set number
-"入力中のコマンドをステータスに表示
 set showcmd
-" カッコ
 set showmatch
 set matchtime=1
 let loaded_matchparen = 1
 set matchpairs& matchpairs+=<:>
 set helplang=ja,en
-" ステータスラインを表示
 set laststatus=2 " ステータスラインを常に表示
 set statusline=%F%r%h%= " ステータスラインの内容
-
-" インクリメンタル検索を有効化
 set incsearch
-
-" 補完時の一覧表示機能有効化
 set wildmenu wildmode=list:full
 set ignorecase
 set tabstop=4
@@ -48,15 +38,15 @@ let g:tex_flavor = "latex"
 "shortcut keys
 "
 let mapleader = "\<Space>"
-nmap s [window]
-nnoremap <silent>[window]s :split<Enter>
-nnoremap <silent>[window]v :vsplit<Enter>
-nnoremap <silent>[window]h <C-w>h
-nnoremap <silent>[window]j <C-w>j
-nnoremap <silent>[window]k <C-w>k
-nnoremap <silent>[window]l <C-w>l
-nnoremap <silent>[window]w <C-w>w
-nnoremap <silent>[window]m :resize<CR>
+"nmap s [window]
+"nnoremap <silent>[window]s :split<Enter>
+"nnoremap <silent>[window]v :vsplit<Enter>
+"nnoremap <silent>[window]h <C-w>h
+"nnoremap <silent>[window]j <C-w>j
+"nnoremap <silent>[window]k <C-w>k
+"nnoremap <silent>[window]l <C-w>l
+"nnoremap <silent>[window]w <C-w>w
+"nnoremap <silent>[window]m :resize<CR>
 nnoremap <silent><leader>k :bnext<CR>
 nnoremap <silent><leader>j :bprev<CR>
 nnoremap <silent><leader>m :make
@@ -115,7 +105,7 @@ autocmd BufRead,BufNewFile *.launch set filetype=xml
 
 " dein.vim
 if &compatible
-	set nocompatible
+    set nocompatible
 endif
 
 if has("unix")
@@ -129,19 +119,19 @@ let s:config_dir =  expand('~/.config/nvim')
 let s:dein_repo_dir = s:dein_dir . '/repos/github.com/Shougo/dein.vim'
 " dein.vimが存在してなければgithubからclone
 if &runtimepath !~# '/dein.vim'
-	if !isdirectory(s:dein_repo_dir)
-		execute '!git clone https://github.com/Shougo/dein.vim' s:dein_repo_dir
-	endif
-	execute 'set runtimepath+='.fnamemodify(s:dein_repo_dir, ':p')
+    if !isdirectory(s:dein_repo_dir)
+        execute '!git clone https://github.com/Shougo/dein.vim' s:dein_repo_dir
+    endif
+    execute 'set runtimepath+='.fnamemodify(s:dein_repo_dir, ':p')
 endif
 
 if dein#load_state(s:dein_dir)
-	call dein#begin(s:dein_dir)
+    call dein#begin(s:dein_dir)
     call dein#load_toml(s:config_dir.'/dein.toml', {'lazy':0})
     call dein#load_toml(s:config_dir.'/dein_lazy.toml', {'lazy':1})
     call dein#remote_plugins()
-	call dein#end()
-	call dein#save_state()
+    call dein#end()
+    call dein#save_state()
 endif
 
 call dein#add('tomasr/molokai')
@@ -150,7 +140,7 @@ colorscheme molokai
 filetype plugin indent on
 
 if dein#check_install()
-	call dein#install()
+    call dein#install()
 endif
 
 syntax on
@@ -211,7 +201,11 @@ function! CloseBuf()
     if len(filter(range(1, bufnr('$')), 'buflisted(v:val)')) == 1
         :q
     else
-        :bd
+        if &filetype == 'neoterm' || &filetype == 'terminal'
+            :bn
+        else
+            :bd
+        endif
     endif
 endfunction
 
@@ -246,25 +240,30 @@ endfu
 " japanese insert mode
 nnoremap <F6> :call JapaneseInserfOn()<CR>
 nnoremap <F7> :call JapaneseInsertOff()<CR>
-nnoremap <A-i> :call JapaneseInserfOn()<CR>i
-nnoremap <A-I> :call JapaneseInserfOn()<CR>I
-nnoremap <A-a> :call JapaneseInserfOn()<CR>a
-nnoremap <A-A> :call JapaneseInserfOn()<CR>A
+nnoremap <A-j> :call ToggleJapaneseMode()<CR>
+inoremap <A-j> <ESC>:call ToggleJapaneseMode()<CR>a
 
 let s:japanese_mode = 0
 function! JapaneseInsertOff() abort
     if s:japanese_mode == 1
         call system("ibus engine 'xkb:jp::jpn'")
-        let s:japanese_mode = 0
     endif
 endfunction
 
 function! JapaneseInserfOn() abort
-    call system("ibus engine 'mozc-jp'")
-    let s:japanese_mode = 1
+    if s:japanese_mode == 1
+        call system("ibus engine 'mozc-jp'")
+    endif
+endfunction
+
+function! ToggleJapaneseMode() abort
+    let s:japanese_mode = s:japanese_mode? 0 : 1
+    let s:japanese_mode_str = s:japanese_mode? 'ON' : 'OFF'
+    echo "mode " . s:japanese_mode_str
 endfunction
 
 autocmd InsertLeave * call JapaneseInsertOff()
+autocmd InsertEnter * call JapaneseInserfOn()
 
 
 echomsg "end init.vim"
