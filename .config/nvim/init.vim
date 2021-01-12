@@ -240,8 +240,8 @@ endfu
 " japanese insert mode
 nnoremap <F6> :call JapaneseInserfOn()<CR>
 nnoremap <F7> :call JapaneseInsertOff()<CR>
-nnoremap <A-j> :call ToggleJapaneseMode()<CR>
-inoremap <A-j> <ESC>:call ToggleJapaneseMode()<CR>a
+nnoremap <F10> :call ToggleJapaneseMode()<CR>
+inoremap <F10> <ESC>:call ToggleJapaneseMode()<CR>a
 
 let s:japanese_mode = 0
 function! JapaneseInsertOff() abort
@@ -259,7 +259,7 @@ endfunction
 function! ToggleJapaneseMode() abort
     let s:japanese_mode = s:japanese_mode? 0 : 1
     let s:japanese_mode_str = s:japanese_mode? 'ON' : 'OFF'
-    echo "mode " . s:japanese_mode_str
+    echo "Japanese mode: " . s:japanese_mode_str
 endfunction
 
 autocmd InsertLeave * call JapaneseInsertOff()
