@@ -53,8 +53,10 @@ hook_add = '''
     endfunction
     nnoremap <silent><leader>f :call InitDefx()<CR>
 
+    
     autocmd FileType defx call s:defx_my_settings()
     function! s:defx_my_settings() abort
+        nnoremap <silent><buffer><expr> g defx#do_action('call', 'DefxDeniteGrep')
         nnoremap <silent><buffer><expr> ~ defx#do_action('cd')
         nnoremap <silent><buffer><expr> h defx#do_action('cd', ['..'])
         nnoremap <silent><buffer><expr> j line('.') == line('$') ? 'gg' : 'j'
@@ -172,8 +174,9 @@ on_source = ['deoplete.nvim']
 [[plugins]]
 repo = 'Shougo/denite.nvim'
 on_cmd =['Denite', 'denite']
+on_source=['defx.nvim']
 hook_add = '''
-    nnoremap <silent><leader>p :Dbuffilerec<CR>
+    nnoremap <silent><leader>p :call Dbuffilerec()<CR>
     nnoremap <silent><leader>b :Dbuff<CR>
     nnoremap <silent><leader>g :Dgrep<CR>
     nnoremap <silent><leader>h :Dhelp<CR>
@@ -188,7 +191,16 @@ hook_add = '''
         call add(s:options, '-winrow=' . float2nr(&lines*(1-s:denite_win_height_percent)*0.5))
         return s:options
     endfunction
-    command! Dbuffilerec execute(':Denite buffer file/rec '.join(s:denite_options_array(), ' ').' ')
+
+    function! DefxDeniteGrep(context) abort
+        let dirpath = fnamemodify(string(a:context.targets[0]), ':p:h')."'"
+        execute 'Denite grep -path=' .dirpath .' -start-filter '.join(s:denite_options_array(), ' ').' '
+    endfunction
+
+    function! Dbuffilerec() abort
+        execute ':Denite buffer file/rec '.join(s:denite_options_array(), ' ').' '
+    endfunction
+    "command! Dbuffilerec execute(':Denite buffer file/rec '.join(s:denite_options_array(), ' ').' ')
     command! Dbuff       execute(':Denite buffer '         .join(s:denite_options_array(), ' ').' ')
     command! Dhelp       execute(':Denite help '           .join(s:denite_options_array(), ' ').' ')
     command! Dgrep       execute(':Denite grep '           .join(s:denite_options_array(), ' ').' ')
