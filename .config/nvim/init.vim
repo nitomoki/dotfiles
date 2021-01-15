@@ -242,6 +242,7 @@ nnoremap <F6> :call JapaneseInserfOn()<CR>
 nnoremap <F7> :call JapaneseInsertOff()<CR>
 nnoremap <F10> :call ToggleJapaneseMode()<CR>
 inoremap <F10> <ESC>:call ToggleJapaneseMode()<CR>a
+tnoremap <F10> <C-\><C-n>:call ToggleJapaneseMode()<CR>i
 
 let s:japanese_mode = 0
 function! JapaneseInsertOff() abort
