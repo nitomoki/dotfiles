@@ -261,6 +261,9 @@ endfunction
 function! ToggleJapaneseMode() abort
     let s:japanese_mode = s:japanese_mode? 0 : 1
     let s:japanese_mode_str = s:japanese_mode? 'ON' : 'OFF'
+    if s:japanese_mode == 0
+        call system("ibus engine 'xkb:jp::jpn'")
+    endif
     echo "Japanese mode: " . s:japanese_mode_str
 endfunction
 
