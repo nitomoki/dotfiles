@@ -66,6 +66,14 @@ nnoremap gk k
 noremap ZZ <Nop>
 noremap ZQ <Nop>
 noremap q <Nop>
+inoremap <UP> <Nop>
+inoremap <DOWN> <Nop>
+inoremap <RIGHT> <Nop>
+inoremap <LEFT> <Nop>
+inoremap <S-UP> <Nop>
+inoremap <S-DOWN> <Nop>
+inoremap <S-RIGHT> <Nop>
+inoremap <S-LEFT> <Nop>
 noremap Q q
 noremap <C-space> <Nop>
 " inoremap <silent>jj <ESC>
@@ -241,9 +249,9 @@ endfu
 " japanese insert mode
 nnoremap <F6> :call JapaneseInserfOn()<CR>
 nnoremap <F7> :call JapaneseInsertOff()<CR>
-nnoremap <F10> :call ToggleJapaneseMode()<CR>
-inoremap <F10> <ESC>:call ToggleJapaneseMode()<CR>a
-tnoremap <F10> <C-\><C-n>:call ToggleJapaneseMode()<CR>i
+nnoremap <C-]> :call ToggleJapaneseMode()<CR>
+inoremap <C-]> <C-o>:call ToggleJapaneseMode()<CR>
+tnoremap <C-]> <C-\><C-n>:call ToggleJapaneseMode()<CR>i
 
 let s:japanese_mode = 0
 function! JapaneseInsertOff() abort

@@ -15,3 +15,9 @@ fi
 
 autoload -Uz colors && colors
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+
+export HISTFILE=$HOME/dotfiles/zsh/.zsh_history
+export HISTSIZE=100000
+export SAVEHIST=100000
+setopt EXTENDED_HISTORY
+setopt hist_ignore_dups

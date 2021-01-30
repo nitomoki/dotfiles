@@ -19,9 +19,9 @@ sns.set_style("darkgrid")
 from mpl_toolkits.mplot3d import Axes3D
 
 fig = plt.figure()
+
+
 ax = fig.add_subplot(111, projection='3d')
-
-
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
 ax.set_zlabel("Z")
@@ -45,10 +45,10 @@ i = 0
 for item in os.listdir(resampled_dir_path):
     filepath = resampled_dir_path + "/" + item
     with open(filepath, 'r') as file:
-        reader = csv.reader(file)
         X = []
         Y = []
         Z = []
+        reader = csv.reader(file)
         for line in reader:
             X.append(float(line[0]))
             Y.append(float(line[1]))
@@ -82,7 +82,19 @@ with open(filepath_2, 'r') as file2:
         Y.append(float(line[1]))
         Z.append(float(line[2]))
 
-ax.plot(X,Y,Z,marker=".",markersize=3,linestyle='None', color=color_rgb[3])
+ax.plot(X,Y,Z,marker="o",markersize=3,label='desired trajectory',linestyle='None', color=color_rgb[3])
+
+filepath_3 = sys.argv[3]
+X,Y,Z = [], [], []
+with open(filepath_3, 'r') as file2:
+    reader = csv.reader(file2)
+    for line in reader:
+        X.append(float(line[0]))
+        Y.append(float(line[1]))
+        Z.append(float(line[2]))
+
+ax.plot(X, Y, Z, marker='^', markersize=6, label='goal position', linestyle='None', color=color_rgb[3])
+ax.legend()
 
 plt.savefig('/home/tomoki/Documents/record.eps', format='eps')
 plt.show()
