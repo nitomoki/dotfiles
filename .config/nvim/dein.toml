@@ -138,9 +138,21 @@ hook_add = '''
     \   },
     \   'tex': {
     \       'command': 'latexmk',
-    \       'outputter': 'buffer',
+    \       'outputter': 'error',
+    \       'outputter/error/success': 'null',
+    \       'outputter/error/error': 'buffer',
     \       'outputter/buffer/split': '""',
-    \       'exec': ['%c -gg -pdfdvi %s', '%c -c %s', 'xdg-open %s:r.pdf']
+    \       'exec': ['%c -gg -pdfdvi %s', '%c -c %s', 'xdg-open %s:r.pdf'],
+    \       'hook/sweep/files': [
+    \                      '%S:p:r.aux',
+    \                      '%S:p:r.bbl',
+    \                      '%S:p:r.blg',
+    \                      '%S:p:r.dvi',
+    \                      '%S:p:r.fdb_latexmk',
+    \                      '%S:p:r.fls',
+    \                      '%S:p:r.log',
+    \                      '%S:p:r.out'
+    \                      ],
     \   },
     \   'cs': {
     \       'command': 'mcs',
