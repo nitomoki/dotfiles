@@ -1,3 +1,0 @@
-c++
--I/opt/ros/melodic/include
-%cpp -std=c++17
