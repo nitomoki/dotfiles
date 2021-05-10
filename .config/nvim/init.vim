@@ -75,7 +75,8 @@ inoremap <S-DOWN> <Nop>
 inoremap <S-RIGHT> <Nop>
 inoremap <S-LEFT> <Nop>
 noremap Q q
-noremap <C-space> <Nop>
+inoremap <C-space> <ESC>
+tnoremap <C-space> <ESC>
 " inoremap <silent>jj <ESC>
 inoremap <expr><tab> pumvisible() ? "\<C-n>" : "\<tab>"
 inoremap <expr> <S-Tab> pumvisible() ? "\<UP>" : "\<S-Tab>"
@@ -245,7 +246,6 @@ fu Tapi_lcd(buf, cwd) abort
     call win_execute(winid, 'lcd '..a:cwd)
 endfu
 
-
 " japanese insert mode
 nnoremap <F6> :call JapaneseInserfOn()<CR>
 nnoremap <F7> :call JapaneseInsertOff()<CR>
@@ -277,6 +277,5 @@ endfunction
 
 autocmd InsertLeave * call JapaneseInsertOff()
 autocmd InsertEnter * call JapaneseInserfOn()
-
 
 echomsg "end init.vim"
