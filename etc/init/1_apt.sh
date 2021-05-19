@@ -34,6 +34,7 @@ packages=(
     xclip
     qt5-default
     vim
+    cpanminus
 )
 
 sudo apt update

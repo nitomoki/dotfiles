@@ -26,7 +26,6 @@ set nrformats-=octal
 set hidden
 set history=50
 set virtualedit=block
-set t_Co=256
 scriptencoding utf-8
 set encoding=utf-8
 " set fileencodings=iso-2022-jp,euc-jp,sjis,utf-8
