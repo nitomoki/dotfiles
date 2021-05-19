@@ -17,10 +17,10 @@ packages=(
     automake
     unzip
     python3-pip
-    python-pip
+    python3
+    python
     fontconfig
     ruby
-    lua5.4
     gem
     nodejs
     npm
