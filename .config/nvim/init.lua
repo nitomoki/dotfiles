@@ -170,15 +170,15 @@ function _G.CloseBuf()
 end
 
 utils.create_augroup({
-    {'VimEnter', '*', 'if @%==""&&v:GetBufByte()==0', '| call v:Term()', '| endif'},
+    {'VimEnter', '*', 'if @%==""&&v:lua.GetBufByte()==0', '| call v:lua.Term()', '| endif'},
     {'BufLeave', '*', 'if exists("b:term_title")&&exists("b:terminal_job_pid")', '| execute ":file term" . b:terminal_job_pid . "/" . b:term_title'}
 },'Term')
 
-utils.map('n', '<leader>q', ':up!<CR>:call v:CloseBuf()<CR>', {noremap = true})
+utils.map('n', '<leader>q', ':up!<CR>:call v:lua.CloseBuf()<CR>', {noremap = true})
 
 
 utils.create_augroup({
-    {'BufNewFile,BufRead', '*.toml', 'call v:Syntax_range_dein()'}
+    {'BufNewFile,BufRead', '*.toml', 'call v:lua.Syntax_range_dein()'}
 }, 'TomlSyntax')
 
 function _G.Syntax_range_dein()
