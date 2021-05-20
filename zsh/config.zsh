@@ -20,4 +20,6 @@ export HISTFILE=$HOME/dotfiles/zsh/.zsh_history
 export HISTSIZE=100000
 export SAVEHIST=100000
 setopt EXTENDED_HISTORY
+setopt hist_reduce_blanks
+setopt hist_ignore_all_dups
 setopt hist_ignore_dups
