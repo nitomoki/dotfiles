@@ -1,4 +1,3 @@
-initlua = "init lua"
 local o = vim.o
 local w = vim.wo
 local b = vim.bo
@@ -25,10 +24,13 @@ o.incsearch = true
 o.wildmenu = true
 o.wildmode = [[list:full]]
 o.ignorecase = true
-b.tabstop = 4
-b.expandtab = true
+--b.expandtab = true
+--b.tabstop = 4
+--b.shiftwidth = 4
+cmd('set expandtab')
+cmd('set tabstop=4')
+cmd('set shiftwidth=4')
 o.showtabline = 2
-b.shiftwidth = 4
 b.autoindent = true
 b.smartindent = true
 o.smartcase = true
@@ -64,30 +66,26 @@ utils.map('i', '<S-RIGHT>', '<Nop>', {noremap = true})
 utils.map('i', '<S-LEFT>', '<Nop>', {noremap = true})
 utils.map('n', 'Q', 'q', {noremap = true})
 
-function _G.smart_tab()
-    return fn.pumvisible() == 1 and [[\<C-n>]] or [[\<tab>]]
+local function t(str)
+    return vim.api.nvim_replace_termcodes(str, true, true, true)
 end
+
+function _G.smart_tab()
+    return fn.pumvisible() == 1 and t'<C-n>' or t'<tab>'
+end
+
+
 utils.map('i', '<tab>', 'v:lua.smart_tab()', {expr = true, noremap = true})
 utils.map('i', '<S-tab>', 'v:lua.smart_tab()', {expr = true, noremap = true})
 
--- utils.map('', '', , {noremap = true})
--- utils.map('', '', , {noremap = true})
--- utils.map('', '', , {noremap = true})
--- utils.map('', '', , {noremap = true})
--- utils.map('', '', , {noremap = true})
--- utils.map('', '', , {noremap = true})
--- utils.map('', '', , {noremap = true})
--- utils.map('', '', , {noremap = true})
--- utils.map('', '', , {noremap = true})
--- utils.map('', '', [[]], {})
---
+
 utils.create_augroup({
     {'BufNewFile,BufRead', '*.launch', 'set', 'filetype=xml'}
 }, 'BufE')
 
-if fn.has('unix') then
+if fn.has('unix') == 1 then
     local vim_home = fn.expand('~/.cacheaaa')
-elseif fn.has('win32') then
+elseif fn.has('win32') == 1 then
     local vim_home = fn.expand('$HOME/vimfiles')
 end
 
