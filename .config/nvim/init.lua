@@ -103,7 +103,7 @@ if string.match(o.rtp, '/dein.vim') == nil then
 end
 
 print(dein_dir)
---print(fn['dein#load_state'](dein_dir) == 1)
+print(fn['dein#load_state'](dein_dir) == 1)
 if fn['dein#load_state'](dein_dir) == 1 then
     fn['dein#begin'](dein_dir)
     cmd([[call dein#load_toml(']] .. config_dir .. [[/dein.toml', {"lazy":0})]])
