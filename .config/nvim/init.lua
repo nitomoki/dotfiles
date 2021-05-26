@@ -5,6 +5,8 @@ local g = vim.g
 local fn = vim.fn
 local cmd = vim.cmd
 local utils = require('utils')
+
+require('nitom.japanesemode').setup()
 g.mapleader = ' '
 
 o.hlsearch = false
@@ -45,15 +47,15 @@ g.tex_flavor = [[latex]]
 g.tex_conceal = [[]]
 b.syntax = [[ON]]
 
-utils.map('n', '<leader>k', [[:bnext<CR>]], {noremap = true})
-utils.map('n', '<leader>j', [[:bprev<CR>]], {noremap = true})
+utils.map('n', '<leader>k', [[:bnext<CR>]], {silent = true, noremap = true})
+utils.map('n', '<leader>j', [[:bprev<CR>]], {silent = true, noremap = true})
 utils.map('n', '<leader>w', [[:w!<CR>]], {noremap = true})
 utils.map('t', '<C-[>', [[<C-\><C-n>]], {noremap = true})
-utils.map('n', 'j', [[gj]], {noremap = true})
-utils.map('n', 'k', [[gk]], {noremap = true})
-utils.map('n', 'gj', 'j', {noremap = true})
-utils.map('n', 'gk', 'k', {noremap = true})
-utils.map('n', 'q', '<Nop>', {noremap = true})
+utils.map('n', 'j', [[gj]], {silent = true, noremap = true})
+utils.map('n', 'k', [[gk]], {silent = true, noremap = true})
+utils.map('n', 'gj', 'j', {silent = true, noremap = true})
+utils.map('n', 'gk', 'k', {silent = true, noremap = true})
+utils.map('n', 'q', '<Nop>', {silent = true, noremap = true})
 utils.map('i', '<UP>', '<Nop>', {noremap = true})
 utils.map('i', '<DOWN>', '<Nop>', {noremap = true})
 utils.map('i', '<RIGHT>', '<Nop>', {noremap = true})
@@ -198,46 +200,6 @@ fu Tapi_lcd(buf, cwd) abort
 endfu
 ]]
 ,false)
-
-
-
-local japanese_mode = false
-
-function _G.JapaneseInsertOff()
-    if japanese_mode == true then
-        os.execute("ibus engine 'xkb:jp::jpn'")
-    end
-end
-
-function _G.JapaneseInsertOn()
-    if japanese_mode == true then
-        os.execute("ibus engine 'mozc-jp'")
-    end
-end
-
-function ToggleJapaneseMode(vim_mode)
-    japanese_mode = not(japanese_mode)
-    local japanese_mode_str = (japanese_mode) and 'ON' or 'OFF'
-    if (vim_mode == 'i') then
-        if japanese_mode then
-            os.execute("ibus engine 'mozc-jp'")
-        else
-            os.execute("ibus engine 'xhb:jp::jpn'")
-        end
-    end
-    print("Japanese Mode: " .. japanese_mode_str)
-end
-
-utils.create_augroup({
-    {'InsertLeave', '*', 'call v:lua.JapaneseInsertOff()'},
-    {'InsertEnter', '*', 'call v:lua.JapaneseInsertOn()'}
-}, 'JapaneseMode')
-
-
-utils.map_lua('i', '<C-]>', 'ToggleJapaneseMode("i")', {noremap = true})
-utils.map_lua('n', '<C-]>', 'ToggleJapaneseMode("n")', {noremap = true})
-
-
 
 
 
