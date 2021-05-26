@@ -4,9 +4,7 @@ local b = vim.bo
 local g = vim.g
 local fn = vim.fn
 local cmd = vim.cmd
-
 local utils = require('utils')
-
 g.mapleader = ' '
 
 o.hlsearch = false
@@ -200,6 +198,45 @@ fu Tapi_lcd(buf, cwd) abort
 endfu
 ]]
 ,false)
+
+
+
+local japanese_mode = false
+
+function _G.JapaneseInsertOff()
+    if japanese_mode == true then
+        os.execute("ibus engine 'xkb:jp::jpn'")
+    end
+end
+
+function _G.JapaneseInsertOn()
+    if japanese_mode == true then
+        os.execute("ibus engine 'mozc-jp'")
+    end
+end
+
+function ToggleJapaneseMode(vim_mode)
+    japanese_mode = not(japanese_mode)
+    local japanese_mode_str = (japanese_mode) and 'ON' or 'OFF'
+    if (vim_mode == 'i') then
+        if japanese_mode then
+            os.execute("ibus engine 'mozc-jp'")
+        else
+            os.execute("ibus engine 'xhb:jp::jpn'")
+        end
+    end
+    print("Japanese Mode: " .. japanese_mode_str)
+end
+
+utils.create_augroup({
+    {'InsertLeave', '*', 'call v:lua.JapaneseInsertOff()'},
+    {'InsertEnter', '*', 'call v:lua.JapaneseInsertOn()'}
+}, 'JapaneseMode')
+
+
+utils.map_lua('i', '<C-]>', 'ToggleJapaneseMode("i")', {noremap = true})
+utils.map_lua('n', '<C-]>', 'ToggleJapaneseMode("n")', {noremap = true})
+
 
 
 
