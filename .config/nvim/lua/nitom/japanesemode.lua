@@ -8,6 +8,10 @@ function M.setup()
 
     local japanese_mode = false
     local japanese_mode_str = 'OFF'
+    PLUGIN_JPMODE = true
+    function PLUGIN_JPMODE_CURRENT()
+        return japanese_mode
+    end
 
     function _G.JapaneseInsertOff()
         if japanese_mode == true then
@@ -32,7 +36,9 @@ function M.setup()
             end
         end
         print("Japanese Mode: " .. japanese_mode_str)
+        vim.cmd('redrawtabline')
     end
+    
 
     utils.create_augroup({
         {'InsertLeave', '*', 'call v:lua.JapaneseInsertOff()'},
