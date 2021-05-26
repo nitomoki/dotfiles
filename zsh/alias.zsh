@@ -9,8 +9,11 @@ alias cp='cp -i'
 alias mv='mv -i'
 alias grep='grep --color=auto'
 alias gcm='git commit -m'
+alias gs='git status'
+alias gp='git push'
+alias gl='git log --graph --oneline --decorate --all'
 #alias bat='upower -i /org/freedesktop/UPower/devices/battery_BAT1'
 
-if builtin command -v bat > /dev/null; then
-  alias cat="bat"
+if type bat > /dev/null 2>&1; then
+    alias cat="bat"
 fi
