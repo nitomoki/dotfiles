@@ -102,8 +102,8 @@ if string.match(o.rtp, '/dein.vim') == nil then
     utils.add_rtp(fn.fnamemodify(dein_repo_dir, ':p'))
 end
 
-print(dein_dir)
-print(fn['dein#load_state'](dein_dir) == 1)
+--print(dein_dir)
+--print(fn['dein#load_state'](dein_dir) == 1)
 if fn['dein#load_state'](dein_dir) == 1 then
     fn['dein#begin'](dein_dir)
     cmd([[call dein#load_toml(']] .. config_dir .. [[/dein.toml', {"lazy":0})]])
@@ -158,7 +158,7 @@ function _G.CloseBuf()
     if fn.len(fn.filter(fn.range(1,fn.bufnr('$')), 'buflisted(v:val)')) == 1 then
         cmd('q')
     else
-        local filetype = cmd('echo &filetype')
+        local filetype = vim.bo.filetype
         if filetype == 'neoterm' or filetype == 'terminal' then
             cmd('bn')
         else
