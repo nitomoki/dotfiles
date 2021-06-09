@@ -42,6 +42,6 @@ for package in "${packages[@]}"; do
     sudo apt install -y $package || sudo apt update $package
 done
 sudo apt upgrade -y
-sudo apt autoremove -y
+sudo apt autoremove
 
 
