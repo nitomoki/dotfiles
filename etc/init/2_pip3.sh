@@ -9,6 +9,7 @@ packages_pip3=(
     pyls
     pyls-isort
     pyls-black
+    matplotlib
 )
 
 for package in "${packages_pip3[@]}"; do
