@@ -65,6 +65,7 @@ utils.map('i', '<S-DOWN>', '<Nop>', {noremap = true})
 utils.map('i', '<S-RIGHT>', '<Nop>', {noremap = true})
 utils.map('i', '<S-LEFT>', '<Nop>', {noremap = true})
 utils.map('n', 'Q', 'q', {noremap = true})
+utils.map('n', '<F5>', [[:QuickRun<CR>]], {noremap = true})
 
 local function t(str)
     return vim.api.nvim_replace_termcodes(str, true, true, true)
