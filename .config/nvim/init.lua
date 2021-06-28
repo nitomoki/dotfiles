@@ -147,8 +147,9 @@ function _G.GetBufByte()
     end
 end
 
+local neoterm_valid = fn['dein#check_install']('neoterm')
 function _G.Term()
-    if fn['dein#check_install']('neoterm') == 0 then
+    if neoterm_valid == 0 then
         cmd('Tnew')
     else
         cmd('terminal')
@@ -160,7 +161,14 @@ function _G.CloseBuf()
         cmd('q')
     else
         local filetype = vim.bo.filetype
-        if filetype == 'neoterm' or filetype == 'terminal' then
+        local term_title = vim.b.term_title
+        if filetype == 'neoterm' then
+            if term_title == 'neoterm-1' then
+                cmd('bn')
+            else
+                cmd('Tclose!')
+            end
+        elseif filetype == 'terminal' then
             cmd('bn')
         else
             cmd('bd')
@@ -170,10 +178,13 @@ end
 
 utils.create_augroup({
     {'VimEnter', '*', 'if @%==""&&v:lua.GetBufByte()==0', '| call v:lua.Term()', '| endif'},
-    {'BufLeave', '*', 'if exists("b:term_title")&&exists("b:terminal_job_pid")', '| execute ":file term" . b:terminal_job_pid . "/" . b:term_title'}
+    --{'BufLeave', '*', 'if exists("b:term_title")&&exists("b:terminal_job_pid")', '| execute ":file term" . b:terminal_job_pid . "/" . b:term_title'}
 },'Term')
 
-utils.map('n', '<leader>q', ':up!<CR>:call v:lua.CloseBuf()<CR>', {noremap = true})
+utils.map('n', '<leader>q', ':up!<CR>:call v:lua.CloseBuf()<CR>', {noremap = true, silent = true})
+if neoterm_valid == 0 then
+    utils.map('n', '<leader>t', ':Tnew<CR>', {noremap = true, silent = true})
+end
 
 
 utils.create_augroup({
