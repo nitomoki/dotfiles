@@ -126,14 +126,13 @@ require'nvim-treesitter.configs'.setup {
   highlight = {
     enable = true,
     disable = {
-      'lua',
       'ruby',
       'toml',
       'c_sharp',
       'vue',
     }
   },
-  ensure_installed = 'all',
+  ensure_installed = 'maintained',
 }
 
 
