@@ -17,9 +17,22 @@ autoload -Uz colors && colors
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 
 export HISTFILE=$HOME/dotfiles/zsh/.zsh_history
-export HISTSIZE=100000
-export SAVEHIST=100000
+export HISTSIZE=1000000
+export SAVEHIST=1000000
 setopt EXTENDED_HISTORY
 setopt hist_reduce_blanks
 setopt hist_ignore_all_dups
 setopt hist_ignore_dups
+setopt share_history
+setopt hist_find_no_dups
+setopt hist_no_store
+zshaddhistory() {
+    local line=${1%%$'\n'}
+    local cmd=${line%% *}
+    [[ ${#line} -ge 5
+        && ${cmd} != (l|l[sal])
+        && ${cmd} != (cd)
+        && ${cmd} != (m|man)
+        && ${cmd} != (r[mr])
+    ]]
+}
