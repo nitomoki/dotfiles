@@ -12,6 +12,7 @@ alias gcm='git commit -m'
 alias gs='git status'
 alias gp='git push'
 alias gl='git log --graph --oneline --decorate --all'
+alias dotfiles='cd ~/dotfiles'
 #alias bat='upower -i /org/freedesktop/UPower/devices/battery_BAT1'
 
 if type bat > /dev/null 2>&1; then

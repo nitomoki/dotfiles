@@ -2,15 +2,19 @@ DOTFILES_EXCLUDES := .git .gitmodules .travis.yml
 DOTFILES_TARGET   := $(wildcard .??*) bin
 DOTFILES_DIR      := $(PWD)
 DOTFILES_FILES    := $(filter-out $(DOTFILES_EXCLUDES), $(DOTFILES_TARGET))
+CONFIG_DIR := .config
 NVIM_CONFIG_DIR := .config/nvim
 NVIM_CONFIG_TARGET := $(notdir $(wildcard $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/*))
 NVIM_CONFIG_FILES := $(filter-out init.lua, $(NVIM_CONFIG_TARGET))
 NVIM_CONFIG_FILES_LUA := $(filter-out init.vim, $(NVIM_CONFIG_TARGET))
 
-deploy: $(NVIM_CONFIG_DIR)
+deploy:
+	mkdir -p $(HOME)/$(CONFIG_DIR)
+	mkdir -p $(HOME)/$(NVIM_CONFIG_DIR)
 	@$(foreach val, $(DOTFILES_FILES), ln -sfnv $(abspath $(val)) $(HOME)/$(val);)
-	@$(foreach val, $(NVIM_CONFIG_FILES), ln -sfnv $(HOME)/dotfiles/$(NVIM_CONFIG_DIR)/$(val) $(HOME)/$(NVIM_CONFIG_DIR)/$(val);)
-	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/init.lua $(HOME)/$(NVIM_CONFIG_DIR)/init.lua
+	@$(foreach val, $(NVIM_CONFIG_TARGET), ln -sfnv $(HOME)/dotfiles/$(NVIM_CONFIG_DIR)/$(val) $(HOME)/$(NVIM_CONFIG_DIR)/$(val);)
+#	@$(foreach val, $(NVIM_CONFIG_FILES), ln -sfnv $(HOME)/dotfiles/$(NVIM_CONFIG_DIR)/$(val) $(HOME)/$(NVIM_CONFIG_DIR)/$(val);)
+#	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/init.lua $(HOME)/$(NVIM_CONFIG_DIR)/init.lua
 #	rm -f $(HOME)/$(NVIM_CONFIG_DIR)/init.lua
 #	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/dein.toml $(HOME)/$(NVIM_CONFIG_DIR)/dein.toml
 #	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/dein_lazy.toml $(HOME)/$(NVIM_CONFIG_DIR)/dein_lazy.toml
@@ -30,6 +34,3 @@ deplua:
 	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/init.lua $(HOME)/$(NVIM_CONFIG_DIR)/init.lua
 	rm -f $(HOME)/$(NVIM_CONFIG_DIR)/init.vim
 
-$(NVIM_CONFIG_DIR):
-	mkdir ~/.config
-	mkdir ~/.config/nvim
