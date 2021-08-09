@@ -1,0 +1,42 @@
+{
+  "settingsVersion": "1.67",
+  "exclusionRules": [
+    {
+      "pattern": "https?://typingx0.net/*",
+      "passKeys": ""
+    },
+    {
+      "pattern": "about:blank*",
+      "passKeys": ""
+    },
+    {
+      "pattern": "https?://platform.twitter.com/*",
+      "passKeys": ""
+    },
+    {
+      "pattern": "https?://unityroom.com/*",
+      "passKeys": ""
+    },
+    {
+      "pattern": "https?://www.e-typing.ne.jp/*",
+      "passKeys": ""
+    }
+  ],
+  "filterLinkHints": false,
+  "waitForEnterForFilteredHints": true,
+  "hideHud": false,
+  "keyMappings": "# Insert your preferred key mappings here.\nunmapAll\nmap j scrollDown\nmap k scrollUp\nmap J scrollPageDown\nmap K scrollPageUp\nmap gg scrollToTop\nmap G scrollToBottom\nmap h goBack\nmap l goForward\n\nmap f LinkHints.activateMode\nmap F LinkHints.activateModeToOpenInNewTab\nmap d LinkHints.activateModeWithQueue\n\nmap r reload\nmap t createTab\nmap . nextTab\nmap , previousTab\nmap $, firstTab\nmap $. lastTab\nmap > moveTabRight\nmap < moveTabLeft\nmap x removeTab\nmap T Vomnibar.activateTavSelection\nmap o Vomnibar.activate\nmap O Vomnibar.activateInNewTab\n\nmap / enterFindMode\nmap n performFind\nmap N performBackwardsFind\nmap b Vomnibar.activateBookmarks\nmap B Vomnibar.activateBookmarksInNewTab\nmap ? showHelp",
+  "linkHintCharacters": "sadfjklewcmpgh",
+  "linkHintNumbers": "0123456789",
+  "newTabUrl": "https://www.google.com/search?q=",
+  "nextPatterns": "next,more,newer,>,›,→,»,≫,>>",
+  "previousPatterns": "prev,previous,back,older,<,‹,←,«,≪,<<",
+  "regexFindMode": false,
+  "ignoreKeyboardLayout": false,
+  "scrollStepSize": 60,
+  "smoothScroll": true,
+  "grabBackFocus": false,
+  "searchEngines": "w: https://www.wikipedia.org/w/index.php?title=Special:Search&search=%s Wikipedia\n\n# More examples.\n#\n# (Vimium supports search completion Wikipedia, as\n# above, and for these.)\n#\ng: https://www.google.com/search?q=%s Google\ncpp: https://www.google.com/search?q=c%2b%2b+%s+-site:cplusplus.com GoogleC++\n# l: https://www.google.com/search?q=%s&btnI I'm feeling lucky...\n# y: https://www.youtube.com/results?search_query=%s Youtube\n# gm: https://www.google.com/maps?q=%s Google maps\n# b: https://www.bing.com/search?q=%s Bing\n# d: https://duckduckgo.com/?q=%s DuckDuckGo\n# az: https://www.amazon.com/s/?field-keywords=%s Amazon\n# qw: https://www.qwant.com/?q=%s Qwant",
+  "searchUrl": "https://www.google.com/search?q=",
+  "userDefinedLinkHintCss": "div > .vimiumHintMarker {\n/* linkhint boxes */\nbackground: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#FFF785),\n  color-stop(100%,#FFC542));\nborder: 1px solid #E3BE23;\n}\n\ndiv > .vimiumHintMarker span {\n/* linkhint text */\ncolor: black;\nfont-weight: bold;\nfont-size: 12px;\n}\n\ndiv > .vimiumHintMarker > .matchingCharacter {\n}"
+}
