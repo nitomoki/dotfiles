@@ -3,13 +3,6 @@
 repo = 'Shougo/dein.vim'
 
 [[plugins]]
-repo = 'vim-jp/vimdoc-ja'
-
-[[plugins]]
-repo = 'mhinz/neovim-remote'
-
-
-[[plugins]]
 repo = 'Yggdroot/indentLine'
 
 [[plugins]]
