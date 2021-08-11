@@ -33,3 +33,5 @@ source $DOTFILES_DIR/zsh/config.zsh
 source $DOTFILES_DIR/zsh/plugins.zsh
 source $DOTFILES_DIR/zsh/extract.zsh
 
+
+alias luamake=/home/tomoki/.cache/nvim/lspconfig/sumneko_lua/lua-language-server/3rd/luamake/luamake

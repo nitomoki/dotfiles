@@ -45,3 +45,8 @@ o.completeopt = [[menu]]
 g.tex_flavor = [[latex]]
 g.tex_conceal = [[]]
 b.syntax = [[ON]]
+vim.cmd[[set completeopt=menuone,noinsert,noselect]]
+vim.cmd[[set shortmess+=c]]
+
+-- netrw
+g.netrw_keepdir = 0
