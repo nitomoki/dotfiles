@@ -1,10 +1,10 @@
 require'lspconfig'.ccls.setup{}
+require'lspconfig'.pylsp.setup{}
 --require'lspconfig'.texlab.setup{}
 --require'lspconfig'.omnisharp.setup{}
---require'lspconfig'.pyls.setup{}
 
 
--- lua
+-- sumeko_lua
 local system_name
 if vim.fn.has("mac") == 1 then
   system_name = "macOS"

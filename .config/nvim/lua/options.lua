@@ -10,7 +10,7 @@ g.mapleader = ' '
 
 o.hlsearch = false
 w.cursorline = true
-w.number = true
+w.number = false
 o.showcmd = true
 o.showmatch = true
 o.matchtime = 1

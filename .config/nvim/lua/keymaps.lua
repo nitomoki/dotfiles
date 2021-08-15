@@ -1,15 +1,15 @@
-local o = vim.o
-local w = vim.wo
-local b = vim.bo
-local g = vim.g
+--local o = vim.o
+--local w = vim.wo
+--local b = vim.bo
+--local g = vim.g
 local fn = vim.fn
-local cmd = vim.cmd
+--local cmd = vim.cmd
 local utils = require('utils')
 
 utils.map('n', '<leader>k', [[:bnext<CR>]], {silent = true, noremap = true})
 utils.map('n', '<leader>j', [[:bprev<CR>]], {silent = true, noremap = true})
 utils.map('n', '<leader>w', [[:w!<CR>]], {noremap = true})
-utils.map('n', '<leader>f', [[:e .<CR>]], {noremap = true})
+--utils.map('n', '<leader>f', [[:e .<CR>]], {noremap = true})
 utils.map('t', '<C-[>', [[<C-\><C-n>]], {noremap = true})
 utils.map('n', 'j', [[gj]], {silent = true, noremap = true})
 utils.map('n', 'k', [[gk]], {silent = true, noremap = true})
@@ -26,6 +26,9 @@ utils.map('i', '<S-RIGHT>', '<Nop>', {noremap = true})
 utils.map('i', '<S-LEFT>', '<Nop>', {noremap = true})
 utils.map('n', 'Q', 'q', {noremap = true})
 utils.map('n', '<F5>', [[:QuickRun<CR>]], {noremap = true})
+utils.map('c', '<C-a>', '<Home>', {silent = true, noremap = true})
+utils.map('c', '<C-f>', '<Right>', {silent = true, noremap = true})
+utils.map('c', '<C-b>', '<Left>', {silent = true, noremap = true})
 
 local function t(str)
     return vim.api.nvim_replace_termcodes(str, true, true, true)

@@ -4,23 +4,18 @@ local fn = vim.fn
 local cmd = vim.cmd
 
 function M.setup()
-    function _G.GetBufByte()
-        local byte = fn.line2byte(fn.line('$') +1)
-        if byte == -1 then
-            return 0
-        else
-            return byte - 1
-        end
+
+    --local term_cmd = utils.is_plugin_installed('neoterm') and 'Tnew' or 'terminal'
+    local term_cmd = utils.is_plugin_installed('nvim-toggleterm.lua') and 'ToggleTerm direction=window' or 'terminal'
+    if utils.is_plugin_installed('nvim-toggleterm.lua') then
+        term_cmd = 'ToggleTerm direction=window'
+        utils.map('n', 't', ':call v:lua.Term()<CR>', {noremap = true, silent = true})
+    elseif utils.is_plugin_installed('neoterm') then
+        term_cmd = 'Tnew'
     end
 
-    --local neoterm_valid = fn['dein#check_install']('neoterm')
-    local neoterm_valid = 0
     function _G.Term()
-        if neoterm_valid == 0 then
-            cmd('Tnew')
-        else
-            cmd('terminal')
-        end
+        cmd(term_cmd)
     end
 
     function _G.CloseBuf()
@@ -43,15 +38,11 @@ function M.setup()
         end
     end
 
-    utils.create_augroup({
-        {'VimEnter', '*', 'if @%==""&&v:lua.GetBufByte()==0', '| call v:lua.Term()', '| endif'},
-        --{'BufLeave', '*', 'if exists("b:term_title")&&exists("b:terminal_job_pid")', '| execute ":file term" . b:terminal_job_pid . "/" . b:term_title'}
-    },'Term')
+    --utils.create_augroup({
+    --    {'VimEnter', '*', 'if @%==""&&v:lua.GetBufByte()==0', '| call v:lua.Term()', '| endif'},
+    --},'Term')
 
     utils.map('n', '<leader>q', ':up!<CR>:call v:lua.CloseBuf()<CR>', {noremap = true, silent = true})
-    if neoterm_valid == 0 then
-        utils.map('n', '<leader>t', ':Tnew<CR>', {noremap = true, silent = true})
-    end
 
     vim.api.nvim_exec(
     [[

@@ -18,14 +18,14 @@ end
 
 function M.map(mode, keys, action, options)
     if options == nil then
-        options = {}
+        options = {noremap = true, silent = true}
     end
     vim.api.nvim_set_keymap(mode, keys, action, options)
 end
 
 function M.map_lua(mode, keys, action, options)
     if options == nil then
-        options = {}
+        options = {noremap = true, silent = true}
     end
     vim.api.nvim_set_keymap(mode, keys, "<cmd>lua " .. action .. "<CR>", options)
 end
@@ -39,6 +39,19 @@ function M.map_buf(mode, keys, action, options, buf_nr)
     vim.api.nvim_set_keymap(buf, mode, keys, "<cmd>lua " .. action .. "<CR>", options)
 end
 
+function M.is_plugin_installed(plugin)
+    return not (vim.fn.globpath(vim.o.rtp, 'pack/*/*/' .. plugin, 1) == '')
+end
+
+
+function M.get_buf_byte()
+    local byte = vim.fn.line2byte(vim.fn.line('$') +1)
+    if byte == -1 then
+        return 0
+    else
+        return byte - 1
+    end
+end
 
 _G.utils = M
 return M
