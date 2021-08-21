@@ -3,7 +3,7 @@
 --local b = vim.bo
 --local g = vim.g
 local fn = vim.fn
-local cmd = vim.cmd
+--local cmd = vim.cmd
 
 local packer_repo_dir = fn.expand([[~/.local/share/nvim/site/pack/packer/start/packer.nvim]])
 
@@ -17,22 +17,19 @@ return require'packer'.startup(function(use)
     use {'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate',
         config = function()
-                require'nvim-treesitter'.setup{
-                    highlight = {
-                      enable = true,
-                      disable = {
-                        'ruby',
-                        'toml',
-                        'c_sharp',
-                        'vue',
-                        }
-                    }
+                require'nvim-treesitter'.setup {
+                    ensure_installed = "maintained",
+                    highlight = { enable = true },
+                    indent    = { enable = true }
                 }
             end
     }
-    use {'hoob3rt/lualine.nvim', config = function() require'nitom.lualine' end}
+    use {'hoob3rt/lualine.nvim',
+        config = function() require'nitom.lualine' end
+    }
     use 'kyazdani42/nvim-web-devicons'
-    use {'sainnhe/sonokai', config = cmd('colorscheme sonokai')}
+    use {'sainnhe/sonokai', config = vim.cmd('colorscheme sonokai')}
+    --use {'EdenEast/nightfox.nvim', config = function () require'nightfox'.set() end}
     use {'neovim/nvim-lspconfig', config = function() require'nitom.lsp' end}
     use {'nvim-lua/completion-nvim',
         config = function()
@@ -40,12 +37,14 @@ return require'packer'.startup(function(use)
         end
     }
     use {'norcalli/snippets.nvim',
+        requires = {'nvim-lua/completion-nvim'},
         config = function ()
             require'snippets'.use_suggested_mappings()
             require'utils'.map('i', '<C-k>', [[<cmd>lua return require'snippets'.expand_or_advance(1)<CR>]],
                 {noremap = true, silent = true})
             require'utils'.map('i', '<C-j>', [[<cmd>lua return require'snippets'.advance_snippet(-1)<CR>]],
                 {noremap = true, silent = true})
+            vim.g.completion_enable_snippet = 'snippets.nvim'
         end
     }
     use {"akinsho/nvim-toggleterm.lua",
@@ -78,6 +77,14 @@ return require'packer'.startup(function(use)
             require'utils'.map('n', '<leader>fo', [[:Telescope oldfiles<CR>]], {silent = true, noremap = true})
         end
     }
+    use {'AckslD/nvim-neoclip.lua',
+        config = function()
+            require'neoclip'.setup()
+        end
+    }
+
+
+
 end)
 
 

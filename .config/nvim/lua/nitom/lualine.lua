@@ -2,7 +2,6 @@ local function fullhalf()
     if PLUGIN_JPMODE == nil then
         return [[HALF]]
     end
-    
     if PLUGIN_JPMODE_CURRENT() then
         return [[FULL]]
     else

@@ -1,3 +1,11 @@
+local utils = require'utils'
+utils.map('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>')
+utils.map('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>')
+utils.map('n', 'K',  '<cmd>lua vim.lsp.buf.hover()<CR>')
+utils.map('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<CR>')
+utils.map('n', 'gr', '<cmd>lua vim.lsp.buf.reference()<CR>')
+
+
 require'lspconfig'.ccls.setup{}
 require'lspconfig'.pylsp.setup{}
 --require'lspconfig'.texlab.setup{}
