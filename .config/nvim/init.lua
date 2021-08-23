@@ -10,6 +10,7 @@ require'nitom.japanesemode'.setup()
 require'options'
 require'keymaps'
 require'plugins'
+cmd('colorscheme sonokai')
 
 utils.create_augroup({
     {'BufWritePost', 'plugins.lua', 'PackerCompile'}
