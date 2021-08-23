@@ -28,7 +28,8 @@ return require'packer'.startup(function(use)
         config = function() require'nitom.lualine' end
     }
     use 'kyazdani42/nvim-web-devicons'
-    use {'sainnhe/sonokai', config = vim.cmd('colorscheme sonokai')}
+    --use {'sainnhe/sonokai', config = vim.cmd('colorscheme sonokai')}
+    use {'sainnhe/sonokai'}
     --use {'EdenEast/nightfox.nvim', config = function () require'nightfox'.set() end}
     use {'neovim/nvim-lspconfig', config = function() require'nitom.lsp' end}
     use {'nvim-lua/completion-nvim',
