@@ -47,25 +47,8 @@ return require'packer'.startup(function(use)
     }
     use {'nvim-telescope/telescope.nvim',
         requires = {{'nvim-lua/popup.nvim'}, {'nvim-lua/plenary.nvim'}},
-        config = function()
-            require'telescope'.setup{
-                defaults = {
-                    vimgrep_arguments = {
-                        'rg',
-                        '--no-heading',
-                        '--with-filename',
-                        '--line-number',
-                        '--column',
-                        '--smart-case',
-                        '-u'
-                    },
-                }
-            }
-            require'utils'.map('n', '<leader>fb', [[:Telescope file_browser<CR>]], {silent = true, noremap = true})
-            require'utils'.map('n', '<leader>ff', [[<cmd>lua require'telescope.builtin'.find_files({find_command = {'rg', '--hidden', '-g', '!.git', '--files'}})<CR>]], {silent = true, noremap = true})
-            require'utils'.map('n', '<leader>b', [[:Telescope buffers<CR>]], {silent = true, noremap = true})
-            require'utils'.map('n', '<leader>fh', [[:Telescope help_tags<CR>]], {silent = true, noremap = true})
-            require'utils'.map('n', '<leader>fo', [[:Telescope oldfiles<CR>]], {silent = true, noremap = true})
+        config = function ()
+            require'config.telescope'
         end
     }
     use {'AckslD/nvim-neoclip.lua',

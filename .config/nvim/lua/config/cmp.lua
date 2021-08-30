@@ -5,6 +5,9 @@ cmp.setup {
             vim.fn['vsnip#anonymous'](args.body)
         end
     },
+    documentation = {
+        border = "solid",
+    },
     mapping = {
         ['<C-p>'] = cmp.mapping.select_prev_item(),
         ['<C-n>'] = cmp.mapping.select_next_item(),
@@ -23,7 +26,6 @@ cmp.setup {
         { name = 'calc' },
     },
 }
-
 
 require'cmp_nvim_lsp'.setup()
 for index, value in ipairs(vim.lsp.protocol.CompletionItemKind) do
