@@ -1,12 +1,12 @@
-local o = vim.o
-local w = vim.wo
-local b = vim.bo
-local g = vim.g
-local fn = vim.fn
+--local o = vim.o
+--local w = vim.wo
+--local b = vim.bo
+--local g = vim.g
+--local fn = vim.fn
 local cmd = vim.cmd
 local utils = require('utils')
 
-require'nitom.japanesemode'.setup()
+require'config.japanesemode'.setup()
 require'options'
 require'keymaps'
 require'plugins'

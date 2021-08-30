@@ -8,6 +8,7 @@ utils.map('n', 'gr', '<cmd>lua vim.lsp.buf.reference()<CR>')
 
 require'lspconfig'.ccls.setup{}
 require'lspconfig'.pylsp.setup{}
+require'lspconfig'.hls.setup{}
 --require'lspconfig'.texlab.setup{}
 --require'lspconfig'.omnisharp.setup{}
 

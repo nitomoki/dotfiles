@@ -18,22 +18,15 @@ return require'packer'.startup(function(use)
     use {'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate',
         config = function()
-            require'nitom.treesitter'
+            require'config.treesitter'
             end
     }
     use {'hoob3rt/lualine.nvim',
-        config = function() require'nitom.lualine' end
+        config = function() require'config.lualine' end
     }
     use 'kyazdani42/nvim-web-devicons'
-    --use {'sainnhe/sonokai', config = vim.cmd('colorscheme sonokai')}
     use {'sainnhe/sonokai'}
-    --use {'EdenEast/nightfox.nvim', config = function () require'nightfox'.set() end}
-    use {'neovim/nvim-lspconfig', config = function() require'nitom.lsp' end}
-    --use {'nvim-lua/completion-nvim',
-    --    config = function()
-    --        vim.cmd[[autocmd BufEnter * lua require'completion'.on_attach()]]
-    --    end
-    --}
+    use {'neovim/nvim-lspconfig', config = function() require'config.lsp' end}
     use {'hrsh7th/vim-vsnip'}
     use {'hrsh7th/nvim-cmp',
         requires = {{'hrsh7th/cmp-buffer'},
@@ -43,24 +36,13 @@ return require'packer'.startup(function(use)
                     {'hrsh7th/cmp-path'},
                 },
         config = function()
-            require'nitom.cmp'
+            require'config.cmp'
         end
     }
-    --use {'norcalli/snippets.nvim',
-    --    requires = {'nvim-lua/completion-nvim'},
-    --    config = function ()
-    --        require'snippets'.use_suggested_mappings()
-    --        require'utils'.map('i', '<C-k>', [[<cmd>lua return require'snippets'.expand_or_advance(1)<CR>]],
-    --            {noremap = true, silent = true})
-    --        require'utils'.map('i', '<C-j>', [[<cmd>lua return require'snippets'.advance_snippet(-1)<CR>]],
-    --            {noremap = true, silent = true})
-    --        vim.g.completion_enable_snippet = 'snippets.nvim'
-    --    end
-    --}
     use {"akinsho/nvim-toggleterm.lua",
         config = function ()
             require"toggleterm".setup{}
-            require'nitom.term'.setup()
+            require'config.term'.setup()
         end
     }
     use {'nvim-telescope/telescope.nvim',
@@ -79,7 +61,6 @@ return require'packer'.startup(function(use)
                     },
                 }
             }
-            --require'nitom.viminit'.telescope_fb()
             require'utils'.map('n', '<leader>fb', [[:Telescope file_browser<CR>]], {silent = true, noremap = true})
             require'utils'.map('n', '<leader>ff', [[<cmd>lua require'telescope.builtin'.find_files({find_command = {'rg', '--hidden', '-g', '!.git', '--files'}})<CR>]], {silent = true, noremap = true})
             require'utils'.map('n', '<leader>b', [[:Telescope buffers<CR>]], {silent = true, noremap = true})
