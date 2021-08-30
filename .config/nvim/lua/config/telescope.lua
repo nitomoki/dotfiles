@@ -13,22 +13,20 @@ require'telescope'.setup{
     }
 }
 utils.map('n', '<leader>fb',
-    [[:Telescope file_browser<CR>]],
-    {silent = true, noremap = true}
+    [[:Telescope file_browser<CR>]]
     )
 utils.map('n', '<leader>ff',
-    [[<cmd>lua require'telescope.builtin'.find_files({find_command = {'rg', '--hidden', '-g', '!.git', '--files'}})<CR>]],
-    {silent = true, noremap = true}
+    [[<cmd>lua require'telescope.builtin'.find_files({find_command = {'rg', '--hidden', '-g', '!.git', '--files'}})<CR>]]
     )
 utils.map('n', '<leader>b',
-    [[<cmd>lua require'telescope.builtin'.file_browser({hidden = true})<CR>]],
-    {silent = true, noremap = true}
+    [[<cmd>lua require'telescope.builtin'.file_browser({hidden = true})<CR>]]
     )
 utils.map('n', '<leader>fh',
-    [[:Telescope help_tags<CR>]],
-    {silent = true, noremap = true}
+    [[:Telescope help_tags<CR>]]
     )
 utils.map('n', '<leader>fo',
-    [[:Telescope oldfiles<CR>]],
-    {silent = true, noremap = true}
+    [[:Telescope oldfiles<CR>]]
+    )
+utils.map('n', '<leader>g',
+    [[<cmd>lua require'telescope.builtin'.live_grep{vimgrep_arguments = { 'rg', '--color=never', '--no-heading', '--line-number', '--column', '--smart-case', '-u' }}<CR>]]
     )
