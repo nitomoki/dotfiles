@@ -14,7 +14,9 @@ fi
 
 
 autoload -Uz colors && colors
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+#zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+zstyle ':completion:*' matcher-list 'm:{[:lower:]}={[:upper:]}' '+m:{[:upper:]}={[:lower:]}'
+
 
 export HISTFILE=$HOME/.zsh_history
 export HISTSIZE=1000000

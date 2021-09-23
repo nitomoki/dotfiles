@@ -8,6 +8,6 @@ if [ ! -e /$HOME/.fonts ]; then
 fi
 cp /$HOME/HackGenNerd_v2.2.1/*.ttf /$HOME/.fonts/
 cd /$HOME
-sudo fc-cache -fv
+fc-cache -fv
 sudo rm -rf /$HOME/HackGenNerd_v2.2.1
 sudo rm /$HOME/HackGenNerd_v2.2.1.zip

@@ -6,9 +6,11 @@ packages=(
     cmake
     git
     zsh
+    openssh
     build-essential
     pkg-config
     clang
+    ninja
     ninja-build
     gettext
     libtool
@@ -35,13 +37,22 @@ packages=(
     qt5-default
     vim
     cpanminus
+    alacritty
 )
 
-sudo apt update
-for package in "${packages[@]}"; do
-    sudo apt install -y $package || sudo apt update $package
-done
-sudo apt upgrade
-sudo apt autoremove
+if [ "`uname -r |grep 'arch'`" ]; then
+	sudo pacman -Syyu --noconfirm
+	for package in "${packages[@]}"; do
+	    sudo pacman -Sy --noconfirm $package
+	done
+	sudo pacman -Syyu --noconfirm
+else
+	sudo apt update
+	for package in "${packages[@]}"; do
+	    sudo apt install -y $package || sudo apt update $package
+	done
+	sudo apt upgrade
+	sudo apt autoremove
+fi
 
 

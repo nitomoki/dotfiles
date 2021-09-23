@@ -18,3 +18,13 @@ alias dotfiles='cd ~/dotfiles'
 if type bat > /dev/null 2>&1; then
     alias cat="bat"
 fi
+
+
+if [ "`uname -r |grep 'arch'`" ]; then
+    alias pac='sudo pacman -S --noconfirm'
+    alias pacu='sudo pacman -Syu --noconfirm'
+    alias pacr='sudo pacman -Rs'
+    alias pacs='pacman -Ss'
+    alias paci='pacman -Si'
+    alias paclf='pacman -Ql'
+fi

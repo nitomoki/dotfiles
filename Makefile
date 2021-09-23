@@ -1,36 +1,25 @@
-DOTFILES_EXCLUDES := .git .gitmodules .travis.yml
+DOTFILES_EXCLUDES := .git .gitmodules .travis.yml .config
 DOTFILES_TARGET   := $(wildcard .??*) bin
 DOTFILES_DIR      := $(PWD)
 DOTFILES_FILES    := $(filter-out $(DOTFILES_EXCLUDES), $(DOTFILES_TARGET))
 CONFIG_DIR := .config
-NVIM_CONFIG_DIR := .config/nvim
-NVIM_CONFIG_TARGET := $(notdir $(wildcard $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/*))
-NVIM_CONFIG_FILES := $(filter-out init.lua, $(NVIM_CONFIG_TARGET))
-NVIM_CONFIG_FILES_LUA := $(filter-out init.vim, $(NVIM_CONFIG_TARGET))
+CONFIG_DIR_TARGET :=$(wildcard $(CONFIG_DIR)/??*)
+
+MAKE_DIR_COMMAND := mkdir -pv
+MAKE_LINK_COMMAND := ln -sfnv
 
 deploy:
-	mkdir -p $(HOME)/$(CONFIG_DIR)
-	mkdir -p $(HOME)/$(NVIM_CONFIG_DIR)
-	@$(foreach val, $(DOTFILES_FILES), ln -sfnv $(abspath $(val)) $(HOME)/$(val);)
-	@$(foreach val, $(NVIM_CONFIG_TARGET), ln -sfnv $(HOME)/dotfiles/$(NVIM_CONFIG_DIR)/$(val) $(HOME)/$(NVIM_CONFIG_DIR)/$(val);)
-#	@$(foreach val, $(NVIM_CONFIG_FILES), ln -sfnv $(HOME)/dotfiles/$(NVIM_CONFIG_DIR)/$(val) $(HOME)/$(NVIM_CONFIG_DIR)/$(val);)
-#	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/init.lua $(HOME)/$(NVIM_CONFIG_DIR)/init.lua
-#	rm -f $(HOME)/$(NVIM_CONFIG_DIR)/init.lua
-#	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/dein.toml $(HOME)/$(NVIM_CONFIG_DIR)/dein.toml
-#	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/dein_lazy.toml $(HOME)/$(NVIM_CONFIG_DIR)/dein_lazy.toml
-#	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/lua $(HOME)/$(NVIM_CONFIG_DIR)/lua
-#	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/plugin $(HOME)/$(NVIM_CONFIG_DIR)/plugin
-#	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/init.vim $(HOME)/$(NVIM_CONFIG_DIR)/init.vim
+	$(MAKE_DIR_COMMAND) $(HOME)/$(CONFIG_DIR)
+	@$(foreach val, $(DOTFILES_FILES), $(MAKE_LINK_COMMAND) $(abspath $(val)) $(HOME)/$(val);)
+	@$(foreach val, $(CONFIG_DIR_TARGET), $(MAKE_DIR_COMMAND) $(HOME)/$(val);)
+	@$(foreach val, $(CONFIG_DIR_TARGET), $(foreach val2, $(wildcard $(val)/??*), $(MAKE_LINK_COMMAND) $(DOTFILES_DIR)/$(val2) $(HOME)/$(val2);))
 
 test:
-	@$(foreach val, $(NVIM_CONFIG_FILES), echo $(val);)
-	@$(foreach val, $(NVIM_CONFIG_FILES_LUA), echo $(val);)
+	@$(foreach val, $(DOTFILES_FILES), echo $(abspath $(val)) $(HOME)/$(val);)
+	@$(foreach val, $(CONFIG_DIR_TARGET), $(foreach val2, $(wildcard $(val)/??*), echo $(DOTFILES_DIR)/$(val2) $(HOME)/$(val2);))
 
 init:
 	@$(foreach val, $(wildcard $(PWD)/etc/init/*.sh), bash $(val);)
 	@$(foreach val, $(wildcard $(PWD)/etc/init/zsh/*.sh), zsh $(val);)
 
-deplua:
-	@ln -snfv $(DOTFILES_DIR)/$(NVIM_CONFIG_DIR)/init.lua $(HOME)/$(NVIM_CONFIG_DIR)/init.lua
-	rm -f $(HOME)/$(NVIM_CONFIG_DIR)/init.vim
 

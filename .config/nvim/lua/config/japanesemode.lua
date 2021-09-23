@@ -38,7 +38,6 @@ function M.setup()
         print("Japanese Mode: " .. japanese_mode_str)
         vim.cmd('redrawtabline')
     end
-    
 
     utils.create_augroup({
         {'InsertLeave', '*', 'call v:lua.JapaneseInsertOff()'},

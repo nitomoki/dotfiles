@@ -5,11 +5,12 @@ local cmd = vim.cmd
 
 function M.setup()
 
-    --local term_cmd = utils.is_plugin_installed('neoterm') and 'Tnew' or 'terminal'
-    local term_cmd = utils.is_plugin_installed('nvim-toggleterm.lua') and 'ToggleTerm direction=window' or 'terminal'
+    utils.map('n', '<C-t>', ':call v:lua.Term()<CR>', {noremap = true, silent = true})
+    utils.map('t', '<C-t>', [[<C-\><C-n>:call v:lua.Term()<CR>]], {noremap = true, silent = true})
+    utils.map('n', '<c-q>', ':up!<CR>:call v:lua.CloseBuf()<CR>', {noremap = true, silent = true})
+    local term_cmd = 'terminal'
     if utils.is_plugin_installed('nvim-toggleterm.lua') then
-        term_cmd = 'ToggleTerm direction=window'
-        utils.map('n', 't', ':call v:lua.Term()<CR>', {noremap = true, silent = true})
+        term_cmd = 'ToggleTerm direction=float'
     elseif utils.is_plugin_installed('neoterm') then
         term_cmd = 'Tnew'
     end
@@ -37,12 +38,6 @@ function M.setup()
             end
         end
     end
-
-    --utils.create_augroup({
-    --    {'VimEnter', '*', 'if @%==""&&v:lua.GetBufByte()==0', '| call v:lua.Term()', '| endif'},
-    --},'Term')
-
-    utils.map('n', '<leader>q', ':up!<CR>:call v:lua.CloseBuf()<CR>', {noremap = true, silent = true})
 
     vim.api.nvim_exec(
     [[

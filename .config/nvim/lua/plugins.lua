@@ -56,6 +56,13 @@ return require'packer'.startup(function(use)
             require'neoclip'.setup()
         end
     }
+    --[[
+    use {'glepnir/dashboard-nvim',
+        config = function()
+            require'config.dashboard'.setup()
+        end
+    }
+    ]]--
 
 
 
