@@ -11,7 +11,7 @@ end
 
 require'lualine'.setup{
     options = {
-        theme = 'molokai'
+        theme = 'gruvbox_material'
     },
     tabline = {
         lualine_a = {},

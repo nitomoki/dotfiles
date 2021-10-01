@@ -4,6 +4,7 @@
 --local g = vim.g
 local fn = vim.fn
 --local cmd = vim.cmd
+local packer = require'packer'
 
 
 local packer_repo_dir = fn.expand([[~/.local/share/nvim/site/pack/packer/start/packer.nvim]])
@@ -13,6 +14,10 @@ if fn.isdirectory(packer_repo_dir) == 0 then
 end
 
 return require'packer'.startup(function(use)
+    packer.use_rocks({
+        "luaposix",
+        "lua-struct",
+    })
     use 'wbthomason/packer.nvim'
     use 'Yggdroot/indentLine'
     use {'nvim-treesitter/nvim-treesitter',
@@ -26,6 +31,7 @@ return require'packer'.startup(function(use)
     }
     use 'kyazdani42/nvim-web-devicons'
     use {'sainnhe/sonokai'}
+    use {'ulwlu/elly.vim'}
     use {'neovim/nvim-lspconfig', config = function() require'config.lsp' end}
     use {'hrsh7th/vim-vsnip'}
     use {'hrsh7th/nvim-cmp',
