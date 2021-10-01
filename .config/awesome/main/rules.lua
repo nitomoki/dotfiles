@@ -26,33 +26,20 @@ M.setup = function()
                          size_hints_honor = false
             }
         },
-
+        {   rule = { class = "Vieb" },
+            properties = {
+                floating = true,
+            },
+        },
         -- Floating clients.
         { rule_any = {
             instance = {
-                "DTA",  -- Firefox addon DownThemAll.
-                "copyq",  -- Includes session name in class.
-                "pinentry",
             },
             class = {
-                "Arandr",
-                "Blueman-manager",
-                "Gpick",
-                "Kruler",
-                "MessageWin",  -- kalarm.
-                "Sxiv",
-                "Tor Browser",
-                "Wpa_gui",
-                "veromix",
-                "xtightvncviewer",
             },
             name = {
-                "Event Tester",  -- xev.
             },
             role = {
-                "AlarmWindow",  -- Thunderbird's calendar.
-                "ConfigManager",  -- Thunderbird's about:config.
-                "pop-up",       -- e.g. Google Chrome's (detached) Developer Tools.
             },
           }, properties = { floating = true }},
 

@@ -9,7 +9,8 @@ local my_table = awful.util.table or gears.table -- 4.{0,1} compatibility
 
 local theme                                     = {}
 theme.dir                                       = os.getenv("HOME") .. "/.config/awesome/themes"
-theme.wallpaper                                 = theme.dir .. "/rain_steam_speed.jpg"
+--theme.wallpaper                                 = theme.dir .. "/rain_steam_speed.jpg"
+theme.wallpaper                                 = theme.dir .. "/rainworld1.png"
 theme.font                                      = "Terminus 9"
 theme.fg_normal                                 = "#FEFEFE"
 theme.fg_focus                                  = "#32D6FF"
@@ -125,24 +126,24 @@ function theme.at_screen_connect(s)
     s.mytasklist = awful.widget.tasklist(s, awful.widget.tasklist.filter.currenttags, awful.util.tasklist_buttons)
 
     -- Create the wibox
-    --s.mywibox = awful.wibar({ position = "top", screen = s, height = dpi(16), bg = theme.bg_normal, fg = theme.fg_normal })
+    s.mywibox = awful.wibar({ position = "top", screen = s, height = dpi(16), bg = theme.bg_normal, fg = theme.fg_normal })
 
     ---- Add widgets to the wibox
-    --s.mywibox:setup {
-    --    layout = wibox.layout.align.horizontal,
-    --    { -- Left widgets
-    --        layout = wibox.layout.fixed.horizontal,
-    --        s.mytaglist,
-    --        space,
-    --        s.mypromptbox,
-    --        space,
-    --    },
-    --    --s.mytasklist, -- Middle widget
-    --    { -- Right widgets
-    --        layout = wibox.layout.fixed.horizontal,
-    --        s.mylayoutbox,
-    --    },
-    --}
+    s.mywibox:setup {
+        layout = wibox.layout.align.horizontal,
+        { -- Left widgets
+            layout = wibox.layout.fixed.horizontal,
+            s.mytaglist,
+            space,
+            s.mypromptbox,
+            space,
+        },
+        --s.mytasklist, -- Middle widget
+        { -- Right widgets
+            layout = wibox.layout.fixed.horizontal,
+            s.mylayoutbox,
+        },
+    }
 end
 
 return theme
