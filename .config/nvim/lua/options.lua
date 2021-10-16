@@ -6,6 +6,8 @@ local fn = vim.fn
 local cmd = vim.cmd
 local utils = require('utils')
 
+vim.opt.termguicolors = true
+
 g.mapleader = ' '
 
 o.hlsearch = false

@@ -1,8 +1,9 @@
+local jpmode = require'config.japanesemode'
 local function fullhalf()
-    if PLUGIN_JPMODE == nil then
+    if jpmode.PLUGIN_JPMODE == nil then
         return [[HALF]]
     end
-    if PLUGIN_JPMODE_CURRENT() then
+    if jpmode.PLUGIN_JPMODE_CURRENT() then
         return [[FULL]]
     else
         return [[HALF]]

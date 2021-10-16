@@ -10,10 +10,19 @@ local check_fcitx = function()
     return vim.v.shell_error
 end
 
+local check_swim = function()
+    vim.cmd('call system("type swim")')
+    return vim.v.shell_error
+end
+
+
+M.PLUGIN_JPMODE = true
+M.japanese_mode = false
+
 function M.setup()
     local on_command = ""
     local off_command =""
-    local japanese_mode = false
+    --local japanese_mode = false
     local japanese_mode_str = 'OFF'
     PLUGIN_JPMODE = true
 
@@ -23,31 +32,31 @@ function M.setup()
     elseif check_fcitx() == 0 then
         on_command  = "fcitx-remote -o"
         off_command = "fcitx-remote -c"
+    elseif check_swim() == 0 then
+        on_command  = "swim use com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese"
+        off_command = "swim use com.apple.keylayout.ABC"
     else
         return -1
     end
 
-    function PLUGIN_JPMODE_CURRENT()
-        return japanese_mode
-    end
 
     function _G.JapaneseInsertOff()
-        if japanese_mode == true then
+        if M.japanese_mode == true then
             os.execute(off_command)
         end
     end
 
     function _G.JapaneseInsertOn()
-        if japanese_mode == true then
+        if M.japanese_mode == true then
             os.execute(on_command)
         end
     end
 
     function ToggleJapaneseMode(vim_mode)
-        japanese_mode = not(japanese_mode)
-        japanese_mode_str = (japanese_mode) and 'ON' or 'OFF'
+        M.japanese_mode = not(M.japanese_mode)
+        japanese_mode_str = (M.japanese_mode) and 'ON' or 'OFF'
         if (vim_mode == 'i') then
-            if japanese_mode then
+            if M.japanese_mode then
                 os.execute(on_command)
             else
                 os.execute(off_command)
@@ -66,5 +75,8 @@ function M.setup()
     utils.map_lua('n', '<C-]>', 'ToggleJapaneseMode("n")', {noremap = true})
 end
 
+function M.PLUGIN_JPMODE_CURRENT()
+    return M.japanese_mode
+end
 
 return M

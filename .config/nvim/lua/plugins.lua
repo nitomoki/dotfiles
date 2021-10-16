@@ -4,7 +4,6 @@
 --local g = vim.g
 local fn = vim.fn
 --local cmd = vim.cmd
-local packer = require'packer'
 
 
 local packer_repo_dir = fn.expand([[~/.local/share/nvim/site/pack/packer/start/packer.nvim]])
@@ -12,14 +11,19 @@ local packer_repo_dir = fn.expand([[~/.local/share/nvim/site/pack/packer/start/p
 if fn.isdirectory(packer_repo_dir) == 0 then
     os.execute([[git clone https://github.com/wbthomason/packer.nvim ]] .. packer_repo_dir)
 end
+local packer = require'packer'
+local utils = require'utils'
+-- AutoPackerCompile
+utils.create_augroup({
+    {'BufWritePost', 'plugins.lua', 'PackerCompile'}
+}, 'AutoPackerCompile')
 
 return require'packer'.startup(function(use)
     packer.use_rocks({
-        "luaposix",
-        "lua-struct",
+        inspect
     })
-    use 'wbthomason/packer.nvim'
-    use 'Yggdroot/indentLine'
+    use {'wbthomason/packer.nvim'}
+    use {'Yggdroot/indentLine'}
     use {'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate',
         config = function()
@@ -62,13 +66,13 @@ return require'packer'.startup(function(use)
             require'neoclip'.setup()
         end
     }
-    --[[
-    use {'glepnir/dashboard-nvim',
+    use {'akinsho/bufferline.nvim',
+        requires = 'kyazdani42/nvim-web-devicons',
         config = function()
-            require'config.dashboard'.setup()
+            require'config.bufferline'.setup()
         end
     }
-    ]]--
+
 
 
 
