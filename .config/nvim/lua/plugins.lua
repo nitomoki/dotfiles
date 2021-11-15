@@ -5,7 +5,6 @@
 local fn = vim.fn
 --local cmd = vim.cmd
 
-
 local packer_repo_dir = fn.expand([[~/.local/share/nvim/site/pack/packer/start/packer.nvim]])
 
 if fn.isdirectory(packer_repo_dir) == 0 then
@@ -20,7 +19,6 @@ utils.create_augroup({
 
 return require'packer'.startup(function(use)
     packer.use_rocks({
-        inspect
     })
     use {'wbthomason/packer.nvim'}
     use {'Yggdroot/indentLine'}
@@ -29,9 +27,6 @@ return require'packer'.startup(function(use)
         config = function()
             require'config.treesitter'
             end
-    }
-    use {'hoob3rt/lualine.nvim',
-        config = function() require'config.lualine' end
     }
     use 'kyazdani42/nvim-web-devicons'
     use {'sainnhe/sonokai'}
@@ -66,16 +61,20 @@ return require'packer'.startup(function(use)
             require'neoclip'.setup()
         end
     }
-    use {'akinsho/bufferline.nvim',
-        requires = 'kyazdani42/nvim-web-devicons',
-        config = function()
-            require'config.bufferline'.setup()
-        end
+    --use { 'hoob3rt/lualine.nvim',
+    use {'nvim-lualine/lualine.nvim',
+        requires = {'kyazdani42/nvim-web-devicons', opt = true},
+        config = function() require'config.lualine'.setup() end
     }
+    --use {'akinsho/bufferline.nvim',
+    --    requires = 'kyazdani42/nvim-web-devicons',
+    --    config = function()
+    --        require'config.bufferline'.setup()
+    --    end
+    --}
 
 
 
 
 end)
-
 

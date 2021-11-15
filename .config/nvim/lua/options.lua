@@ -2,7 +2,7 @@ local o = vim.o
 local w = vim.wo
 local b = vim.bo
 local g = vim.g
-local fn = vim.fn
+-- local fn = vim.fn
 local cmd = vim.cmd
 local utils = require('utils')
 
@@ -52,3 +52,15 @@ vim.cmd[[set shortmess+=c]]
 
 -- netrw
 g.netrw_keepdir = 0
+
+-- Command Line Window Options
+utils.create_augroup({
+    {'CmdwinEnter', '[:/?=]', 'setlocal', 'nonumber'},
+    {'CmdwinEnter', '[:/?=]', 'setlocal', 'signcolumn=no'},
+    {'CmdwinEnter', ':', [[g/^qa\?!\?$/d]]},
+    {'CmdwinEnter', ':', [[g/^wq\?a\?!\?$/d]]},
+},'CmdWin')
+
+
+
+
