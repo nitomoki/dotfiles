@@ -2,7 +2,7 @@
 --local w = vim.wo
 --local b = vim.bo
 --local g = vim.g
-local fn = vim.fn
+--local fn = vim.fn
 --local cmd = vim.cmd
 local utils = require('utils')
 
@@ -31,14 +31,11 @@ utils.map('c', '<C-b>', '<Left>', {silent = true, noremap = true})
 utils.map('i', '_', [[\]], {silent = true, noremap = true})
 utils.map('i', '<C-_>', [[_]], {silent = true, noremap = true})
 
-local function t(str)
-    return vim.api.nvim_replace_termcodes(str, true, true, true)
-end
-
-function _G.smart_tab()
-    return fn.pumvisible() == 1 and t'<C-n>' or t'<tab>'
-end
-
-
-utils.map('i', '<tab>', 'v:lua.smart_tab()', {expr = true, noremap = true})
-utils.map('i', '<S-tab>', 'v:lua.smart_tab()', {expr = true, noremap = true})
+-- local function t(str)
+--     return vim.api.nvim_replace_termcodes(str, true, true, true)
+-- end
+-- function _G.smart_tab()
+--     return fn.pumvisible() == 1 and t'<C-n>' or t'<tab>'
+-- end
+-- utils.map('i', '<tab>', 'v:lua.smart_tab()', {expr = true, noremap = true})
+-- utils.map('i', '<S-tab>', 'v:lua.smart_tab()', {expr = true, noremap = true})

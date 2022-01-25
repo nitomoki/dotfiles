@@ -18,6 +18,13 @@ cmp.setup {
             behavior = cmp.ConfirmBehavior.Replace,
             select = true,
         }),
+        ['<Tab>'] = function(fallback)
+            if cmp.visible() then
+                cmp.select_next_item()
+            else
+                fallback()
+            end
+        end,
     },
     sources = {
         { name = 'nvim_lsp' },
@@ -26,6 +33,18 @@ cmp.setup {
         { name = 'calc' },
     },
 }
+
+cmp.setup.cmdline(':', {
+    sources = {
+        { name = 'cmdline' }
+    }
+})
+
+cmp.setup.cmdline('/', {
+    sources = {
+        { name = 'buffer' }
+    }
+})
 
 require'cmp_nvim_lsp'.setup()
 for index, value in ipairs(vim.lsp.protocol.CompletionItemKind) do

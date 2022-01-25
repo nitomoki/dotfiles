@@ -32,13 +32,14 @@ return require'packer'.startup(function(use)
     use {'sainnhe/sonokai'}
     use {'ulwlu/elly.vim'}
     use {'neovim/nvim-lspconfig', config = function() require'config.lsp' end}
-    use {'hrsh7th/vim-vsnip'}
+    -- use {'hrsh7th/vim-vsnip'}
     use {'hrsh7th/nvim-cmp',
         requires = {{'hrsh7th/cmp-buffer'},
                     {'hrsh7th/cmp-nvim-lua'},
                     {'hrsh7th/cmp-nvim-lsp'},
                     {'hrsh7th/cmp-calc'},
                     {'hrsh7th/cmp-path'},
+                    {'hrsh7th/cmp-cmdline'},
                 },
         config = function()
             require'config.cmp'
@@ -51,7 +52,7 @@ return require'packer'.startup(function(use)
         end
     }
     use {'nvim-telescope/telescope.nvim',
-        requires = {{'nvim-lua/popup.nvim'}, {'nvim-lua/plenary.nvim'}},
+        requires = {{'nvim-lua/popup.nvim'}, {'nvim-lua/plenary.nvim'}, {'nvim-telescope/telescope-file-browser.nvim'},},
         config = function ()
             require'config.telescope'
         end
