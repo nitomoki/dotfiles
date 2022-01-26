@@ -1,0 +1,6 @@
+// 既定値を上書きするには、このファイル内にキー バインドを挿入します
+[
+    {"key": "ctrl+h", "command": "deleteLeft", "when": "vim.mode == 'Insert'"},
+    {"key": "backspace", "command": "deleteLeft", "when": "vim.mode == 'Insert'"},
+    {"key": "ctrl+t", "command": "workbench.action.terminal.toggleTerminal", "when": "vim.mode == 'Normal'"},
+]
