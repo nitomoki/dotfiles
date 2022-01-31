@@ -1,4 +1,5 @@
 local utils = require'utils'
+-- local keymap = require'vim.keymap'
 require'telescope'.setup{
     defaults = {
         vimgrep_arguments = {
@@ -23,6 +24,14 @@ require'telescope'.setup{
         },
     },
 }
+
+local opts = {noremap = true, silent = true}
+local builtin = require'telescope.builtin'
+local extensions = require'telescope'.extensions
+-- keymap.set('n', '<leader>b', builtin.buffers, opts)
+-- keymap.set('n', '<leader>g', builtin.live_grep{vimgrep_arguments={ 'rg', '--color=never', '--no-heading', '--line-number', '--column', '--smart-case', '-u' }}, opts)
+-- keymap.set('n', '<leader>fb', extensions.file_browser.file_browser({hidden=true}), opts)
+
 utils.map('n', '<leader>b',
     [[<cmd>lua require'telescope.builtin'.buffers()<CR>]]
     )

@@ -57,16 +57,22 @@ return require'packer'.startup(function(use)
             require'config.telescope'
         end
     }
+    use {'tjdevries/express_line.nvim',
+        requires = {{'nvim-lua/plenary.nvim'}},
+        config = function ()
+            require'config.el'
+        end
+    }
     use {'AckslD/nvim-neoclip.lua',
         config = function()
             require'neoclip'.setup()
         end
     }
     --use { 'hoob3rt/lualine.nvim',
-    use {'nvim-lualine/lualine.nvim',
-        requires = {'kyazdani42/nvim-web-devicons', opt = true},
-        config = function() require'config.lualine'.setup() end
-    }
+    --use {'nvim-lualine/lualine.nvim',
+    --    requires = {'kyazdani42/nvim-web-devicons', opt = true},
+    --    config = function() require'config.lualine'.setup() end
+    --}
     --use {'akinsho/bufferline.nvim',
     --    requires = 'kyazdani42/nvim-web-devicons',
     --    config = function()
