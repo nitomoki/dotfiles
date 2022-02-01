@@ -31,7 +31,7 @@ o.ignorecase = true
 cmd('set expandtab')
 cmd('set tabstop=4')
 cmd('set shiftwidth=4')
-o.showtabline = 2
+o.showtabline = 1
 b.autoindent = true
 b.smartindent = true
 o.smartcase = true
