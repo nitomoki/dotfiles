@@ -28,8 +28,8 @@ utils.map('c', '<C-a>', '<Home>', {silent = true, noremap = true})
 utils.map('c', '<C-f>', '<Right>', {silent = true, noremap = true})
 utils.map('c', '<C-b>', '<Left>', {silent = true, noremap = true})
 
-utils.map('i', '_', [[\]], {silent = true, noremap = true})
-utils.map('i', '<C-_>', [[_]], {silent = true, noremap = true})
+--utils.map('i', '_', [[\]], {silent = true, noremap = true})
+--utils.map('i', '<C-_>', [[_]], {silent = true, noremap = true})
 
 -- local function t(str)
 --     return vim.api.nvim_replace_termcodes(str, true, true, true)
