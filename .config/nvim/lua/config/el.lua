@@ -17,12 +17,19 @@ local generator = function()
             end,
     }
 
+    local getcwd = function()
+        local cwd = "[" .. vim.fn.getcwd() .. "]"
+        return cwd
+    end
+
     return el_segments
         :add(extensions.mode)
-        :add(sections.split)
-        :add(builtin.file)
+        :add(" ")
+        :add(builtin.shortened_file)
         :add(sections.collapse_builtin{" ", builtin.modified_flag,})
         :add(sections.split)
+        :add(getcwd)
+        --:add(sections.split)
         :add(lsp_statusline.segment)
         :add(lsp_statusline.current_function)
         :add(subscribe.buf_autocmd("el_git_status", "BufWritePost",

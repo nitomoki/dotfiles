@@ -13,8 +13,11 @@ end
 local packer = require'packer'
 local utils = require'utils'
 -- AutoPackerCompile
+-- utils.create_augroup({
+--     {'BufWritePost', 'plugins.lua', 'PackerCompile'}
+-- }, 'AutoPackerCompile')
 utils.create_augroup({
-    {'BufWritePost', 'plugins.lua', 'PackerCompile'}
+    {'BufWritePost', '*/.config/nvim/*/*.lua', 'PackerCompile'}
 }, 'AutoPackerCompile')
 
 return require'packer'.startup(function(use)
@@ -32,7 +35,6 @@ return require'packer'.startup(function(use)
     use {'sainnhe/sonokai'}
     use {'ulwlu/elly.vim'}
     use {'neovim/nvim-lspconfig', config = function() require'config.lsp' end}
-    -- use {'hrsh7th/vim-vsnip'}
     use {'hrsh7th/nvim-cmp',
         requires = {{'hrsh7th/cmp-buffer'},
                     {'hrsh7th/cmp-nvim-lua'},

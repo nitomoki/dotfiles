@@ -1,41 +1,24 @@
---local o = vim.o
---local w = vim.wo
---local b = vim.bo
---local g = vim.g
---local fn = vim.fn
---local cmd = vim.cmd
-local utils = require('utils')
-
-utils.map('n', '<leader>k', [[:bnext<CR>]], {silent = true, noremap = true})
-utils.map('n', '<leader>j', [[:bprev<CR>]], {silent = true, noremap = true})
-utils.map('n', '<leader>w', [[:w!<CR>]], {noremap = true})
-utils.map('t', '<C-[>', [[<C-\><C-n>]], {noremap = true})
-utils.map('n', 'j', [[gj]], {silent = true, noremap = true})
-utils.map('n', 'k', [[gk]], {silent = true, noremap = true})
-utils.map('n', 'gj', 'j', {silent = true, noremap = true})
-utils.map('n', 'gk', 'k', {silent = true, noremap = true})
-utils.map('n', 'q', '<Nop>', {silent = true, noremap = true})
-utils.map('i', '<UP>', '<Nop>', {noremap = true})
-utils.map('i', '<DOWN>', '<Nop>', {noremap = true})
-utils.map('i', '<RIGHT>', '<Nop>', {noremap = true})
-utils.map('i', '<LEFT>', '<Nop>', {noremap = true})
-utils.map('i', '<S-UP>', '<Nop>', {noremap = true})
-utils.map('i', '<S-DOWN>', '<Nop>', {noremap = true})
-utils.map('i', '<S-RIGHT>', '<Nop>', {noremap = true})
-utils.map('i', '<S-LEFT>', '<Nop>', {noremap = true})
-utils.map('n', 'Q', 'q', {noremap = true})
-utils.map('c', '<C-a>', '<Home>', {silent = true, noremap = true})
-utils.map('c', '<C-f>', '<Right>', {silent = true, noremap = true})
-utils.map('c', '<C-b>', '<Left>', {silent = true, noremap = true})
-
---utils.map('i', '_', [[\]], {silent = true, noremap = true})
---utils.map('i', '<C-_>', [[_]], {silent = true, noremap = true})
-
--- local function t(str)
---     return vim.api.nvim_replace_termcodes(str, true, true, true)
--- end
--- function _G.smart_tab()
---     return fn.pumvisible() == 1 and t'<C-n>' or t'<tab>'
--- end
--- utils.map('i', '<tab>', 'v:lua.smart_tab()', {expr = true, noremap = true})
--- utils.map('i', '<S-tab>', 'v:lua.smart_tab()', {expr = true, noremap = true})
+local keymap = vim.keymap
+local s_opts = {silent = true, noremap = true}
+local opts = {silent = true, noremap = true}
+keymap.set('n', '<leader>k', [[:bnext<CR>]], s_opts)
+keymap.set('n', '<leader>j', [[:bprev<CR>]], s_opts)
+keymap.set('n', '<leader>w', [[:w!<CR>]],    s_opts)
+keymap.set('t', '<C-[>',     [[<C-\><C-n>]], s_opts)
+keymap.set('n', 'j',         [[gj]],         s_opts)
+keymap.set('n', 'k',         [[gk]],         s_opts)
+keymap.set('n', 'gj',        'j',            s_opts)
+keymap.set('n', 'gk',        'k',            s_opts)
+keymap.set('n', 'q',         '<Nop>',        s_opts)
+keymap.set('i', '<UP>',      '<Nop>',        opts)
+keymap.set('i', '<DOWN>',    '<Nop>',        opts)
+keymap.set('i', '<RIGHT>',   '<Nop>',        opts)
+keymap.set('i', '<LEFT>',    '<Nop>',        opts)
+keymap.set('i', '<S-UP>',    '<Nop>',        opts)
+keymap.set('i', '<S-DOWN>',  '<Nop>',        opts)
+keymap.set('i', '<S-RIGHT>', '<Nop>',        opts)
+keymap.set('i', '<S-LEFT>',  '<Nop>',        opts)
+keymap.set('n', 'Q',         'q',            opts)
+--keymap.set('c', '<C-a>',     '<Home>',       s_opts)
+--keymap.set('c', '<C-f>',     '<Right>',      s_opts)
+--keymap.set('c', '<C-b>',     '<Left>',       s_opts)

@@ -32,6 +32,7 @@ cmd('set expandtab')
 cmd('set tabstop=4')
 cmd('set shiftwidth=4')
 o.showtabline = 1
+o.showmode = 0
 b.autoindent = true
 b.smartindent = true
 o.smartcase = true
@@ -41,7 +42,7 @@ o.hidden = true
 o.history = 50
 o.virtualedit = [[block]]
 o.encoding = [[utf-8]]
-o.autochdir = true
+o.autochdir = false
 o.compatible = false
 o.completeopt = [[menu]]
 g.tex_flavor = [[latex]]
