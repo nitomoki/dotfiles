@@ -3,7 +3,7 @@ local extensions = require'el.extensions'
 local subscribe = require'el.subscribe'
 local sections = require'el.sections'
 local lsp_statusline = require'el.plugins.lsp_status'
-
+local diagnostic     = require 'el.diagnostic'
 
 local generator = function()
     local el_segments = {
@@ -17,16 +17,19 @@ local generator = function()
             end,
     }
 
+
     local getcwd = function()
-        local cwd = "[" .. vim.fn.getcwd() .. "]"
-        return cwd
+        return "[" .. vim.fn.getcwd() .. "]"
     end
 
     return el_segments
         :add(extensions.mode)
+        :add("  ")
+        :add(extensions.file_icon)
         :add(" ")
         :add(builtin.shortened_file)
-        :add(sections.collapse_builtin{" ", builtin.modified_flag,})
+        :add(sections.collapse_builtin{builtin.modified_flag,})
+        :add(sections.collapse_builtin{" ", diagnostic.make_buffer(),})
         :add(sections.split)
         :add(getcwd)
         --:add(sections.split)
