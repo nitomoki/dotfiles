@@ -34,6 +34,7 @@ return require'packer'.startup(function(use)
     use 'kyazdani42/nvim-web-devicons'
     use {'sainnhe/sonokai'}
     use {'ulwlu/elly.vim'}
+    use {'williamboman/nvim-lsp-installer'}
     use {'neovim/nvim-lspconfig', config = function() require'config.lsp' end}
     use {'hrsh7th/nvim-cmp',
         requires = {{'hrsh7th/cmp-buffer'},
@@ -72,17 +73,6 @@ return require'packer'.startup(function(use)
             require'neoclip'.setup()
         end
     }
-    --use { 'hoob3rt/lualine.nvim',
-    --use {'nvim-lualine/lualine.nvim',
-    --    requires = {'kyazdani42/nvim-web-devicons', opt = true},
-    --    config = function() require'config.lualine'.setup() end
-    --}
-    --use {'akinsho/bufferline.nvim',
-    --    requires = 'kyazdani42/nvim-web-devicons',
-    --    config = function()
-    --        require'config.bufferline'.setup()
-    --    end
-    --}
 
 
 
