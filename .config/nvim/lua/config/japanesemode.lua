@@ -17,13 +17,13 @@ end
 
 
 M.PLUGIN_JPMODE = true
-M.japanese_mode = false
+M.isJapaneseMode = false
 
 function M.setup()
     local on_command = ""
-    local off_command =""
-    --local japanese_mode = false
-    local japanese_mode_str = 'OFF'
+    local off_command = ""
+    --local isJapaneseMode = false
+    local isJapaneseMode_str = 'OFF'
     PLUGIN_JPMODE = true
 
     if check_ibus() == 0 then
@@ -40,43 +40,51 @@ function M.setup()
     end
 
 
-    function _G.JapaneseInsertOff()
-        if M.japanese_mode == true then
+    M.JapaneseInsertOff = function()
+        if M.isJapaneseMode  then
             os.execute(off_command)
         end
     end
 
-    function _G.JapaneseInsertOn()
-        if M.japanese_mode == true then
+    M.JapaneseInsertOn = function()
+        if M.isJapaneseMode then
             os.execute(on_command)
         end
     end
 
     function ToggleJapaneseMode(vim_mode)
-        M.japanese_mode = not(M.japanese_mode)
-        japanese_mode_str = (M.japanese_mode) and 'ON' or 'OFF'
+        M.isJapaneseMode = not(M.isJapaneseMode)
+        isJapaneseMode_str = (M.isJapaneseMode) and 'ON' or 'OFF'
         if (vim_mode == 'i') then
-            if M.japanese_mode then
+            if M.isJapaneseMode then
                 os.execute(on_command)
             else
                 os.execute(off_command)
             end
         end
-        print("Japanese Mode: " .. japanese_mode_str)
+        print("Japanese Mode: " .. isJapaneseMode_str)
         vim.cmd('redrawtabline')
     end
 
     utils.create_augroup({
-        {'InsertLeave', '*', 'call v:lua.JapaneseInsertOff()'},
-        {'InsertEnter', '*', 'call v:lua.JapaneseInsertOn()'}
+        {'InsertLeave', '*', [[lua require'config.japanesemode'.JapaneseInsertOff()]]},
+        {'InsertEnter', '*', [[lua require'config.japanesemode'.JapaneseInsertOn()]]}
     }, 'JapaneseMode')
 
-    utils.map_lua('i', '<C-]>', 'ToggleJapaneseMode("i")', {noremap = true})
-    utils.map_lua('n', '<C-]>', 'ToggleJapaneseMode("n")', {noremap = true})
+    local h_ToggleJapaneseMode_I = function()
+        ToggleJapaneseMode("i")
+    end
+
+    local h_ToggleJapaneseMode_N = function()
+        ToggleJapaneseMode("n")
+    end
+
+    vim.keymap.set('i', '<C-]>', h_ToggleJapaneseMode_I, {noremap = true})
+    vim.keymap.set('n', '<C-]>', h_ToggleJapaneseMode_N, {noremap = true})
 end
 
 function M.PLUGIN_JPMODE_CURRENT()
-    return M.japanese_mode
+    return M.isJapaneseMode
 end
 
 return M
