@@ -1,21 +1,11 @@
---local o = vim.o
---local w = vim.wo
---local b = vim.bo
---local g = vim.g
-local fn = vim.fn
---local cmd = vim.cmd
+local packer_repo_dir = vim.fn.expand([[~/.local/share/nvim/site/pack/packer/start/packer.nvim]])
 
-local packer_repo_dir = fn.expand([[~/.local/share/nvim/site/pack/packer/start/packer.nvim]])
-
-if fn.isdirectory(packer_repo_dir) == 0 then
+if vim.fn.isdirectory(packer_repo_dir) == 0 then
     os.execute([[git clone https://github.com/wbthomason/packer.nvim ]] .. packer_repo_dir)
 end
 local packer = require'packer'
 local utils = require'utils'
 -- AutoPackerCompile
--- utils.create_augroup({
---     {'BufWritePost', 'plugins.lua', 'PackerCompile'}
--- }, 'AutoPackerCompile')
 utils.create_augroup({
     {'BufWritePost', '*/.config/nvim/*/*.lua', 'PackerCompile'}
 }, 'AutoPackerCompile')
@@ -69,13 +59,12 @@ return require'packer'.startup(function(use)
         end
     }
     use {'AckslD/nvim-neoclip.lua',
+        requires = {
+            { 'nvim-telescope/telescope.nvim' }
+        },
         config = function()
-            require'neoclip'.setup()
+            require'config.neoclip'
         end
     }
-
-
-
-
 end)
 
