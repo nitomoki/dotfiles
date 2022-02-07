@@ -6,7 +6,9 @@ utils.map('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<CR>')
 utils.map('n', 'gr', '<cmd>lua vim.lsp.buf.reference()<CR>')
 
 
-require'lspconfig'.ccls.setup{}
+require'lspconfig'.clangd.setup{
+    cmd = {"/home/delta/.local/share/nvim/lsp_servers/clangd/clangd/bin/clangd"},
+}
 require'lspconfig'.pylsp.setup{}
 require'lspconfig'.hls.setup{}
 require'lspconfig'.texlab.setup{}
@@ -26,15 +28,19 @@ else
 end
 
 -- set the path to the sumneko installation; if you previously installed via the now deprecated :LspInstall, use
-local sumneko_root_path = vim.fn.stdpath('cache')..'/lspconfig/sumneko_lua/lua-language-server'
-local sumneko_binary = sumneko_root_path.."/bin/"..system_name.."/lua-language-server"
+-- local sumneko_root_path = vim.fn.stdpath('cache')..'/lspconfig/sumneko_lua/lua-language-server'
+local sumneko_binary
+if system_name == "Linux" then
+    sumneko_binary = vim.fn.stdpath('cache').."/../../.local/share/nvim/lsp_servers/sumneko_lua/extension/server/bin/lua-language-server"
+end
 
 local runtime_path = vim.split(package.path, ';')
 table.insert(runtime_path, "lua/?.lua")
 table.insert(runtime_path, "lua/?/init.lua")
 
 require'lspconfig'.sumneko_lua.setup {
-  cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"};
+    cmd = {sumneko_binary},
+  -- cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"};
   settings = {
     Lua = {
       runtime = {
