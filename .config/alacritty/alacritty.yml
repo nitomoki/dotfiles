@@ -6,3 +6,21 @@ shell:
   args:
     - -c
     - nvim
+
+background_opacity: 0.7
+
+font:
+  normal:
+    family: HackGenNerd
+    style: Regular
+
+  bold:
+    family: HackGenNerd
+    style: Bold
+
+  italic:
+    family: HackGenNerd
+    style: Regular
+
+  size: 16
+

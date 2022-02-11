@@ -3,7 +3,7 @@ local packer_repo_dir = vim.fn.expand([[~/.local/share/nvim/site/pack/packer/sta
 if vim.fn.isdirectory(packer_repo_dir) == 0 then
     os.execute([[git clone https://github.com/wbthomason/packer.nvim ]] .. packer_repo_dir)
 end
-local packer = require'packer'
+-- local packer = require'packer'
 local utils = require'utils'
 -- AutoPackerCompile
 utils.create_augroup({
@@ -11,8 +11,6 @@ utils.create_augroup({
 }, 'AutoPackerCompile')
 
 return require'packer'.startup(function(use)
-    packer.use_rocks({
-    })
     use {'wbthomason/packer.nvim'}
     use {'Yggdroot/indentLine'}
     use {'nvim-treesitter/nvim-treesitter',
@@ -38,6 +36,7 @@ return require'packer'.startup(function(use)
                 },
         config = function()
             require'config.cmp'
+            require'config.luasnip'
         end
     }
     use {"akinsho/nvim-toggleterm.lua",

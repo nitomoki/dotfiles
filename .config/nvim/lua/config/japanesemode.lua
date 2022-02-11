@@ -1,3 +1,4 @@
+local utils = require'utils'
 local M = {}
 
 local check_ibus = function()
