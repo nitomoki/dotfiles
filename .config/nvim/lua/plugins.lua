@@ -39,7 +39,8 @@ return require'packer'.startup(function(use)
             require'config.luasnip'
         end
     }
-    use {"akinsho/nvim-toggleterm.lua",
+    --use {"akinsho/nvim-toggleterm.lua",
+    use {"akinsho/toggleterm.nvim",
         config = function ()
             require"toggleterm".setup{}
             require'config.term'.setup()
@@ -63,6 +64,11 @@ return require'packer'.startup(function(use)
         },
         config = function()
             require'config.neoclip'
+        end
+    }
+    use {'nitomoki/JPmode.nvim',
+        config = function()
+            require'JPmode'.setup()
         end
     }
 end)

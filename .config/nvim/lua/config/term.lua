@@ -9,7 +9,7 @@ function M.setup()
     utils.map('t', '<C-t>', [[<C-\><C-n>:call v:lua.Term()<CR>]], {noremap = true, silent = true})
     utils.map('n', '<c-q>', ':up!<CR>:call v:lua.CloseBuf()<CR>', {noremap = true, silent = true})
     local term_cmd = 'terminal'
-    if utils.is_plugin_installed('nvim-toggleterm.lua') then
+    if utils.is_plugin_installed('toggleterm.nvim') then
         term_cmd = 'ToggleTerm direction=float'
     elseif utils.is_plugin_installed('neoterm') then
         term_cmd = 'Tnew'
