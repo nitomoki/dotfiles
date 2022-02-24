@@ -17,11 +17,6 @@ local generator = function()
             end,
     }
 
-
-    local getcwd = function()
-        return "[" .. vim.fn.getcwd() .. "]"
-    end
-
     return el_segments
         :add(extensions.mode)
         :add("  ")
@@ -31,7 +26,10 @@ local generator = function()
         :add(sections.collapse_builtin{builtin.modified_flag,})
         :add(sections.collapse_builtin{" ", diagnostic.make_buffer(),})
         :add(sections.split)
-        :add(getcwd)
+        :add("[")
+        --:add(function() return vim.fn.getcwd() end)
+        :add(sections.maximum_width(function() return vim.fn.getcwd() end, 0.3))
+        :add("]")
         --:add(sections.split)
         :add(lsp_statusline.segment)
         :add(lsp_statusline.current_function)

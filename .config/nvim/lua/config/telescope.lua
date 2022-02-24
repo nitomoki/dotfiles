@@ -43,6 +43,7 @@ local builtin = require'telescope.builtin'
 local extensions = require'telescope'.extensions
 keymap.set('n', '<leader>b',  builtin.buffers,                      s_opts)
 keymap.set('n', '<leader>g',  builtin.live_grep,                    s_opts)
+keymap.set('n', '<leader>r',  builtin.resume,                       s_opts)
 keymap.set('n', '<leader>fb', extensions.file_browser.file_browser, s_opts)
 keymap.set('n', '<leader>ff', builtin.find_files,                   s_opts)
 keymap.set('n', '<leader>fh', builtin.help_tags,                    s_opts)

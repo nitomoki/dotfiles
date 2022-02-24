@@ -1,7 +1,3 @@
-alias ez='nvr ~/.zshrc'
-alias ev='nvr ~/.config/nvim/init.vim'
-alias sz='source ~/.zshrc'
-alias lsa='ls -A'
 alias h='cd $HOME'
 alias rm='rm -i'
 alias cp='cp -i'
@@ -11,14 +7,20 @@ alias gcm='git commit -m'
 alias gs='git status'
 alias gp='git push'
 alias gl='git log --graph --oneline --decorate --all'
-alias dotfiles='cd ~/dotfiles'
-#alias bat='upower -i /org/freedesktop/UPower/devices/battery_BAT1'
+alias dof='cd ~/dotfiles'
 
 case "${OSTYPE}" in
 darwin*)
-    alias ls="ls -G"
-    alias ll="ls -lG"
-    alias la="ls -laG"
+    if type exa > /dev/null 2>&1; then
+        alias ls="exa -h"
+        alias lsa="ls -aF"
+        alias ll="ls -lF"
+        alias lla=" ls -laF"
+    else
+        alias ls="ls -G"
+        alias ll="ls -lG"
+        alias la="ls -laG"
+    fi
     ;;
 linux*)
     alias ls='ls --color'
