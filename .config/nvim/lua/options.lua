@@ -2,14 +2,10 @@ local o = vim.o
 local w = vim.wo
 local b = vim.bo
 local g = vim.g
--- local fn = vim.fn
-local cmd = vim.cmd
 local utils = require('utils')
 
-vim.opt.termguicolors = true
-
+o.termguicolors = true
 g.mapleader = ' '
-
 o.hlsearch = false
 w.cursorline = true
 w.number = false
@@ -25,12 +21,9 @@ o.incsearch = true
 o.wildmenu = true
 o.wildmode = [[list:full]]
 o.ignorecase = true
---b.expandtab = true
---b.tabstop = 4
---b.shiftwidth = 4
-cmd('set expandtab')
-cmd('set tabstop=4')
-cmd('set shiftwidth=4')
+o.expandtab = true
+o.tabstop = 4
+o.shiftwidth = 4
 o.showtabline = 1
 o.showmode = 0
 b.autoindent = true
@@ -48,8 +41,8 @@ o.completeopt = [[menu]]
 g.tex_flavor = [[latex]]
 g.tex_conceal = [[]]
 b.syntax = [[ON]]
-vim.cmd[[set completeopt=menuone,noinsert,noselect]]
-vim.cmd[[set shortmess+=c]]
+o.completeopt="menuone,noinsert,noselect"
+o.shortmess = o.shortmess .. 'c'
 
 -- netrw
 g.netrw_keepdir = 0
