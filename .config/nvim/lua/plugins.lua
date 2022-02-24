@@ -42,8 +42,7 @@ return require'packer'.startup(function(use)
     --use {"akinsho/nvim-toggleterm.lua",
     use {"akinsho/toggleterm.nvim",
         config = function ()
-            require"toggleterm".setup{}
-            require'config.term'.setup()
+            require'config.term'
         end
     }
     use {'nvim-telescope/telescope.nvim',
