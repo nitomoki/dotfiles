@@ -4,6 +4,7 @@ require'telescope'.setup{
         mappings = {
             i = {
                 ["<C-t>"] = actions.close,
+                ["<C-q>"] = actions.close,
             },
         },
         find_command = {
