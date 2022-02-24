@@ -1,10 +1,10 @@
-local utils = require'utils'
 local lsp_installer = require'nvim-lsp-installer'
-utils.map('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>')
-utils.map('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>')
-utils.map('n', 'K',  '<cmd>lua vim.lsp.buf.hover()<CR>')
-utils.map('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<CR>')
-utils.map('n', 'gr', '<cmd>lua vim.lsp.buf.reference()<CR>')
+local k_opts = {noremap = true, silent = true}
+vim.keymap.set('n', 'gD', vim.lsp.buf.declaration,    k_opts)
+vim.keymap.set('n', 'gd', vim.lsp.buf.definition,     k_opts)
+vim.keymap.set('n', 'K',  vim.lsp.buf.hover,          k_opts)
+vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, k_opts)
+vim.keymap.set('n', 'gr', vim.lsp.buf.references,     k_opts)
 
 local server_opts  = {
     ["sumneko_lua"] = function (opts)
