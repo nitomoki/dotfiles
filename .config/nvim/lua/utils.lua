@@ -24,6 +24,19 @@ function M.get_buf_byte()
     end
 end
 
+function M.merge_highlight(newhi, ...)
+    local sources_cmd = {...}
+    local command = "highlight " .. newhi
+    for _, source_cmd in ipairs(sources_cmd) do
+        --local source = vim.fn.execute("highlight " .. source_cmd)
+        local source = vim.fn.execute("highlight " .. source_cmd)
+        local resolved = source:gsub('^%W%S+%s+xxx%s', "")
+        command = command .. " " .. resolved
+    end
+
+    return command
+end
+
 
 _G.utils = M
 return M
