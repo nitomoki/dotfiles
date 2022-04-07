@@ -1,9 +1,5 @@
 local builtin = require'el.builtin'
-local extensions = require'el.extensions'
-local subscribe = require'el.subscribe'
 local sections = require'el.sections'
-local lsp_statusline = require'el.plugins.lsp_status'
-local diagnostic     = require 'el.diagnostic'
 
 local c = require'components'
 
@@ -26,7 +22,6 @@ local highlights = {
     blue_fg = c.extract_hl({
           bg = { StatusLine   = 'bg' },
           fg = { Blue         = 'fg' },
-          -- fg = { MatchParen   = 'fg' },
           gui = "bold",
     }),
 }
@@ -37,7 +32,6 @@ local modes = {
             niR    = {'Normal', 'N',   { highlights.green_fg } },
             niV    = {'Normal', 'N',   { highlights.green_fg } },
             no     = {'N·OpPd', '?',   { highlights.green_fg } },
-            --v      = {'Visual', 'V',   { 'Directory' } ,
             v      = {'Visual', 'V',   { highlights.blue_fg } },
             V      = {'V·Line', 'Vl',  { highlights.blue_fg } },
             [''] = {'V·Blck', 'Vb',  { highlights.blue_fg } },
@@ -74,18 +68,9 @@ local components = {
     },
     { " | " },
     { c.file_icon { fmt = "%s ", hl_icon = false } },
-    --{ extensions.file_icon },
     { builtin.shortened_file },
     { sections.collapse_builtin{builtin.modified_flag,} },
-    --{ sections.collapse_builtin{" ", diagnostic.make_buffer(),} },
     { sections.split , required = true },
-    --{ "[" },
-    --{ function() return vim.fn.getcwd() end },
-    --{ sections.maximum_width(function() return vim.fn.getcwd() end, 0.3) },
-    --{ "]" },
-    --{ sections.split },
-    --{ lsp_statusline.segment },
-    --{ lsp_statusline.current_function },
     { c.diagnostics {
         fmt = "[%s]",
         lsp = true,
@@ -106,17 +91,6 @@ local components = {
         hl_delete = highlights.red_fg
         }
     },
-    --{ subscribe.buf_autocmd("el_git_status", "BufWritePost",
-    --        function(window, buffer)
-    --            return extensions.git_changes(window, buffer)
-    --        end
-    --    )
-    --},
-    -- { "[" },
-    -- { builtin.line },
-    -- { " : " },
-    -- { builtin.column },
-    -- { "]" },
     { sections.collapse_builtin{
             "[",
             builtin.help_list,
