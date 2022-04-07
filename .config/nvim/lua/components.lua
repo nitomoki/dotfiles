@@ -2,8 +2,8 @@ if not pcall(require, "el") then
     return
 end
 
-local Job = require'plenary.job'
-local el_sub = require'el.subscribe'
+local Job = require "plenary.job"
+local el_sub = require "el.subscribe"
 
 local M = {}
 
@@ -12,10 +12,12 @@ local M = {}
 -- @param spec the table contains the setting of bg and fg such as { bg = { StatusLine = 'bg'}, fg = { ErrorMsg = 'fg'}}
 -- @return the string of the new highlight name
 M.extract_hl = function(spec)
-    if not spec or vim.tbl_isempty(spec) then return end
+    if not spec or vim.tbl_isempty(spec) then
+        return
+    end
     local hl_name, hl_cmd, hl_props = { "El" }, {}, {}
     for attr, val in pairs(spec) do
-        if type(val) == 'table' then
+        if type(val) == "table" then
             table.insert(hl_name, attr)
             local mode = val.mode or "gui"
             val.mode = nil
@@ -25,7 +27,7 @@ M.extract_hl = function(spec)
             if hlID > 0 then
                 table.insert(hl_name, hl)
                 local col = vim.fn.synIDattr(hlID, what, mode)
-                if col and #col>0 then
+                if col and #col > 0 then
                     table.insert(hl_name, what)
                     table.insert(hl_cmd, ("%s%s=%s"):format(mode, attr, col))
                     hl_props[attr] = { mode = mode, val = col }
@@ -33,11 +35,11 @@ M.extract_hl = function(spec)
             end
         else
             table.insert(hl_cmd, ("%s=%s"):format(attr, val))
-            hl_props[attr] = { mode = attr, val = '1' }
+            hl_props[attr] = { mode = attr, val = "1" }
         end
     end
-    hl_name = table.concat(hl_name, '_')
-    hl_cmd = ("highlight %s %s"):format(hl_name, table.concat(hl_cmd, ' '))
+    hl_name = table.concat(hl_name, "_")
+    hl_cmd = ("highlight %s %s"):format(hl_name, table.concat(hl_cmd, " "))
     local newID = vim.fn.hlID(hl_name)
     if newID > 0 then
         for what, expected in pairs(hl_props) do
@@ -53,14 +55,15 @@ M.extract_hl = function(spec)
     return hl_name
 end
 
-
 --- parse param string into highlighted
 --@param hls the highlight
 --@param s the string
 --@return pased string
 local set_hl = function(hls, s)
-    if not hls or not s then return s end
-    hls = type(hls)=='string' and { hls } or hls
+    if not hls or not s then
+        return s
+    end
+    hls = type(hls) == "string" and { hls } or hls
     for _, hl in pairs(hls) do
         if vim.fn.hlID(hl) > 0 then
             return ("%%#%s#%s%%0*"):format(hl, s)
@@ -68,7 +71,6 @@ local set_hl = function(hls, s)
     end
     return s
 end
-
 
 --- wrap function
 --@param opts
@@ -78,14 +80,12 @@ local wrap_func = function(opts, fn)
         if not window and buffer then
             window = { win_id = vim.fn.bufwinid(buffer.bufnr) }
         end
-        if opts.hide_inactive and window and
-            window.win_id ~= vim.api.nvim_get_current_win() then
+        if opts.hide_inactive and window and window.win_id ~= vim.api.nvim_get_current_win() then
             return ""
         end
         return fn(window, buffer)
     end
 end
-
 
 M.mode = function(opts)
     opts = opts or {}
@@ -101,7 +101,6 @@ M.mode = function(opts)
     end)
 end
 
-
 M.try_devicons = function()
     if not M._has_devicons then
         M._has_devicons, M._devicons = pcall(require, "nvim-web-devicons")
@@ -109,21 +108,24 @@ M.try_devicons = function()
     return M._devicons
 end
 
-
 M.file_icon = function(opts)
     opts = opts or {}
-    return el_sub.buf_autocmd("el_file_icon", "BufRead",
+    return el_sub.buf_autocmd(
+        "el_file_icon",
+        "BufRead",
         wrap_func(opts, function(_, buffer)
-            if not M.try_devicons() then return "" end
+            if not M.try_devicons() then
+                return ""
+            end
             local fmt = opts.fmt or "%s"
-            local ext = vim.fn.fnamemodify(buffer.name, ':p:e')
-            local icon, hl = M._devicons.get_icon(buffer.name, ext:lower(), {default = true})
+            local ext = vim.fn.fnamemodify(buffer.name, ":p:e")
+            local icon, hl = M._devicons.get_icon(buffer.name, ext:lower(), { default = true })
             if icon then
                 if opts.hl_icon then
-                    local hlgroup = M.extract_hl({
-                        bg = { StatusLine = 'bg' },
-                        fg = { [hl] = 'fg' }
-                    })
+                    local hlgroup = M.extract_hl {
+                        bg = { StatusLine = "bg" },
+                        fg = { [hl] = "fg" },
+                    }
                     icon = set_hl(hlgroup, icon)
                 end
                 return (fmt):format(icon)
@@ -133,23 +135,26 @@ M.file_icon = function(opts)
     )
 end
 
-
 M.git_branch = function(opts)
     opts = opts or {}
-    return el_sub.buf_autocmd("el_git_branch", "BufEnter",
+    return el_sub.buf_autocmd(
+        "el_git_branch",
+        "BufEnter",
         wrap_func(opts, function(_, buffer)
             local branch = vim.g.loaded_fugitive == 1 and vim.fn.FugitiveHead() or nil
             if not buffer or not (buffer.bufnr > 0) then
                 return
             end
             if not branch then
-                local ok, res = pcall(vim.api.nvim_buf_get_var, buffer.bufnr, 'gitsigns_head')
-                if ok then branch = res end
+                local ok, res = pcall(vim.api.nvim_buf_get_var, buffer.bufnr, "gitsigns_head")
+                if ok then
+                    branch = res
+                end
             end
 
             if not branch then
                 local j = Job:new {
-                    command = 'git',
+                    command = "git",
                     args = { "branch", "--show-current" },
                     cwd = vim.fn.fnamemodify(buffer.name, ":h"),
                 }
@@ -161,31 +166,30 @@ M.git_branch = function(opts)
                 end
             end
 
-            if branch and #branch>0 then
+            if branch and #branch > 0 then
                 local fmt = opts.fmt or "%s %s"
-                local icon = opts.icon or ' '
+                local icon = opts.icon or " "
                 return set_hl(opts.hl, (fmt):format(icon, branch))
             end
         end)
     )
 end
 
-
 local git_changes_formatter = function(opts)
     local specs = {
         insert = {
             regex = "(%d+) insertions?",
-            icon = opts.icon_insert or '+',
+            icon = opts.icon_insert or "+",
             hl = opts.hl_insert,
         },
         change = {
             regex = "(%d+) files? changed",
-            icon = opts.icon_change or '~',
+            icon = opts.icon_change or "~",
             hl = opts.hl_change,
         },
         delete = {
             regex = "(%d+) deletions?",
-            icon = opts.icon_delete or '-',
+            icon = opts.icon_delete or "-",
             hl = opts.hl_delete,
         },
     }
@@ -193,7 +197,7 @@ local git_changes_formatter = function(opts)
         local result = {}
         for k, v in pairs(specs) do
             local count = nil
-            if type(s) == 'string' then
+            if type(s) == "string" then
                 count = tonumber(string.match(s, v.regex))
             else
                 count = s[k]
@@ -207,15 +211,16 @@ local git_changes_formatter = function(opts)
     end
 end
 
-
 M.git_changes_buf = function(opts)
     opts = opts or {}
     local formatter = opts.formatter or git_changes_formatter(opts)
     return wrap_func(opts, function(window, buffer)
         local stats = {}
         if buffer and buffer.bufnr > 0 then
-            local ok, res = pcall(vim.api.nvim_buf_get_var, buffer.bufnr, 'gitsigns_status_dict')
-            if ok then stats = res end
+            local ok, res = pcall(vim.api.nvim_buf_get_var, buffer.bufnr, "gitsigns_status_dict")
+            if ok then
+                stats = res
+            end
         end
         local counts = {
             insert = stats.added > 0 and stats.added or nil,
@@ -232,17 +237,20 @@ M.git_changes_buf = function(opts)
     end)
 end
 
-
 M.git_changes_all = function(opts)
     opts = opts or {}
     local formatter = opts.formatter or git_changes_formatter(opts)
-    return el_sub.buf_autocmd("el_git_changes", "BufWritePost",
+    return el_sub.buf_autocmd(
+        "el_git_changes",
+        "BufWritePost",
         wrap_func(opts, function(window, buffer)
-            if not buffer or
-                not (buffer.bufnr>0) or
-                vim.bo[buffer.bufnr].bufhidden ~= "" or
-                vim.bo[buffer.bufnr].buftype == "nofile" or
-                vim.fn.filereadable(buffer.name) ~= 1 then
+            if
+                not buffer
+                or not (buffer.bufnr > 0)
+                or vim.bo[buffer.bufnr].bufhidden ~= ""
+                or vim.bo[buffer.bufnr].buftype == "nofile"
+                or vim.fn.filereadable(buffer.name) ~= 1
+            then
                 return
             end
 
@@ -264,9 +272,8 @@ M.git_changes_all = function(opts)
     )
 end
 
-
 local lsp_srvname = function()
-    local buf_ft = vim.api.nvim_buf_get_option(0, 'filetype')
+    local buf_ft = vim.api.nvim_buf_get_option(0, "filetype")
     local clients = vim.lsp.get_active_clients()
     if next(clients) == nil then
         return nil
@@ -280,17 +287,16 @@ local lsp_srvname = function()
     return nil
 end
 
-
 local diag_formatter = function(opts)
     return function(_, _, counts)
         local items = {}
         local icons = {
-            ['errors'] = { opts.icon_err or 'E', opts.hl_err },
-            ['warnings'] = { opts.icon_warn or 'W', opts.hl_warn },
-            ['infos'] = { opts.icon_info or 'I', opts.hl_info },
-            ['hints'] = { opts.icon_hint or 'H', opts.hl_hint },
+            ["errors"] = { opts.icon_err or "E", opts.hl_err },
+            ["warnings"] = { opts.icon_warn or "W", opts.hl_warn },
+            ["infos"] = { opts.icon_info or "I", opts.hl_info },
+            ["hints"] = { opts.icon_hint or "H", opts.hl_hint },
         }
-        for _, k in ipairs({ 'errors', 'warnings', 'infos', 'hints' }) do
+        for _, k in ipairs { "errors", "warnings", "infos", "hints" } do
             if counts[k] > 0 then
                 table.insert(items, set_hl(icons[k][2], ("%s:%s"):format(icons[k][1], counts[k])))
             end
@@ -309,9 +315,8 @@ local diag_formatter = function(opts)
     end
 end
 
-
 local get_buffer_counts = function(diagnostic, _, buffer)
-    local counts = { 0, 0, 0, 0}
+    local counts = { 0, 0, 0, 0 }
     local diags = diagnostic.get(buffer.bufnr)
     if diags and not vim.tbl_isempty(diags) then
         for _, d in ipairs(diags) do
@@ -328,26 +333,29 @@ local get_buffer_counts = function(diagnostic, _, buffer)
     }
 end
 
-
 M.lsp_diagnostics = function(opts)
     opts = opts or {}
     local formatter = opts.formatter or diag_formatter(opts)
-    return el_sub.user_autocmd("el_buf_diagnostic", "LspDiagnosticsChanged",
+    return el_sub.user_autocmd(
+        "el_buf_diagnostic",
+        "LspDiagnosticsChanged",
         wrap_func(opts, function(window, buffer)
             return formatter(window, buffer, get_buffer_counts(vim.lsp.diagnostic, window, buffer))
-        end))
+        end)
+    )
 end
-
 
 M.vim_diagnostics = function(opts)
     opts = opts or {}
     local formatter = opts.formatter or diag_formatter(opts)
-    return el_sub.buf_autocmd("el_buf_diagnostic", "DiagnosticChanged",
+    return el_sub.buf_autocmd(
+        "el_buf_diagnostic",
+        "DiagnosticChanged",
         wrap_func(opts, function(window, buffer)
             return formatter(window, buffer, get_buffer_counts(vim.diagnostic, window, buffer))
-    end))
+        end)
+    )
 end
-
 
 M.diagnostics = function(opts)
     if vim.diagnostic then
@@ -357,38 +365,4 @@ M.diagnostics = function(opts)
     end
 end
 
-
 return M
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

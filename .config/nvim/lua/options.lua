@@ -2,10 +2,10 @@ local o = vim.o
 local w = vim.wo
 local b = vim.bo
 local g = vim.g
-local utils = require('utils')
+local utils = require "utils"
 
 o.termguicolors = true
-g.mapleader = ' '
+g.mapleader = " "
 o.hlsearch = false
 w.cursorline = true
 w.number = false
@@ -41,20 +41,16 @@ o.completeopt = [[menu]]
 g.tex_flavor = [[latex]]
 g.tex_conceal = [[]]
 b.syntax = [[ON]]
-o.completeopt="menuone,noinsert,noselect"
-o.shortmess = o.shortmess .. 'c'
+o.completeopt = "menuone,noinsert,noselect"
+o.shortmess = o.shortmess .. "c"
 
 -- netrw
 g.netrw_keepdir = 0
 
 -- Command Line Window Options
 utils.create_augroup({
-    {'CmdwinEnter', '[:/?=]', 'setlocal', 'nonumber'},
-    {'CmdwinEnter', '[:/?=]', 'setlocal', 'signcolumn=no'},
-    {'CmdwinEnter', ':', [[g/^qa\?!\?$/d]]},
-    {'CmdwinEnter', ':', [[g/^wq\?a\?!\?$/d]]},
-},'CmdWin')
-
-
-
-
+    { "CmdwinEnter", "[:/?=]", "setlocal", "nonumber" },
+    { "CmdwinEnter", "[:/?=]", "setlocal", "signcolumn=no" },
+    { "CmdwinEnter", ":", [[g/^qa\?!\?$/d]] },
+    { "CmdwinEnter", ":", [[g/^wq\?a\?!\?$/d]] },
+}, "CmdWin")

@@ -1,5 +1,5 @@
-local actions = require'telescope.actions'
-require'telescope'.setup{
+local actions = require "telescope.actions"
+require("telescope").setup {
     defaults = {
         mappings = {
             i = {
@@ -8,45 +8,43 @@ require'telescope'.setup{
             },
         },
         find_command = {
-            'rg',
-            '--hidden',
-            '-g',
-            '!.git',
-            '--files'
+            "rg",
+            "--hidden",
+            "-g",
+            "!.git",
+            "--files",
         },
         vimgrep_arguments = {
-            'rg',
-            '--no-heading',
-            '--with-filename',
-            '--line-number',
-            '--column',
-            '--smart-case',
-            '-u'
+            "rg",
+            "--no-heading",
+            "--with-filename",
+            "--line-number",
+            "--column",
+            "--smart-case",
+            "-u",
         },
     },
     extensions = {
         file_browser = {
-            theme = 'ivy',
+            theme = "ivy",
             mappings = {
-                ["i"] = {
-                },
-                ["n"] ={
-                },
+                ["i"] = {},
+                ["n"] = {},
             },
             hidden = true,
         },
     },
 }
 
-local s_opts = {noremap = true, silent = true}
+local s_opts = { noremap = true, silent = true }
 local keymap = vim.keymap
-local builtin = require'telescope.builtin'
-local extensions = require'telescope'.extensions
-keymap.set('n', '<leader>b',  builtin.buffers,                      s_opts)
-keymap.set('n', '<leader>g',  builtin.live_grep,                    s_opts)
-keymap.set('n', '<leader>r',  builtin.resume,                       s_opts)
-keymap.set('n', '<leader>fb', extensions.file_browser.file_browser, s_opts)
-keymap.set('n', '<leader>ff', builtin.find_files,                   s_opts)
-keymap.set('n', '<leader>fh', builtin.help_tags,                    s_opts)
-keymap.set('n', '<leader>fo', builtin.oldfiles,                     s_opts)
-keymap.set('n', '<leader>fr', builtin.registers,                    s_opts)
+local builtin = require "telescope.builtin"
+local extensions = require("telescope").extensions
+keymap.set("n", "<leader>b", builtin.buffers, s_opts)
+keymap.set("n", "<leader>g", builtin.live_grep, s_opts)
+keymap.set("n", "<leader>r", builtin.resume, s_opts)
+keymap.set("n", "<leader>fb", extensions.file_browser.file_browser, s_opts)
+keymap.set("n", "<leader>ff", builtin.find_files, s_opts)
+keymap.set("n", "<leader>fh", builtin.help_tags, s_opts)
+keymap.set("n", "<leader>fo", builtin.oldfiles, s_opts)
+keymap.set("n", "<leader>fr", builtin.registers, s_opts)
