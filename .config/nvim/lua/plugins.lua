@@ -52,9 +52,10 @@ return require'packer'.startup(function(use)
         end
     }
     use {'tjdevries/express_line.nvim',
-        requires = {{'nvim-lua/plenary.nvim'}},
+        requires = {{'nvim-lua/plenary.nvim'}, {'lewis6991/gitsigns.nvim'}},
         config = function ()
             require'config.el'
+            require'gitsigns'.setup()
         end
     }
     use {'AckslD/nvim-neoclip.lua',
@@ -68,6 +69,11 @@ return require'packer'.startup(function(use)
     use {'nitomoki/JPmode.nvim',
         config = function()
             require'JPmode'.setup()
+        end
+    }
+    use {'norcalli/nvim-colorizer.lua',
+        config = function()
+            require'colorizer'.setup()
         end
     }
 end)
