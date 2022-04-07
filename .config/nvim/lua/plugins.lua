@@ -39,6 +39,7 @@ return require'packer'.startup(function(use)
             require'config.luasnip'
         end
     }
+    use {"ckipp01/stylua-nvim", run = "cargo install stylua"}
     --use {"akinsho/nvim-toggleterm.lua",
     use {"akinsho/toggleterm.nvim",
         config = function ()

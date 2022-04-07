@@ -40,6 +40,13 @@ local server_opts  = {
             },
           },
         }
+        opts.commands = {
+            Format = {
+                function()
+                    require'stylua-nvim'.format_file()
+                end
+            }
+        }
     end
 }
 
