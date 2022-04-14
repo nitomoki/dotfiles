@@ -44,6 +44,13 @@ b.syntax = [[ON]]
 o.completeopt = "menuone,noinsert,noselect"
 o.shortmess = o.shortmess .. "c"
 
+local handle = io.popen [[which zsh]]
+local result = handle:read "*a"
+handle:close()
+if result ~= "" then
+    o.shell = result:gsub("^%s*(.-)%s*$", "%1")
+end
+
 -- netrw
 g.netrw_keepdir = 0
 
