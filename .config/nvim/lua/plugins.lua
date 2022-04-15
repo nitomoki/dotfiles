@@ -47,7 +47,15 @@ return require("packer").startup(function(use)
             require "config.luasnip"
         end,
     }
-    use { "ckipp01/stylua-nvim", run = "cargo install stylua" }
+    use {
+        "ckipp01/stylua-nvim",
+        run = "cargo install stylua",
+        config = function()
+            require("stylua-nvim").setup {
+                config_file = "~/.config/stylua/stylua.toml",
+            }
+        end,
+    }
     --use {"akinsho/nvim-toggleterm.lua",
     use {
         "akinsho/toggleterm.nvim",
@@ -93,6 +101,13 @@ return require("packer").startup(function(use)
         "norcalli/nvim-colorizer.lua",
         config = function()
             require("colorizer").setup()
+        end,
+    }
+    use {
+        "goolord/alpha-nvim",
+        requires = { "kyazdani42/nvim-web-devicons" },
+        config = function()
+            require("alpha").setup(require("alpha.themes.startify").config)
         end,
     }
 end)

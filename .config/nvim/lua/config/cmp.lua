@@ -11,9 +11,9 @@ cmp.setup {
             require("luasnip").lsp_expand(args.body)
         end,
     },
-    documentation = {
-        border = "solid",
-    },
+    --documentation = {
+    --    border = "solid",
+    --},
     mapping = {
         ["<C-p>"] = cmp.mapping.select_prev_item(),
         ["<C-n>"] = cmp.mapping.select_next_item(),
@@ -26,7 +26,7 @@ cmp.setup {
             else
                 fallback()
             end
-        end, { "i", "s" }),
+        end, { "i", "s", "c" }),
         ["<CR>"] = cmp.mapping.confirm {
             behavior = cmp.ConfirmBehavior.Replace,
             select = false,
@@ -39,14 +39,14 @@ cmp.setup {
             else
                 fallback()
             end
-        end, { "i", "s" }),
+        end, { "i", "s", "c" }),
         ["<S-Tab>"] = cmp.mapping(function(fallback)
             if cmp.visible() then
                 cmp.select_prev_item()
             else
                 fallback()
             end
-        end, { "i", "s" }),
+        end, { "i", "s", "c" }),
     },
     sources = {
         { name = "luasnip" },
