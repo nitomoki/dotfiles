@@ -1,6 +1,6 @@
 require("toggleterm").setup {
     size = function(term)
-        local rate = 0.4
+        local rate = 0.7
         if term.direction == "horizontal" then
             return vim.o.lines * rate
         elseif term.direction == "vertical" then
