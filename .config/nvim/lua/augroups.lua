@@ -2,6 +2,7 @@ local utils = require "utils"
 
 utils.create_augroup({
     { "BufNewFile,BufRead", "*.launch", "set", "filetype=xml" },
+    { "BufNewFile,BufRead", "*.xacro", "set", "filetype=xml" },
 }, "BufE")
 
 utils.create_augroup({
