@@ -1,13 +1,16 @@
 #!/bin/bash
 
+(
+VERSION="v2.6.3"
 cd /$HOME
-wget https://github.com/yuru7/HackGen/releases/download/v2.2.1/HackGenNerd_v2.2.1.zip
-unzip HackGenNerd_v2.2.1.zip
+wget https://github.com/yuru7/HackGen/releases/download/$VERSION/HackGenNerd_$VERSION.zip
+unzip HackGenNerd_$VERSION.zip
 if [ ! -e /$HOME/.fonts ]; then
     mkdir /$HOME/.fonts
 fi
-cp /$HOME/HackGenNerd_v2.2.1/*.ttf /$HOME/.fonts/
+cp /$HOME/HackGenNerd_$VERSION/*.ttf /$HOME/.fonts/
 cd /$HOME
 fc-cache -fv
-sudo rm -rf /$HOME/HackGenNerd_v2.2.1
-sudo rm /$HOME/HackGenNerd_v2.2.1.zip
+sudo rm -rf /$HOME/HackGenNerd_$VERSION
+sudo rm /$HOME/HackGenNerd_$VERSION.zip
+)
