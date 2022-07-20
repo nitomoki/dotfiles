@@ -14,24 +14,19 @@ fi
 source ~/.zshrc.local
 
 
-##########zinit installer##########
-if [[ ! -f $HOME/.zinit/bin/zinit.zsh ]]; then
-    print -P "%F{33}▓▒░ %F{220}Installing %F{33}DHARMA%F{220} Initiative Plugin Manager (%F{33}zdharma/zinit%F{220})…%f"
-    command mkdir -p "$HOME/.zinit" && command chmod g-rwX "$HOME/.zinit"
-    command git clone https://github.com/zdharma/zinit "$HOME/.zinit/bin" && \
-        print -P "%F{33}▓▒░ %F{34}Installation successful.%f%b" || \
-        print -P "%F{160}▓▒░ The clone has failed.%f%b"
+if ! type sheldon > /dev/null; then
+    echo "install sheldon!"
+    curl --proto '=https' -fLsS https://rossmacarthur.github.io/install/crate.sh | bash -s -- --repo rossmacarthur/sheldon --to ~/.local/bin
+    mkdir -p ~/.local/share/sheldon/
 fi
 
-source "$HOME/.zinit/bin/zinit.zsh"
-autoload -Uz _zinit
-(( ${+_comps} )) && _comps[zinit]=_zinit
-
-
+eval "$(sheldon source)"
 source $DOTFILES_DIR/zsh/alias.zsh
 source $DOTFILES_DIR/zsh/config.zsh
-source $DOTFILES_DIR/zsh/plugins.zsh
 source $DOTFILES_DIR/zsh/extract.zsh
 
 
 alias luamake=/home/tomoki/.cache/nvim/lspconfig/sumneko_lua/lua-language-server/3rd/luamake/luamake
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

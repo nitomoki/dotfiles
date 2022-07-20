@@ -24,7 +24,7 @@ return require("packer").startup(function(use)
     }
     use {
         "nvim-treesitter/nvim-treesitter",
-        run = ":TSUpdate",
+        run = function() require('nvim-treesitter.install').update({ with_sunc = true }) end,
         config = function()
             require "config.treesitter"
         end,

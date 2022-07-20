@@ -24,9 +24,11 @@ darwin*)
     ;;
 linux*)
     alias ls='ls --color'
+    alias lsa='ls -aF --color'
+    alias ll="ls -lF --color"
     ;;
 esac
-    
+
 
 if type bat > /dev/null 2>&1; then
     alias cat="bat"

@@ -20,6 +20,5 @@ test:
 
 init:
 	@$(foreach val, $(wildcard $(PWD)/etc/init/*.sh), bash $(val);)
-	@$(foreach val, $(wildcard $(PWD)/etc/init/zsh/*.sh), zsh $(val);)
 
 
