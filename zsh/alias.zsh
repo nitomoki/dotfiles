@@ -9,6 +9,8 @@ alias gp='git push'
 alias gl='git log --graph --oneline --decorate --all'
 alias dof='cd ~/dotfiles'
 
+alias luamake=/home/tomoki/.cache/nvim/lspconfig/sumneko_lua/lua-language-server/3rd/luamake/luamake
+
 case "${OSTYPE}" in
 darwin*)
     if type exa > /dev/null 2>&1; then
@@ -23,9 +25,10 @@ darwin*)
     fi
     ;;
 linux*)
-    alias ls='ls --color'
+    alias ls='ls -F --color'
     alias lsa='ls -aF --color'
-    alias ll="ls -lF --color"
+    alias ll="ls -lhF --color"
+    alias lla="ls -alhF --color"
     ;;
 esac
 
@@ -42,4 +45,11 @@ if [ "`uname -r |grep 'arch'`" ]; then
     alias pacs='pacman -Ss'
     alias paci='pacman -Si'
     alias paclf='pacman -Ql'
+fi
+
+
+# neovim remote
+if type nvr > /dev/null 2>&1; then
+    alias nvro="nvr -cc q "
+    alias nvrcd='pwd | xargs -I{} nvr -cc "cd {}"'
 fi
