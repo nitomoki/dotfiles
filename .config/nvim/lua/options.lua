@@ -15,7 +15,7 @@ o.matchtime = 1
 g.loaded_matchparen = 1
 o.matchpairs = [[(:),{:},[:],<:>,=:;]]
 o.helplang = [[ja,en]]
-o.laststatus = 2
+o.laststatus = 0
 o.statusline = [[%F%r%h%=]]
 o.incsearch = true
 o.wildmenu = true
@@ -43,6 +43,7 @@ g.tex_conceal = [[]]
 b.syntax = [[ON]]
 o.completeopt = "menuone,noinsert,noselect"
 o.shortmess = o.shortmess .. "c"
+o.cmdheight = 0
 
 local handle = io.popen [[which zsh]]
 local result = handle:read "*a"
@@ -51,13 +52,4 @@ if result ~= "" then
     o.shell = result:gsub("^%s*(.-)%s*$", "%1")
 end
 
--- netrw
-g.netrw_keepdir = 0
 
--- Command Line Window Options
-utils.create_augroup({
-    { "CmdwinEnter", "[:/?=]", "setlocal", "nonumber" },
-    { "CmdwinEnter", "[:/?=]", "setlocal", "signcolumn=no" },
-    { "CmdwinEnter", ":", [[g/^qa\?!\?$/d]] },
-    { "CmdwinEnter", ":", [[g/^wq\?a\?!\?$/d]] },
-}, "CmdWin")

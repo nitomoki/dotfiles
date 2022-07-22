@@ -7,6 +7,7 @@ require("toggleterm").setup {
             return vim.o.columns * rate
         end
     end,
+    start_in_insert = true,
 }
 
 local closeBuf = function()
