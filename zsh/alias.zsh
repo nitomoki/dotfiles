@@ -17,7 +17,7 @@ darwin*)
         alias ls="exa -h"
         alias lsa="ls -aF"
         alias ll="ls -lF"
-        alias lla=" ls -laF"
+        alias lla="ls -laF"
     else
         alias ls="ls -G"
         alias ll="ls -lG"
