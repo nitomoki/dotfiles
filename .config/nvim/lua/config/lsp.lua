@@ -1,10 +1,10 @@
-local lsp_installer = require "nvim-lsp-installer"
-local k_opts = { noremap = true, silent = true }
-vim.keymap.set("n", "gD", vim.lsp.buf.declaration, k_opts)
-vim.keymap.set("n", "gd", vim.lsp.buf.definition, k_opts)
-vim.keymap.set("n", "K", vim.lsp.buf.hover, k_opts)
-vim.keymap.set("n", "gi", vim.lsp.buf.implementation, k_opts)
-vim.keymap.set("n", "gr", vim.lsp.buf.references, k_opts)
+--local lsp_installer = require "nvim-lsp-installer"
+--local k_opts = { noremap = true, silent = true }
+--vim.keymap.set("n", "gD", vim.lsp.buf.declaration, k_opts)
+--vim.keymap.set("n", "gd", vim.lsp.buf.definition, k_opts)
+--vim.keymap.set("n", "K", vim.lsp.buf.hover, k_opts)
+--vim.keymap.set("n", "gi", vim.lsp.buf.implementation, k_opts)
+--vim.keymap.set("n", "gr", vim.lsp.buf.references, k_opts)
 
 local server_opts = {
     ["sumneko_lua"] = function(opts)
@@ -40,20 +40,36 @@ local server_opts = {
                 },
             },
         }
-        opts.commands = {
-            Format = {
-                function()
-                    require("stylua-nvim").format_file()
-                end,
-            },
-        }
     end,
 }
 
-lsp_installer.on_server_ready(function(server)
-    local opts = {}
-    if server_opts[server.name] then
-        server_opts[server.name](opts)
-    end
-    server:setup(opts)
-end)
+local mason = require "mason"
+mason.setup {
+    ui = {
+        icons = {
+            package_installed = "✓",
+            package_pending = "➜",
+            package_uninstalled = "✗",
+        },
+    },
+}
+
+local nvim_lsp = require "lspconfig"
+require("mason-lspconfig").setup_handlers {
+    function(server_name)
+        local opts = {}
+        opts.on_attach = function(_, bufnr)
+            local bufopts = { silent = true, buffer = bufnr }
+            vim.keymap.set("n", "gD", vim.lsp.buf.declaration, bufopts)
+            vim.keymap.set("n", "gd", vim.lsp.buf.definition, bufopts)
+            vim.keymap.set("n", "K", vim.lsp.buf.hover, bufopts)
+            vim.keymap.set("n", "gi", vim.lsp.buf.implementation, bufopts)
+            vim.keymap.set("n", "gr", vim.lsp.buf.references, bufopts)
+        end
+        if server_opts[server_name] then
+            server_opts[server_name](opts)
+        end
+        --server:setup(opts)
+        nvim_lsp[server_name].setup(opts)
+    end,
+}

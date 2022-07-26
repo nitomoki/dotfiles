@@ -2,13 +2,16 @@ local packer_repo_dir = vim.fn.expand [[~/.local/share/nvim/site/pack/packer/sta
 
 if vim.fn.isdirectory(packer_repo_dir) == 0 then
     os.execute([[git clone https://github.com/wbthomason/packer.nvim ]] .. packer_repo_dir)
+    vim.cmd [[packadd packer.nvim]]
 end
--- local packer = require'packer'
-local utils = require "utils"
+
 -- AutoPackerCompile
-utils.create_augroup({
-    { "BufWritePost", "*/.config/nvim/*/*.lua", "PackerCompile" },
-}, "AutoPackerCompile")
+local id_apc = vim.api.nvim_create_augroup("AutoPackerCompile", {})
+vim.api.nvim_create_autocmd("BufWritePost", {
+    group = id_apc,
+    pattern = "*/.config/nvim/*/*.lua",
+    command = "PackerCompile",
+})
 
 return require("packer").startup(function(use)
     use { "wbthomason/packer.nvim" }
@@ -24,7 +27,9 @@ return require("packer").startup(function(use)
     }
     use {
         "nvim-treesitter/nvim-treesitter",
-        run = function() require('nvim-treesitter.install').update({ with_sunc = true }) end,
+        run = function()
+            require("nvim-treesitter.install").update { with_sunc = true }
+        end,
         config = function()
             require "config.treesitter"
         end,
@@ -32,9 +37,13 @@ return require("packer").startup(function(use)
     use "kyazdani42/nvim-web-devicons"
     use { "sainnhe/sonokai" }
     use { "ulwlu/elly.vim" }
-    use { "williamboman/nvim-lsp-installer" }
+    --use { "williamboman/nvim-lsp-installer" }
     use {
         "neovim/nvim-lspconfig",
+        requires = {
+            { "williamboman/mason.nvim" },
+            { "williamboman/mason-lspconfig.nvim" },
+        },
         config = function()
             require "config.lsp"
         end,
@@ -56,15 +65,15 @@ return require("packer").startup(function(use)
             require "config.luasnip"
         end,
     }
-    use {
-        "ckipp01/stylua-nvim",
-        run = "cargo install stylua",
-        config = function()
-            require("stylua-nvim").setup {
-                config_file = "~/.config/stylua/stylua.toml",
-            }
-        end,
-    }
+    --use {
+    --    "ckipp01/stylua-nvim",
+    --    run = "cargo install stylua",
+    --    config = function()
+    --        require("stylua-nvim").setup {
+    --            config_file = "~/.config/stylua/stylua.toml",
+    --        }
+    --    end,
+    --}
     --use {"akinsho/nvim-toggleterm.lua",
     use {
         "akinsho/toggleterm.nvim",
@@ -101,9 +110,9 @@ return require("packer").startup(function(use)
         end,
     }
     use {
-        "nitomoki/JPmode.nvim",
+        "~/nvim_plugins/JPmode.nvim",
         config = function()
-            require("JPmode").setup()
+            require("JPmode").setup {}
         end,
     }
     use {

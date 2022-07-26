@@ -8,10 +8,14 @@ require("toggleterm").setup {
         end
     end,
     on_open = function()
-        vim.cmd[[startinsert!]]
+        vim.cmd [[startinsert!]]
         local bufnr = vim.api.nvim_get_current_buf()
-        vim.keymap.set("n", "<C-q>", function() vim.cmd[[bd!]] end, { noremap = true, buffer = bufnr })
-        vim.keymap.set("t", "<C-q>", function() vim.cmd[[bd!]] end, { noremap = true, buffer = bufnr })
+        vim.keymap.set("n", "<C-q>", function()
+            vim.cmd [[bd!]]
+        end, { noremap = true, buffer = bufnr })
+        vim.keymap.set("t", "<C-q>", function()
+            vim.cmd [[bd!]]
+        end, { noremap = true, buffer = bufnr })
     end,
 }
 
@@ -26,11 +30,10 @@ local closeBuf = function()
         vim.cmd "q"
     else
         vim.cmd "bd"
-        if bufs == 2 and vim.fn.line2byte(vim.fn.line('$')) == -1 then
+        if bufs == 2 and vim.fn.line2byte(vim.fn.line "$") == -1 then
             vim.cmd "q"
         end
     end
-
 end
 
 local opts = { noremap = true, silent = true }

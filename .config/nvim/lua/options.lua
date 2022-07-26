@@ -51,5 +51,3 @@ handle:close()
 if result ~= "" then
     o.shell = result:gsub("^%s*(.-)%s*$", "%1")
 end
-
-

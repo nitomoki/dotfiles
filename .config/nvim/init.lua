@@ -5,5 +5,6 @@ require "options"
 require "keymaps"
 require "plugins"
 require "augroups"
+require "formatter"
 cmd [[PackerInstall]]
 cmd [[colorscheme sonokai]]
