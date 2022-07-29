@@ -52,4 +52,5 @@
     "window.menuBarVisibility": "toggle",
     "workbench.startupEditor": "none",
     "workbench.colorTheme": "Default Dark+",
+    "window.zoomLevel": 5,
 }

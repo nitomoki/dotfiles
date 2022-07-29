@@ -4,7 +4,6 @@ if vim.fn.isdirectory(packer_repo_dir) == 0 then
     os.execute([[git clone https://github.com/wbthomason/packer.nvim ]] .. packer_repo_dir)
     vim.cmd [[packadd packer.nvim]]
 end
-
 -- AutoPackerCompile
 local id_apc = vim.api.nvim_create_augroup("AutoPackerCompile", {})
 vim.api.nvim_create_autocmd("BufWritePost", {
@@ -46,6 +45,7 @@ return require("packer").startup(function(use)
         },
         config = function()
             require "config.lsp"
+            require "config.formatter"
         end,
     }
     use {
@@ -59,10 +59,11 @@ return require("packer").startup(function(use)
             { "hrsh7th/cmp-cmdline" },
             { "L3MON4D3/LuaSnip" },
             { "saadparwaiz1/cmp_luasnip" },
+            { "onsails/lspkind.nvim" },
         },
         config = function()
-            require "config.cmp"
             require "config.luasnip"
+            require "config.cmp"
         end,
     }
     --use {
