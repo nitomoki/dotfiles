@@ -2,6 +2,7 @@ DOTFILES_DIR=$HOME/dotfiles
 
 export LANG=ja_JP.UTF-8
 export PATH=$PATH:$HOME/.local/bin/:$HOME/dotfiles/bin/:$HOME/.cargo/bin/
+export XDG_CONFIG_HOME=$HOME/.config/
 
 if ! type sheldon > /dev/null 2>&1; then
     echo "install sheldon!"
