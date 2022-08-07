@@ -110,12 +110,12 @@ return require("packer").startup(function(use)
             require "config.neoclip"
         end,
     }
-    use {
-        "~/nvim_plugins/JPmode.nvim",
-        config = function()
-            require("JPmode").setup {}
-        end,
-    }
+    -- use {
+    --     "~/nvim_plugins/JPmode.nvim",
+    --     config = function()
+    --         require("JPmode").setup {}
+    --     end,
+    -- }
     use {
         "norcalli/nvim-colorizer.lua",
         config = function()
