@@ -110,12 +110,12 @@ return require("packer").startup(function(use)
             require "config.neoclip"
         end,
     }
-    -- use {
-    --     "~/nvim_plugins/JPmode.nvim",
-    --     config = function()
-    --         require("JPmode").setup {}
-    --     end,
-    -- }
+    use {
+        "nitomoki/JPmode.nvim",
+        config = function()
+            require("JPmode").setup {}
+        end,
+    }
     use {
         "norcalli/nvim-colorizer.lua",
         config = function()
@@ -127,6 +127,12 @@ return require("packer").startup(function(use)
         requires = { "kyazdani42/nvim-web-devicons" },
         config = function()
             require("alpha").setup(require("alpha.themes.startify").config)
+        end,
+    }
+    use {
+        "anuvyklack/hydra.nvim",
+        config = function()
+            require "config.hydra"
         end,
     }
 end)
