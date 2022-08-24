@@ -35,8 +35,6 @@ return require("packer").startup(function(use)
     }
     use "kyazdani42/nvim-web-devicons"
     use { "sainnhe/sonokai" }
-    use { "ulwlu/elly.vim" }
-    --use { "williamboman/nvim-lsp-installer" }
     use {
         "neovim/nvim-lspconfig",
         requires = {
@@ -112,8 +110,12 @@ return require("packer").startup(function(use)
     }
     use {
         "nitomoki/JPmode.nvim",
+        --"~/NeovimPlugins/JPmode.nvim",
         config = function()
-            require("JPmode").setup {}
+            require("JPmode").setup {
+                on_command = "/usr/local/bin/swim use com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese",
+                off_command = "/usr/local/bin/swim use com.apple.keylayout.ABC",
+            }
         end,
     }
     use {

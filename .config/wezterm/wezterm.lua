@@ -10,9 +10,17 @@ end)
 return {
     keys = {
         {
-            key = "t",
+            key = "n",
             mods = "ALT",
             action = act.SpawnTab "CurrentPaneDomain",
+        },
+        {
+            key = "z",
+            mods = "ALT",
+            action = act.SpawnCommandInNewTab {
+                args = { "/bin/zsh", "-l" },
+                domain = "CurrentPaneDomain",
+            },
         },
         {
             key = "h",
