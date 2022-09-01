@@ -7,7 +7,7 @@ local window_hint = [[
 ^^^^^^^^^^^^-------------  ^^-----------^^   ^^---------------
 ^ ^ _k_ ^ ^  ^ ^ K ^ ^   ^   <C-k>   ^   _s_: horizontally 
 _h_ ^ ^ _l_  H ^ ^ L   <C-h> <C-l>   _v_: vertically
-^ ^ _j_ ^ ^  ^ ^ J ^ ^   ^   <C-j>   ^   _q_, _c_: close
+^ ^ _j_ ^ ^  ^ ^ J ^ ^   ^   <C-j>   ^   _c_: close
 focus^^^^^^  window^^^^^^  ^_=_: equalize^   z: maximize
 ^ ^ ^ ^ ^ ^  ^ ^ ^ ^ ^ ^   ^^ ^          ^   _o_: remain only
 ]]
@@ -43,11 +43,9 @@ Hydra {
         { "o", "<C-w>o", { exit = true, desc = "remain only" } },
         { "<C-o>", "<C-w>o", { exit = true, desc = false } },
 
-        { "c", pcmd("close", "E444") },
-        { "q", pcmd("close", "E444"), { desc = "close window" } },
-        { "<C-c>", pcmd("close", "E444"), { desc = false } },
-        { "<C-q>", pcmd("close", "E444"), { desc = false } },
+        { "c", pcmd("close", "E444"), { desc = "close window" } },
 
+        { "q", nil, { exit = true, desc = false } },
         { "<Esc>", nil, { exit = true, desc = false } },
     },
 }

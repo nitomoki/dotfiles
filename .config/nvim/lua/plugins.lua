@@ -91,14 +91,14 @@ return require("packer").startup(function(use)
             require "config.telescope"
         end,
     }
-    use {
-        "tjdevries/express_line.nvim",
-        requires = { { "nvim-lua/plenary.nvim" }, { "lewis6991/gitsigns.nvim" } },
-        config = function()
-            require "config.el"
-            require("gitsigns").setup()
-        end,
-    }
+    -- use {
+    --     "tjdevries/express_line.nvim",
+    --     requires = { { "nvim-lua/plenary.nvim" }, { "lewis6991/gitsigns.nvim" } },
+    --     config = function()
+    --         require "config.el"
+    --         require("gitsigns").setup()
+    --     end,
+    -- }
     use {
         "AckslD/nvim-neoclip.lua",
         requires = {
@@ -115,6 +115,14 @@ return require("packer").startup(function(use)
             require("JPmode").setup {
                 on_command = "/usr/local/bin/swim use com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese",
                 off_command = "/usr/local/bin/swim use com.apple.keylayout.ABC",
+                keymap = {
+                    i = {
+                        toggle = "<C-]>",
+                    },
+                    n = {
+                        off = "<C-]>",
+                    },
+                },
             }
         end,
     }
@@ -131,10 +139,10 @@ return require("packer").startup(function(use)
             require("alpha").setup(require("alpha.themes.startify").config)
         end,
     }
-    use {
-        "anuvyklack/hydra.nvim",
-        config = function()
-            require "config.hydra"
-        end,
-    }
+    --use {
+    --    "anuvyklack/hydra.nvim",
+    --    config = function()
+    --        require "config.hydra"
+    --    end,
+    --}
 end)

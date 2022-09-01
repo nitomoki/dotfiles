@@ -16,7 +16,7 @@ g.loaded_matchparen = 1
 o.matchpairs = [[(:),{:},[:],<:>,=:;]]
 o.helplang = [[ja,en]]
 o.laststatus = 0
-o.statusline = [[%F%r%h%=]]
+o.statusline = [[%#DiffChange# ]]
 o.incsearch = true
 o.wildmenu = true
 o.wildmode = [[list:full]]
