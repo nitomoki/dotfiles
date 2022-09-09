@@ -24,3 +24,5 @@ keymap.set("n", "Q", "q", opts)
 --keymap.set('c', '<C-a>',     '<Home>',       s_opts)
 --keymap.set('c', '<C-f>',     '<Right>',      s_opts)
 --keymap.set('c', '<C-b>',     '<Left>',       s_opts)
+--
+keymap.set("n", "s", "<C-w>", { silent = true, noremap = false })

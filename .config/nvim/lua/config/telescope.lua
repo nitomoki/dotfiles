@@ -24,6 +24,15 @@ require("telescope").setup {
             "-u",
         },
     },
+    pickers = {
+        help_tags = {
+            mappings = {
+                ["i"] = {
+                    ["<CR>"] = actions.select_vertical,
+                },
+            },
+        },
+    },
     extensions = {
         file_browser = {
             theme = "ivy",

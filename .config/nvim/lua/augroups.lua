@@ -34,16 +34,3 @@ vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
         vim.bo.filetype = "xml"
     end,
 })
-
-local id_transparentBG = vim.api.nvim_create_augroup("TransparentBG", {})
-vim.api.nvim_create_autocmd({ "VimEnter", "ColorScheme" }, {
-    group = id_transparentBG,
-    pattern = "*",
-    callback = function()
-        vim.cmd [[hi Normal      ctermbg=none guibg=none]]
-        vim.cmd [[hi NonText     ctermbg=none guibg=none]]
-        vim.cmd [[hi LineNr      ctermbg=none guibg=none]]
-        vim.cmd [[hi Folded      ctermbg=none guibg=none]]
-        vim.cmd [[hi EndOfBuffer ctermbg=none guibg=none]]
-    end,
-})

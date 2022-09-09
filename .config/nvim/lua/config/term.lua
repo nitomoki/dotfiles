@@ -1,12 +1,4 @@
 require("toggleterm").setup {
-    size = function(term)
-        local rate = 0.7
-        if term.direction == "horizontal" then
-            return vim.o.lines * rate
-        elseif term.direction == "vertical" then
-            return vim.o.columns * rate
-        end
-    end,
     on_open = function()
         vim.cmd [[startinsert!]]
         local bufnr = vim.api.nvim_get_current_buf()
@@ -19,8 +11,15 @@ require("toggleterm").setup {
     end,
 }
 
+local Terminal = require("toggleterm.terminal").Terminal
+local python_repl = Terminal:new {
+    auto_scroll = true,
+    close_on_exit = true,
+    direction = "vertical",
+    cmd = "python3",
+}
+
 local closeBuf = function()
-    --if vim.fn.len(vim.fn.filter(vim.fn.range(1, vim.fn.bufnr "$"), "buflisted(v:val)")) == 1 then
     local buflisted = function(bufnr)
         return vim.fn.buflisted(bufnr) == 1
     end
@@ -41,3 +40,7 @@ vim.keymap.set("n", "<C-t>", [[:ToggleTerm direction=float<CR>]], opts)
 vim.keymap.set("t", "<C-t>", [[<C-\><C-n>:ToggleTerm<CR>]], opts)
 vim.keymap.set("n", "<C-q>", closeBuf, opts)
 vim.keymap.set("t", "<C-q>", closeBuf, opts)
+
+vim.keymap.set("n", "<leader><leader>p", function()
+    python_repl:toggle()
+end, opts)

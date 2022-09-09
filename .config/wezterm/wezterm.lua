@@ -3,7 +3,7 @@ local mux = wezterm.mux
 local act = wezterm.action
 
 wezterm.on("gui-startup", function(cmd)
-    local tab, pane, window = mux.spawn_window(cmd or {})
+    local _, _, window = mux.spawn_window(cmd or {})
     window:gui_window():maximize()
 end)
 
@@ -33,9 +33,14 @@ return {
             action = act.ActivateTabRelative(1),
         },
     },
+    colors = {
+        background = "#0c0c0c",
+    },
     default_prog = { "/usr/local/bin/nvim", "-l" },
 
     tab_bar_at_bottom = true,
     hide_tab_bar_if_only_one_tab = true,
-    window_background_opacity = 0.75,
+    -- window_background_opacity = 0.75,
+
+    font_size = 9.0,
 }

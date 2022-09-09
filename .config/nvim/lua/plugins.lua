@@ -14,16 +14,6 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 
 return require("packer").startup(function(use)
     use { "wbthomason/packer.nvim" }
-    --    use { "Yggdroot/indentLine" }
-    use {
-        "lukas-reineke/indent-blankline.nvim",
-        config = function()
-            require("indent_blankline").setup {
-                show_current_context = true,
-                show_current_context_start = true,
-            }
-        end,
-    }
     use {
         "nvim-treesitter/nvim-treesitter",
         run = function()
@@ -34,7 +24,13 @@ return require("packer").startup(function(use)
         end,
     }
     use "kyazdani42/nvim-web-devicons"
-    use { "sainnhe/sonokai" }
+    -- use {
+    --     "cranberry-clockworks/coal.nvim",
+    --     config = function()
+    --         require("coal").setup()
+    --         -- require("config.bg_opacity").setup()
+    --     end,
+    -- }
     use {
         "neovim/nvim-lspconfig",
         requires = {
