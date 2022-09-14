@@ -23,6 +23,12 @@ return require("packer").startup(function(use)
             require "config.treesitter"
         end,
     }
+    use {
+        "nvim-treesitter/playground",
+        config = function()
+            vim.keymap.set("n", "<leader>h", "<CMD>TSHighlightCapturesUnderCursor<CR>", { noremap = true })
+        end,
+    }
     use "kyazdani42/nvim-web-devicons"
     -- use {
     --     "cranberry-clockworks/coal.nvim",
@@ -85,6 +91,7 @@ return require("packer").startup(function(use)
         },
         config = function()
             require "config.telescope"
+            vim.keymap.set("n", "<leader>sh", require("telescope.builtin").highlights, { noremap = true })
         end,
     }
     -- use {
