@@ -1,7 +1,6 @@
 local wezterm = require "wezterm"
 local mux = wezterm.mux
 local act = wezterm.action
-local l = require "wezterm_local"
 
 wezterm.on("gui-startup", function(cmd)
     local _, _, window = mux.spawn_window(cmd or {})
@@ -41,10 +40,17 @@ local res = {
 
     tab_bar_at_bottom = true,
     hide_tab_bar_if_only_one_tab = true,
+
+    font_size = 9.0,
 }
 
-for key, val in pairs(l) do
-    res[key] = val
+local status, l = pcall(function()
+    return require "wezterm_local"
+end)
+if status then
+    for key, val in pairs(l) do
+        res[key] = val
+    end
 end
 
 return res
