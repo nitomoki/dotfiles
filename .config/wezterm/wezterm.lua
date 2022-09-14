@@ -1,13 +1,14 @@
 local wezterm = require "wezterm"
 local mux = wezterm.mux
 local act = wezterm.action
+local l = require "wezterm_local"
 
 wezterm.on("gui-startup", function(cmd)
     local _, _, window = mux.spawn_window(cmd or {})
     window:gui_window():maximize()
 end)
 
-return {
+local res = {
     keys = {
         {
             key = "n",
@@ -40,7 +41,10 @@ return {
 
     tab_bar_at_bottom = true,
     hide_tab_bar_if_only_one_tab = true,
-    -- window_background_opacity = 0.75,
-
-    font_size = 9.0,
 }
+
+for key, val in pairs(l) do
+    res[key] = val
+end
+
+return res
