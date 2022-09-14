@@ -1,7 +1,7 @@
 local keymap = vim.keymap
 local opts = { silent = true, noremap = true }
-keymap.set("n", "<leader>k", [[:bnext<CR>]], opts)
-keymap.set("n", "<leader>j", [[:bprev<CR>]], opts)
+-- keymap.set("n", "<leader>k", [[:bnext<CR>]], opts)
+-- keymap.set("n", "<leader>j", [[:bprev<CR>]], opts)
 keymap.set("n", "<leader>w", [[:w!<CR>]], opts)
 keymap.set("n", "<leader>.", [[:cd %:h<CR>]], opts)
 keymap.set("t", "<C-[>", [[<C-\><C-n>]], opts)
