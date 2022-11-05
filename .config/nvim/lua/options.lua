@@ -2,7 +2,6 @@ local o = vim.o
 local w = vim.wo
 local b = vim.bo
 local g = vim.g
-local utils = require "utils"
 
 o.termguicolors = true
 g.mapleader = " "
@@ -13,6 +12,7 @@ o.showcmd = true
 o.showmatch = true
 o.matchtime = 1
 g.loaded_matchparen = 1
+-- o.matchpairs = [[(:),{:},[:],<:>,=:;,（:）,「:」,『:』【:】]]
 o.matchpairs = [[(:),{:},[:],<:>,=:;]]
 o.helplang = [[ja,en]]
 o.laststatus = 0
@@ -32,7 +32,7 @@ o.smartcase = true
 w.list = true
 o.listchars = [[tab:>-,trail:-,eol:↴,extends:>,precedes:<,nbsp:%]]
 o.hidden = true
-o.history = 50
+o.history = 10000
 o.virtualedit = [[block]]
 o.encoding = [[utf-8]]
 o.autochdir = false
@@ -46,8 +46,8 @@ o.shortmess = o.shortmess .. "c"
 o.cmdheight = 0
 
 local handle = io.popen [[which zsh]]
-local result = handle:read "*a"
-handle:close()
-if result ~= "" then
+local result = handle and handle:read "*a"
+local _ = handle and handle:close()
+if result and result ~= "" then
     o.shell = result:gsub("^%s*(.-)%s*$", "%1")
 end

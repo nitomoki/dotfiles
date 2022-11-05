@@ -20,7 +20,7 @@ return require("packer").startup(function(use)
             require("nvim-treesitter.install").update { with_sunc = true }
         end,
         config = function()
-            require "config.treesitter"
+            require "plugins.config.treesitter"
         end,
     }
     use {
@@ -30,13 +30,6 @@ return require("packer").startup(function(use)
         end,
     }
     use "kyazdani42/nvim-web-devicons"
-    -- use {
-    --     "cranberry-clockworks/coal.nvim",
-    --     config = function()
-    --         require("coal").setup()
-    --         -- require("config.bg_opacity").setup()
-    --     end,
-    -- }
     use {
         "neovim/nvim-lspconfig",
         requires = {
@@ -44,8 +37,8 @@ return require("packer").startup(function(use)
             { "williamboman/mason-lspconfig.nvim" },
         },
         config = function()
-            require "config.lsp"
-            require "config.formatter"
+            require "plugins.config.lsp"
+            require "plugins.config.formatter"
         end,
     }
     use {
@@ -62,24 +55,14 @@ return require("packer").startup(function(use)
             { "onsails/lspkind.nvim" },
         },
         config = function()
-            require "config.luasnip"
-            require "config.cmp"
+            require "plugins.config.luasnip"
+            require "plugins.config.cmp"
         end,
     }
-    --use {
-    --    "ckipp01/stylua-nvim",
-    --    run = "cargo install stylua",
-    --    config = function()
-    --        require("stylua-nvim").setup {
-    --            config_file = "~/.config/stylua/stylua.toml",
-    --        }
-    --    end,
-    --}
-    --use {"akinsho/nvim-toggleterm.lua",
     use {
         "akinsho/toggleterm.nvim",
         config = function()
-            require "config.term"
+            require "plugins.config.term"
         end,
     }
     use {
@@ -90,25 +73,17 @@ return require("packer").startup(function(use)
             { "nvim-telescope/telescope-file-browser.nvim" },
         },
         config = function()
-            require "config.telescope"
+            require "plugins.config.telescope"
             vim.keymap.set("n", "<leader>sh", require("telescope.builtin").highlights, { noremap = true })
         end,
     }
-    -- use {
-    --     "tjdevries/express_line.nvim",
-    --     requires = { { "nvim-lua/plenary.nvim" }, { "lewis6991/gitsigns.nvim" } },
-    --     config = function()
-    --         require "config.el"
-    --         require("gitsigns").setup()
-    --     end,
-    -- }
     use {
         "AckslD/nvim-neoclip.lua",
         requires = {
             { "nvim-telescope/telescope.nvim" },
         },
         config = function()
-            require "config.neoclip"
+            require "plugins.config.neoclip"
         end,
     }
     use {
@@ -142,10 +117,4 @@ return require("packer").startup(function(use)
             require("alpha").setup(require("alpha.themes.startify").config)
         end,
     }
-    --use {
-    --    "anuvyklack/hydra.nvim",
-    --    config = function()
-    --        require "config.hydra"
-    --    end,
-    --}
 end)

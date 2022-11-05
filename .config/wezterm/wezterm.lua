@@ -36,7 +36,7 @@ local res = {
     colors = {
         background = "#0c0c0c",
     },
-    default_prog = { "/usr/local/bin/nvim", "-l" },
+    default_prog = { "/usr/local/bin/nvim", "-l", "--listen", "/tmp/nvimsocket" },
 
     tab_bar_at_bottom = true,
     hide_tab_bar_if_only_one_tab = true,

@@ -1,28 +1,61 @@
 local keymap = vim.keymap
 local opts = { silent = true, noremap = true }
--- keymap.set("n", "<leader>k", [[:bnext<CR>]], opts)
--- keymap.set("n", "<leader>j", [[:bprev<CR>]], opts)
-keymap.set("n", "<leader>w", [[:w!<CR>]], opts)
-keymap.set("n", "<leader>.", [[:cd %:h<CR>]], opts)
-keymap.set("t", "<C-[>", [[<C-\><C-n>]], opts)
-keymap.set("n", "j", [[gj]], opts)
-keymap.set("n", "k", [[gk]], opts)
-keymap.set("n", "gj", "j", opts)
-keymap.set("n", "gk", "k", opts)
-keymap.set("n", "q", "<Nop>", opts)
-keymap.set("i", "<UP>", "<Nop>", opts)
-keymap.set("i", "<DOWN>", "<Nop>", opts)
-keymap.set("i", "<RIGHT>", "<Nop>", opts)
-keymap.set("i", "<LEFT>", "<Nop>", opts)
-keymap.set("i", "<S-UP>", "<Nop>", opts)
-keymap.set("i", "<S-DOWN>", "<Nop>", opts)
-keymap.set("i", "<S-RIGHT>", "<Nop>", opts)
-keymap.set("i", "<S-LEFT>", "<Nop>", opts)
-keymap.set("i", "<M-¥>", "¥", opts)
-keymap.set("i", "¥", "\\", opts)
-keymap.set("n", "Q", "q", opts)
---keymap.set('c', '<C-a>',     '<Home>',       s_opts)
---keymap.set('c', '<C-f>',     '<Right>',      s_opts)
---keymap.set('c', '<C-b>',     '<Left>',       s_opts)
---
-keymap.set("n", "s", "<C-w>", { silent = true, noremap = false })
+
+local map_tables = {
+    {
+        modes = { "n" },
+        maps = {
+            { "<leader>w", [[:wall!<CR>]] },
+            { "<leader>.", [[:lcd %:h<CR>]] },
+            { "j", "gj" },
+            { "k", "gk" },
+            { "gj", "j" },
+            { "gk", "k" },
+            { "q", "<Nop>" },
+            { "Q", "q" },
+        },
+    },
+    {
+        modes = { "i" },
+        maps = {
+            { "<UP>", "<Nop>" },
+            { "<DOWN>", "<Nop>" },
+            { "<RIGHT>", "<Nop>" },
+            { "<LEFT>", "<Nop>" },
+            { "<S-UP>", "<Nop>" },
+            { "<S-DOWN>", "<Nop>" },
+            { "<S-RIGHT>", "<Nop>" },
+            { "<S-LEFT>", "<Nop>" },
+        },
+    },
+    {
+        modes = { "i", "c" },
+        maps = {
+            { "<M-¥>", "¥" },
+            { "¥", "\\" },
+        },
+    },
+    {
+        modes = { "t" },
+        maps = {
+            { "<C-[>", [[<C-\><C-n>]] },
+        },
+    },
+    {
+        modes = { "n", "o", "v" },
+        maps = {
+            { "f<M-¥>", "f¥" },
+            { "F<M-¥>", "F¥" },
+            { "f¥", "f\\" },
+            { "F¥", "F\\" },
+        },
+    },
+}
+
+for _, table in pairs(map_tables) do
+    for _, mode in pairs(table.modes) do
+        for _, map in pairs(table.maps) do
+            keymap.set(mode, map[1], map[2], opts)
+        end
+    end
+end

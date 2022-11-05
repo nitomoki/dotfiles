@@ -11,14 +11,6 @@ require("toggleterm").setup {
     end,
 }
 
-local Terminal = require("toggleterm.terminal").Terminal
-local python_repl = Terminal:new {
-    auto_scroll = true,
-    close_on_exit = true,
-    direction = "vertical",
-    cmd = "python3",
-}
-
 local closeBuf = function()
     local buflisted = function(bufnr)
         return vim.fn.buflisted(bufnr) == 1
@@ -38,9 +30,5 @@ end
 local opts = { noremap = true, silent = true }
 vim.keymap.set("n", "<C-t>", [[:ToggleTerm direction=float<CR>]], opts)
 vim.keymap.set("t", "<C-t>", [[<C-\><C-n>:ToggleTerm<CR>]], opts)
-vim.keymap.set("n", "<C-q>", closeBuf, opts)
-vim.keymap.set("t", "<C-q>", closeBuf, opts)
-
-vim.keymap.set("n", "<leader><leader>p", function()
-    python_repl:toggle()
-end, opts)
+-- vim.keymap.set("n", "<C-q>", closeBuf, opts)
+-- vim.keymap.set("t", "<C-q>", closeBuf, opts)
