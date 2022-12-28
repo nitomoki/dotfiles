@@ -34,3 +34,13 @@ vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
         vim.bo.filetype = "xml"
     end,
 })
+
+local id_tex_replace = vim.api.nvim_create_augroup("TEX_replace", {})
+vim.api.nvim_create_autocmd({ "BufWrite" }, {
+    group = id_tex_replace,
+    pattern = "*.tex",
+    callback = function()
+        vim.cmd [[silent! %s/、/，/g]]
+        vim.cmd [[silent! %s/。/．/g]]
+    end,
+})

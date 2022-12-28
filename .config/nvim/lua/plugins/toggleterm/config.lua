@@ -1,6 +1,5 @@
 require("toggleterm").setup {
     on_open = function()
-        vim.cmd [[startinsert!]]
         local bufnr = vim.api.nvim_get_current_buf()
         vim.keymap.set("n", "<C-q>", function()
             vim.cmd [[bd!]]
@@ -9,6 +8,15 @@ require("toggleterm").setup {
             vim.cmd [[bd!]]
         end, { noremap = true, buffer = bufnr })
     end,
+    start_in_insert = true,
+    float_opts = {
+        width = function()
+            return vim.o.columns
+        end,
+        height = function()
+            return vim.o.lines
+        end,
+    },
 }
 
 local closeBuf = function()
@@ -27,8 +35,8 @@ local closeBuf = function()
     end
 end
 
-local opts = { noremap = true, silent = true }
-vim.keymap.set("n", "<C-t>", [[:ToggleTerm direction=float<CR>]], opts)
-vim.keymap.set("t", "<C-t>", [[<C-\><C-n>:ToggleTerm<CR>]], opts)
+-- local opts = { noremap = true, silent = true }
+-- vim.keymap.set("n", "<C-t>", [[:ToggleTerm direction=float<CR>]], opts)
+-- vim.keymap.set("t", "<C-t>", [[<C-\><C-n>:ToggleTerm<CR>]], opts)
 -- vim.keymap.set("n", "<C-q>", closeBuf, opts)
 -- vim.keymap.set("t", "<C-q>", closeBuf, opts)

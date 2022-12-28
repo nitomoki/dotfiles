@@ -55,20 +55,20 @@ require("telescope").setup {
     },
 }
 
-local opts = { noremap = true, silent = true }
-local builtin = require "telescope.builtin"
-local extensions = require("telescope").extensions
-vim.keymap.set("n", "<leader>b", builtin.buffers, opts)
-vim.keymap.set("n", "<leader>j", function()
-    builtin.buffers { initial_mode = "normal", ignore_current_buffer = true, sort_mru = true }
-end, opts)
-vim.keymap.set("n", "<leader>k", function()
-    builtin.buffers { initial_mode = "normal", ignore_current_buffer = true, sort_mru = true }
-end, opts)
-vim.keymap.set("n", "<leader>r", builtin.resume, opts)
-vim.keymap.set("n", "<leader>fb", extensions.file_browser.file_browser, opts)
-vim.keymap.set("n", "<leader>fc", builtin.current_buffer_fuzzy_find, opts)
-vim.keymap.set("n", "<leader>ff", builtin.find_files, opts)
-vim.keymap.set("n", "<leader>fg", builtin.live_grep, opts)
-vim.keymap.set("n", "<leader>fh", builtin.help_tags, opts)
-vim.keymap.set("n", "<leader>fo", builtin.oldfiles, opts)
+-- local opts = { noremap = true, silent = true }
+-- local builtin = require "telescope.builtin"
+-- local extensions = require("telescope").extensions
+-- vim.keymap.set("n", "<leader>b", builtin.buffers, opts)
+-- vim.keymap.set("n", "<leader>j", function()
+--     builtin.buffers { initial_mode = "normal", ignore_current_buffer = true, sort_mru = true }
+-- end, opts)
+-- vim.keymap.set("n", "<leader>k", function()
+--     builtin.buffers { initial_mode = "normal", ignore_current_buffer = true, sort_mru = true }
+-- end, opts)
+-- vim.keymap.set("n", "<leader>r", builtin.resume, opts)
+-- vim.keymap.set("n", "<leader>fb", extensions.file_browser.file_browser, opts)
+-- vim.keymap.set("n", "<leader>fc", builtin.current_buffer_fuzzy_find, opts)
+-- vim.keymap.set("n", "<leader>ff", builtin.find_files, opts)
+-- vim.keymap.set("n", "<leader>fg", builtin.live_grep, opts)
+-- vim.keymap.set("n", "<leader>fh", builtin.help_tags, opts)
+-- vim.keymap.set("n", "<leader>fo", builtin.oldfiles, opts)

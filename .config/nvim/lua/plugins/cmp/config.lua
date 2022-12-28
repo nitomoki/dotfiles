@@ -1,6 +1,5 @@
 local luasnip = require "luasnip"
 local cmp = require "cmp"
-local lspkind = require "lspkind"
 cmp.setup {
     snippet = {
         expand = function(args)
@@ -51,18 +50,6 @@ cmp.setup {
         { name = "path" },
         { name = "calc" },
     }),
-    formatting = {
-        format = lspkind.cmp_format {
-            mode = "symbol_text",
-            menu = {
-                buffer = "[Buffer]",
-                nvim_lsp = "[LSP]",
-                luasnip = "[LuaSnip]",
-                nvim_lua = "[Lua]",
-                latex_symbols = "[Latex]",
-            },
-        },
-    },
     experimental = {
         ghost_text = true,
     },

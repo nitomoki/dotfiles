@@ -5,6 +5,7 @@ local act = wezterm.action
 wezterm.on("gui-startup", function(cmd)
     local _, _, window = mux.spawn_window(cmd or {})
     window:gui_window():maximize()
+    window:gui_window():toggle_fullscreen()
 end)
 
 local res = {
@@ -33,9 +34,7 @@ local res = {
             action = act.ActivateTabRelative(1),
         },
     },
-    colors = {
-        background = "#0c0c0c",
-    },
+    color_scheme = 'tokyonight',
     default_prog = { "/usr/local/bin/nvim", "-l", "--listen", "/tmp/nvimsocket" },
 
     tab_bar_at_bottom = true,

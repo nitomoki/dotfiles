@@ -5,7 +5,6 @@
 --vim.keymap.set("n", "K", vim.lsp.buf.hover, k_opts)
 --vim.keymap.set("n", "gi", vim.lsp.buf.implementation, k_opts)
 --vim.keymap.set("n", "gr", vim.lsp.buf.references, k_opts)
-
 local server_opts = {
     ["sumneko_lua"] = function(opts)
         local runtime_path = vim.split(package.path, ";")
@@ -33,6 +32,7 @@ local server_opts = {
                 workspace = {
                     -- Make the server aware of Neovim runtime files
                     library = vim.api.nvim_get_runtime_file("", true),
+                    checkThirdParty = false,
                 },
                 -- Do not send telemetry data containing a randomized but unique identifier
                 telemetry = {
