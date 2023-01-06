@@ -9,8 +9,6 @@ alias gp='git push'
 alias gl='git log --graph --oneline --decorate --all'
 alias dof='cd ~/dotfiles'
 
-alias luamake=/home/tomoki/.cache/nvim/lspconfig/sumneko_lua/lua-language-server/3rd/luamake/luamake
-
 case "${OSTYPE}" in
 darwin*)
     if type exa > /dev/null 2>&1; then
@@ -35,6 +33,10 @@ esac
 
 if type bat > /dev/null 2>&1; then
     alias cat="bat"
+fi
+
+if type z > /dev/null 2>&1; then
+    alias cd="z"
 fi
 
 

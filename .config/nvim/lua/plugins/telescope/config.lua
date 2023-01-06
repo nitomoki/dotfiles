@@ -1,4 +1,6 @@
 local actions = require "telescope.actions"
+local z_utils = require "telescope._extensions.zoxide.utils"
+
 require("telescope").setup {
     defaults = {
         mappings = {
@@ -52,23 +54,27 @@ require("telescope").setup {
             },
             hidden = true,
         },
+        zoxide = {
+            prompt_title = "[ Walking on the shoulders of TJ ]",
+            mappings = {
+                default = {
+                    after_action = function(selection)
+                        print("Update to (" .. selection.z_score .. ") " .. selection.path)
+                    end,
+                },
+                ["<C-s>"] = {
+                    before_action = function(selection)
+                        print "before C-s"
+                    end,
+                    action = function(selection)
+                        vim.cmd("edit " .. selection.path)
+                    end,
+                },
+                -- Opens the selected entry in a new split
+                ["<C-q>"] = { action = z_utils.create_basic_command "split" },
+            },
+        },
     },
 }
 
--- local opts = { noremap = true, silent = true }
--- local builtin = require "telescope.builtin"
--- local extensions = require("telescope").extensions
--- vim.keymap.set("n", "<leader>b", builtin.buffers, opts)
--- vim.keymap.set("n", "<leader>j", function()
---     builtin.buffers { initial_mode = "normal", ignore_current_buffer = true, sort_mru = true }
--- end, opts)
--- vim.keymap.set("n", "<leader>k", function()
---     builtin.buffers { initial_mode = "normal", ignore_current_buffer = true, sort_mru = true }
--- end, opts)
--- vim.keymap.set("n", "<leader>r", builtin.resume, opts)
--- vim.keymap.set("n", "<leader>fb", extensions.file_browser.file_browser, opts)
--- vim.keymap.set("n", "<leader>fc", builtin.current_buffer_fuzzy_find, opts)
--- vim.keymap.set("n", "<leader>ff", builtin.find_files, opts)
--- vim.keymap.set("n", "<leader>fg", builtin.live_grep, opts)
--- vim.keymap.set("n", "<leader>fh", builtin.help_tags, opts)
--- vim.keymap.set("n", "<leader>fo", builtin.oldfiles, opts)
+require("telescope").load_extension "zoxide"

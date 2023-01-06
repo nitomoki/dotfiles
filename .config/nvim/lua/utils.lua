@@ -35,5 +35,14 @@ function M.merge_highlight(newhi, ...)
     return command
 end
 
+function M.local_plugins_path()
+    local path = vim.fn.expand "~" .. "/NeovimPlugins"
+    if vim.loop.fs_stat(path) then
+        return path, true
+    else
+        return nil, false
+    end
+end
+
 _G.utils = M
 return M

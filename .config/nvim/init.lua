@@ -14,9 +14,10 @@ if not vim.loop.fs_stat(lazypath) then
     }
 end
 vim.opt.runtimepath:prepend(lazypath)
+
 local lazy_opt = {
     dev = {
-        path = "~/NeovimPlugins",
+        path = require("utils").local_plugins_path(),
     },
 }
 require("lazy").setup("plugins", lazy_opt)

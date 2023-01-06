@@ -1,6 +1,6 @@
 local opts = { noremap = true, silent = true }
 
-vim.keymap.set("n", "<leader>sh", function()
+vim.keymap.set("n", "<leader>hi", function()
     require("telescope.builtin").highlights()
 end, { noremap = true })
 
@@ -42,4 +42,8 @@ end, opts)
 
 vim.keymap.set("n", "<leader>fo", function()
     require("telescope.builtin").oldfiles()
+end, opts)
+
+vim.keymap.set("n", "<leader>cd", function()
+    require("telescope").extensions.zoxide.list()
 end, opts)
