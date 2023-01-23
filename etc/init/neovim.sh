@@ -6,5 +6,5 @@ cd /$HOME/neovim
 make CMAKE_BUILD_TYPE=RelWithDebInfo 
 sudo make install 
 cd /$HOME 
-rm -rf /$HOME/neovim
+sudo rm -rf /$HOME/neovim
 

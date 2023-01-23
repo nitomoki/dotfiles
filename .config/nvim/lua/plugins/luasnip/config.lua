@@ -42,3 +42,9 @@ ls.add_snippets("all", {
 ls.add_snippets("lua", {
     s("req", fmt([[local {} = require "{}"]], { get_less(1), i(1) })),
 })
+ls.add_snippets("tex", {
+    s("cite", fmt([[~\cite{<>}]], { i(1) }, { delimiters = "<>" })),
+    s("sect", fmt([[Section~\ref{sec:<>}]], { i(1) }, { delimiters = "<>" })),
+    s("figu", fmt([[\figurename~\ref{fig:<>}]], { i(1) }, { delimiters = "<>" })),
+    s("equa", fmt([[式~(\ref{equ:<>})]], { i(1) }, { delimiters = "<>" })),
+})

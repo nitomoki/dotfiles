@@ -1,10 +1,3 @@
---local lsp_installer = require "nvim-lsp-installer"
---local k_opts = { noremap = true, silent = true }
---vim.keymap.set("n", "gD", vim.lsp.buf.declaration, k_opts)
---vim.keymap.set("n", "gd", vim.lsp.buf.definition, k_opts)
---vim.keymap.set("n", "K", vim.lsp.buf.hover, k_opts)
---vim.keymap.set("n", "gi", vim.lsp.buf.implementation, k_opts)
---vim.keymap.set("n", "gr", vim.lsp.buf.references, k_opts)
 local server_opts = {
     ["sumneko_lua"] = function(opts)
         local runtime_path = vim.split(package.path, ";")
@@ -53,6 +46,8 @@ mason.setup {
         },
     },
 }
+
+require("neodev").setup {}
 
 local nvim_lsp = require "lspconfig"
 require("mason-lspconfig").setup_handlers {

@@ -1,24 +1,28 @@
 local wezterm = require "wezterm"
-local mux = wezterm.mux
-local act = wezterm.action
 
 wezterm.on("gui-startup", function(cmd)
-    local _, _, window = mux.spawn_window(cmd or {})
+    local _, _, window = wezterm.mux.spawn_window(cmd or {})
     window:gui_window():maximize()
     window:gui_window():toggle_fullscreen()
 end)
 
+wezterm.on("user-new-window", function(window, pane)
+    window:perform_action(wezterm.action.SpawnWindow, pane)
+    window:toggle_fullscreen()
+end)
+-- { key = 'n', mods = 'SUPER', action = act.SpawnWindow },
+
 local res = {
     keys = {
-        {
-            key = "n",
-            mods = "ALT",
-            action = act.SpawnTab "CurrentPaneDomain",
-        },
+        -- {
+        --     key = "n",
+        --     mods = "ALT",
+        --     action = wezterm.action.SpawnTab "CurrentPaneDomain",
+        -- },
         {
             key = "z",
             mods = "ALT",
-            action = act.SpawnCommandInNewTab {
+            action = wezterm.action.SpawnCommandInNewTab {
                 args = { "/bin/zsh", "-l" },
                 domain = "CurrentPaneDomain",
             },
@@ -26,19 +30,35 @@ local res = {
         {
             key = "h",
             mods = "ALT",
-            action = act.ActivateTabRelative(-1),
+            action = wezterm.action.ActivateTabRelative(-1),
         },
         {
             key = "l",
             mods = "ALT",
-            action = act.ActivateTabRelative(1),
+            action = wezterm.action.ActivateTabRelative(1),
+        },
+        {
+            key = "q",
+            mods = "CTRL",
+            action = wezterm.action.SendString "\x11",
+        },
+        {
+            key = "n",
+            mods = "ALT",
+            action = wezterm.action.SpawnWindow,
+        },
+        {
+            key = "Enter",
+            mods = "ALT",
+            action = wezterm.action.ToggleFullScreen,
         },
     },
-    color_scheme = 'tokyonight',
-    default_prog = { "/usr/local/bin/nvim", "-l", "--listen", "/tmp/nvimsocket" },
+    color_scheme = "tokyonight",
+    default_prog = { "/usr/local/bin/nvim", "--listen", "/tmp/nvimsocket" },
 
     tab_bar_at_bottom = true,
     hide_tab_bar_if_only_one_tab = true,
+    disable_default_key_bindings = true,
 
     font_size = 9.0,
 }

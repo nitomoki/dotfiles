@@ -13,5 +13,6 @@ return {
             jp = "/usr/local/bin/swim use com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese",
             en = "/usr/local/bin/swim use com.apple.keylayout.ABC",
         }
+        vim.api.nvim_create_autocmd("User", { pattern = "TelescopeKeymap", callback = require("JPmode").off })
     end,
 }

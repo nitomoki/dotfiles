@@ -11,6 +11,7 @@ return {
                 "nvim-lua/plenary.nvim",
             },
         },
+        { "folke/neodev.nvim" },
     },
     config = function()
         require "plugins.lsp.config"

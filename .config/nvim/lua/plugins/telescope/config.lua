@@ -6,24 +6,24 @@ require("telescope").setup {
         mappings = {
             i = {
                 ["<C-t>"] = actions.close,
-                ["<C-q>"] = actions.close,
+                -- ["<C-q>"] = actions.close,
                 ["<C-c>"] = actions.close,
             },
             n = {
                 ["<C-t>"] = actions.close,
-                ["<C-q>"] = actions.close,
+                -- ["<C-q>"] = actions.close,
                 ["<C-c>"] = actions.close,
             },
         },
         find_command = {
-            "rg",
+            "/usr/local/bin/rg",
             "--hidden",
             "-g",
             "!.git",
             "--files",
         },
         vimgrep_arguments = {
-            "rg",
+            "/usr/local/bin/rg",
             "--no-heading",
             "--with-filename",
             "--line-number",

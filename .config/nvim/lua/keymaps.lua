@@ -1,6 +1,3 @@
-local keymap = vim.keymap
-local opts = { silent = true, noremap = true }
-
 local map_tables = {
     {
         modes = { "n" },
@@ -13,6 +10,15 @@ local map_tables = {
             { "gk", "k" },
             { "q", "<Nop>" },
             { "Q", "q" },
+            { "n", "nzzzv" },
+            { "N", "Nzzzv" },
+            -- {
+            --     "<UP>",
+            --     function()
+            --         vim.notify "UP"
+            --         vim.api.nvim_exec_autocmds("User", { pattern = "MyEventUP" })
+            --     end,
+            -- },
         },
     },
     {
@@ -56,10 +62,9 @@ local map_tables = {
     },
 }
 
+local opts = { silent = true, noremap = true }
 for _, table in pairs(map_tables) do
-    for _, mode in pairs(table.modes) do
-        for _, map in pairs(table.maps) do
-            keymap.set(mode, map[1], map[2], opts)
-        end
+    for _, map in pairs(table.maps) do
+        vim.keymap.set(table.modes, map[1], map[2], opts)
     end
 end
