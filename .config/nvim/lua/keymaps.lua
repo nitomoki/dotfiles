@@ -2,8 +2,9 @@ local map_tables = {
     {
         modes = { "n" },
         maps = {
-            { "<leader>w", [[:wall!<CR>]] },
             { "<leader>.", [[:lcd %:h<CR>]] },
+            { "<leader>m", require("tools.asyncMake").run },
+            { "<leader>q", [[<CMD>bd<CR>]] },
             { "j", "gj" },
             { "k", "gk" },
             { "gj", "j" },
@@ -12,13 +13,6 @@ local map_tables = {
             { "Q", "q" },
             { "n", "nzzzv" },
             { "N", "Nzzzv" },
-            -- {
-            --     "<UP>",
-            --     function()
-            --         vim.notify "UP"
-            --         vim.api.nvim_exec_autocmds("User", { pattern = "MyEventUP" })
-            --     end,
-            -- },
         },
     },
     {
@@ -38,7 +32,7 @@ local map_tables = {
         modes = { "i", "c" },
         maps = {
             { "<M-¥>", "¥" },
-            { "¥", "\\" },
+            { "¥", [[\]] },
         },
     },
     {

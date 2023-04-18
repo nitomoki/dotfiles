@@ -19,11 +19,10 @@ vim.api.nvim_create_autocmd({ "CmdwinEnter" }, {
 vim.api.nvim_create_autocmd({ "CmdwinEnter" }, {
     group = id_cmdwin,
     pattern = "*",
-    callback = function()
-        local bufnr = vim.api.nvim_get_current_buf()
+    callback = function(arg)
         vim.keymap.set("n", "q", function()
             vim.cmd [[q]]
-        end, { noremap = true, buffer = bufnr })
+        end, { noremap = true, buffer = arg.buf })
     end,
 })
 
@@ -50,10 +49,9 @@ local id_quickfix = vim.api.nvim_create_augroup("Q_QuitFT", {})
 vim.api.nvim_create_autocmd({ "FileType" }, {
     group = id_quickfix,
     pattern = { "qf", "help" },
-    callback = function()
-        local bufnr = vim.api.nvim_get_current_buf()
+    callback = function(arg)
         vim.keymap.set("n", "q", function()
             vim.cmd [[q]]
-        end, { noremap = true, buffer = bufnr })
+        end, { noremap = true, buffer = arg.buf })
     end,
 })

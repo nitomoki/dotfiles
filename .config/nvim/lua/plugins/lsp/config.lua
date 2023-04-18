@@ -1,5 +1,5 @@
 local server_opts = {
-    ["sumneko_lua"] = function(opts)
+    ["lua_ls"] = function(opts)
         local runtime_path = vim.split(package.path, ";")
         table.insert(runtime_path, "lua/?.lua")
         table.insert(runtime_path, "lua/?/init.lua")
@@ -15,7 +15,6 @@ local server_opts = {
                     globals = {
                         -- Get the language server to recognize the `vim` global
                         "vim",
-                        "use", -- Packer use keyword
                         -- awesome lua config
                         "awesome",
                         "client",

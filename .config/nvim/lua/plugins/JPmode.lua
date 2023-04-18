@@ -5,8 +5,8 @@ return {
     dev = dev,
     lazy = true,
     init = function()
-        vim.keymap.set({ "i", "c" }, "<C-]>", require("JPmode").toggle, { silent = true, noremap = true })
-        vim.keymap.set("n", "<C-]>", require("JPmode").off, { silent = true, noremap = true })
+        vim.keymap.set({ "i", "c" }, "<C-Space>", require("JPmode").toggle, { silent = true, noremap = true })
+        vim.keymap.set("n", "<C-Space>", require("JPmode").off, { silent = true, noremap = true })
     end,
     config = function()
         require("JPmode").setup {

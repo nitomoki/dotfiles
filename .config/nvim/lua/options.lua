@@ -2,6 +2,7 @@ vim.g.loaded_matchparen = 1
 vim.g.mapleader = " "
 vim.g.tex_conceal = ""
 vim.g.tex_flavor = "latex"
+vim.opt.mouse = nil
 vim.opt.autochdir = false
 vim.opt.autoindent = true
 vim.opt.cmdheight = 0

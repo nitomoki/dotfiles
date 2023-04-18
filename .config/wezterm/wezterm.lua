@@ -59,6 +59,7 @@ local res = {
     tab_bar_at_bottom = true,
     hide_tab_bar_if_only_one_tab = true,
     disable_default_key_bindings = true,
+    disable_default_mouse_bindings = true,
 
     font_size = 9.0,
 }

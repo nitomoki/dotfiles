@@ -23,8 +23,20 @@ cmp.setup {
                 fallback()
             end
         end, { "i", "s", "c" }),
-        ["<C-d>"] = cmp.mapping.scroll_docs(-4),
-        ["<C-f>"] = cmp.mapping.scroll_docs(4),
+        ["<C-b>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+                cmp.scroll_docs(-4)
+            else
+                fallback()
+            end
+        end, { "i", "s", "c" }),
+        ["<C-f>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+                cmp.scroll_docs(4)
+            else
+                fallback()
+            end
+        end, { "i", "s", "c" }),
         ["<C-e>"] = cmp.mapping.close(),
         ["<C-k>"] = cmp.mapping(function(fallback)
             if luasnip.expand_or_jumpable() then
