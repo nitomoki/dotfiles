@@ -35,10 +35,6 @@ if type bat > /dev/null 2>&1; then
     alias cat="bat"
 fi
 
-if type z > /dev/null 2>&1; then
-    alias cd="z"
-fi
-
 
 if [ "`uname -r |grep 'arch'`" ]; then
     alias pac='sudo pacman -S --noconfirm'

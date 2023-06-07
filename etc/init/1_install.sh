@@ -6,11 +6,9 @@ packages=(
     cmake
     git
     zsh
-    openssh
     build-essential
     pkg-config
     clang
-    ninja
     ninja-build
     gettext
     libtool
@@ -20,39 +18,33 @@ packages=(
     unzip
     python3-pip
     python3
-    python
     fontconfig
     ruby
     gem
     nodejs
     npm
     cargo
-    libclang-8-dev
     silversearcher-ag
-    ccls
     latexmk
     nkf
     perl
     xclip
-    qt5-default
     vim
     cpanminus
-    alacritty
+    ripgrep
 )
 
 if [ "`uname -r |grep 'arch'`" ]; then
-	sudo pacman -Syyu --noconfirm
-	for package in "${packages[@]}"; do
-	    sudo pacman -Sy --noconfirm $package
-	done
-	sudo pacman -Syyu --noconfirm
-else
-	sudo apt update
-	for package in "${packages[@]}"; do
-	    sudo apt install -y $package || sudo apt update $package
-	done
-	sudo apt upgrade
-	sudo apt autoremove
+    sudo pacman -Syyu --noconfirm
+    for package in "${packages[@]}"; do
+        sudo pacman -Sy --noconfirm $package
+    done
+    sudo pacman -Syyu --noconfirm
+elif [ "`cat /etc/os-release | grep 'Ubuntu'`" ]; then
+    sudo apt update -y
+    sudo apt install -y ${packages[@]}
+    sudo apt upgrade -y
+    sudo apt autoremove -y
 fi
 
 
