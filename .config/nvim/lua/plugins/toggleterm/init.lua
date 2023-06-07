@@ -10,15 +10,4 @@ return {
     config = function()
         require "plugins.toggleterm.config"
     end,
-    dependencies = {
-        {
-            "chomosuke/term-edit.nvim",
-            version = "1.*",
-            config = function()
-                require("term-edit").setup {
-                    prompt_end = "❯ ",
-                }
-            end,
-        },
-    },
 }

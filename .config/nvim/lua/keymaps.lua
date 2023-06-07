@@ -2,7 +2,7 @@ local map_tables = {
     {
         modes = { "n" },
         maps = {
-            { "<leader>.", [[:lcd %:h<CR>]] },
+            { "<leader>.", [[<CMD>cd %:h<CR>]] },
             { "<leader>m", require("tools.asyncMake").run },
             { "<leader>q", [[<CMD>bd<CR>]] },
             { "j", "gj" },

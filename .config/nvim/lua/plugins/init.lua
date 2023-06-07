@@ -1,5 +1,27 @@
 return {
     {
+        "stevearc/oil.nvim",
+        dependencies = {
+            "nvim-tree/nvim-web-devicons",
+        },
+        config = function()
+            require("oil").setup {
+                use_default_keymaps = false,
+                keymaps = {
+                    ["g?"] = "actions.show_help",
+                    ["<CR>"] = "actions.select",
+                    ["<C-p>"] = "actions.preview",
+                    ["<C-l>"] = "actions.refresh",
+                    ["_"] = "actions.open_cwd",
+                    ["g."] = "actions.toggle_hidden",
+                    ["<C-c>"] = "actions.close",
+                    ["q"] = "actions.close",
+                    [".."] = "actions.parent",
+                },
+            }
+        end,
+    },
+    {
         "norcalli/nvim-colorizer.lua",
         lazy = true,
         event = "BufReadPost",
@@ -10,7 +32,7 @@ return {
     {
         "goolord/alpha-nvim",
         event = "VimEnter",
-        dependencies = { "kyazdani42/nvim-web-devicons" },
+        dependencies = { "nvim-tree/nvim-web-devicons" },
         config = function()
             -- require("alpha").setup(require("alpha.themes.dashboard").config)
             local alpha = require "alpha"

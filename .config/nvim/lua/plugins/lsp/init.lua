@@ -11,7 +11,7 @@ return {
                 "nvim-lua/plenary.nvim",
             },
         },
-        { "folke/neodev.nvim" },
+        { "folke/neodev.nvim", opts = {} },
     },
     config = function()
         require "plugins.lsp.config"
@@ -22,7 +22,7 @@ return {
                 null_ls.builtins.formatting.stylua,
                 null_ls.builtins.formatting.black,
                 null_ls.builtins.formatting.isort,
-                null_ls.builtins.diagnostics.eslint,
+                -- null_ls.builtins.diagnostics.eslint,
             },
             on_attach = function(client, bufnr)
                 if client.supports_method "textDocument/formatting" then
