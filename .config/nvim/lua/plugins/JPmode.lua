@@ -1,24 +1,65 @@
 local _, dev = require("utils").local_plugins_path()
 
+local opt = {
+    enable = false,
+    jp = nil,
+    en = nil,
+}
+if vim.fn.has "mac" == 1 then
+    local swim = "/usr/local/bin/swim"
+    if vim.fn.executable(swim) ~= 1 then
+        opt.enable = true
+        opt.jp = {
+            cmd = swim,
+            args = { "use", "com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese" },
+        }
+        opt.en = {
+            cmd = swim,
+            args = { "use", "com.apple.keylayout.ABC" },
+        }
+    end
+end
+if vim.fn.has "wsl" == 1 then
+    local zenhan = vim.g.WSL_HOME .. "scoop/apps/zenhan/current/zenhan.exe"
+    if vim.fn.executable(zenhan) == 1 then
+        opt.enable = true
+        opt.jp = {
+            cmd = zenhan,
+            args = { "1" },
+        }
+        opt.en = {
+            cmd = zenhan,
+            args = { "0" },
+        }
+    end
+end
+
 return {
     "nitomoki/JPmode.nvim",
+    dependencies = {
+        "nvim-lua/plenary.nvim",
+    },
     dev = dev,
     lazy = true,
     init = function()
-        if vim.fn.executable "/usr/local/bin/swim" ~= 1 then
+        if not opt.enable then
             return
         end
-        vim.keymap.set({ "i", "c" }, "<C-M-Space>", require("JPmode").toggle, { silent = true, noremap = true })
-        vim.keymap.set("n", "<C-M-Space>", require("JPmode").off, { silent = true, noremap = true })
+        local keymap = nil
+        if vim.fn.has "wsl" == 1 then
+            keymap = "<C-Space>"
+        end
+        if vim.fn.has "mac" == 1 then
+            keymap = "<C-M-Space>"
+        end
+        vim.keymap.set({ "i", "c" }, keymap, require("JPmode").toggle, { silent = true, noremap = true })
+        vim.keymap.set("n", keymap, require("JPmode").off, { silent = true, noremap = true })
     end,
     config = function()
-        if vim.fn.executable "/usr/local/bin/swim" ~= 1 then
+        if not opt.enable then
             return
         end
-        require("JPmode").setup {
-            jp = "/usr/local/bin/swim use com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese",
-            en = "/usr/local/bin/swim use com.apple.keylayout.ABC",
-        }
+        require("JPmode").setup(opt)
         vim.api.nvim_create_autocmd("User", { pattern = "TelescopeKeymap", callback = require("JPmode").off })
     end,
 }

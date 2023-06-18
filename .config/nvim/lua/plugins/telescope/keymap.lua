@@ -57,15 +57,6 @@ vim.keymap.set(
 
 vim.keymap.set(
     "n",
-    "<leader>fb",
-    event_func(function()
-        require("telescope").extensions.file_browser.file_browser()
-    end),
-    opts
-)
-
-vim.keymap.set(
-    "n",
     "<leader>fc",
     event_func(function()
         require("telescope.builtin").current_buffer_fuzzy_find()
@@ -105,15 +96,6 @@ vim.keymap.set(
     "<leader>fo",
     event_func(function()
         require("telescope.builtin").oldfiles()
-    end),
-    opts
-)
-
-vim.keymap.set(
-    "n",
-    "<leader>cd",
-    event_func(function()
-        require("telescope").extensions.zoxide.list()
     end),
     opts
 )
