@@ -19,6 +19,10 @@ local server_opts = {
                         "awesome",
                         "client",
                         "root",
+                        -- plenary
+                        "describe",
+                        "it",
+                        "before_each",
                     },
                 },
                 workspace = {

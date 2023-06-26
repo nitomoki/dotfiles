@@ -2,18 +2,20 @@ local _, dev = require("utils").local_plugins_path()
 
 local opt = {
     enable = false,
-    jp = nil,
-    en = nil,
+    IME = {
+        jp = nil,
+        en = nil,
+    },
 }
 if vim.fn.has "mac" == 1 then
     local swim = "/usr/local/bin/swim"
     if vim.fn.executable(swim) ~= 1 then
         opt.enable = true
-        opt.jp = {
+        opt.IME.jp = {
             cmd = swim,
             args = { "use", "com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese" },
         }
-        opt.en = {
+        opt.IME.en = {
             cmd = swim,
             args = { "use", "com.apple.keylayout.ABC" },
         }
@@ -23,11 +25,11 @@ if vim.fn.has "wsl" == 1 then
     local zenhan = vim.g.WSL_HOME .. "scoop/apps/zenhan/current/zenhan.exe"
     if vim.fn.executable(zenhan) == 1 then
         opt.enable = true
-        opt.jp = {
+        opt.IME.jp = {
             cmd = zenhan,
             args = { "1" },
         }
-        opt.en = {
+        opt.IME.en = {
             cmd = zenhan,
             args = { "0" },
         }
