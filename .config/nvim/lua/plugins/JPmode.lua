@@ -22,7 +22,7 @@ if vim.fn.has "mac" == 1 then
     end
 end
 if vim.fn.has "wsl" == 1 then
-    local zenhan = vim.g.WSL_HOME .. "scoop/apps/zenhan/current/zenhan.exe"
+    local zenhan = "/mnt/c/Users/nitom/scoop/apps/zenhan/current/zenhan.exe"
     if vim.fn.executable(zenhan) == 1 then
         opt.enable = true
         opt.IME.jp = {
