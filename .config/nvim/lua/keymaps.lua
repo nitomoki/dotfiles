@@ -5,6 +5,7 @@ local map_tables = {
             { "<leader>.", [[<CMD>cd %:h<CR>]] },
             { "<leader>m", require("tools.asyncMake").run },
             { "<leader>q", [[<CMD>bd<CR>]] },
+            { "<leader>:", "q:" },
             { "j", "gj" },
             { "k", "gk" },
             { "gj", "j" },
