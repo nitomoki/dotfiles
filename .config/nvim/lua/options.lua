@@ -20,7 +20,7 @@ vim.opt.history = 10000
 vim.opt.hlsearch = false
 vim.opt.ignorecase = true
 vim.opt.incsearch = true
-vim.opt.laststatus = 0
+vim.opt.laststatus = 3
 vim.opt.list = true
 vim.opt.listchars = { tab = ">-", trail = "-", eol = "↴", extends = ">", precedes = "<", nbsp = "%" }
 vim.opt.matchpairs = { "(:)", "{:}", "[:]", "<:>", "=:;" }
@@ -35,7 +35,6 @@ vim.opt.showtabline = 1
 vim.opt.signcolumn = "yes"
 vim.opt.smartcase = true
 vim.opt.smartindent = true
-vim.opt.statusline = "%#DiffChange# "
 vim.opt.swapfile = false
 vim.opt.syntax = "ON"
 vim.opt.tabstop = 4
