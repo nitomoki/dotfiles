@@ -1,5 +1,11 @@
 return {
     {
+        "kevinhwang91/nvim-bqf",
+        dependencies = { "nvim-treesitter/nvim-treesitter" },
+        lazy = true,
+        ft = "qf",
+    },
+    {
         "stevearc/oil.nvim",
         dependencies = {
             "nvim-tree/nvim-web-devicons",
@@ -17,6 +23,7 @@ return {
                     ["<C-c>"] = "actions.close",
                     ["q"] = "actions.close",
                     [".."] = "actions.parent",
+                    ["<space>."] = "actions.cd",
                 },
             }
         end,
@@ -52,10 +59,10 @@ return {
 
             -- Set menu
             dashboard.section.buttons.val = {
-                dashboard.button("e", "  > New file", ":ene <BAR> startinsert <CR>"),
-                dashboard.button("f", "  > Find file", ":Telescope find_files<CR>"),
-                dashboard.button("r", "  > Recent", ":Telescope oldfiles<CR>"),
-                dashboard.button("q", "  > Quit NVIM", ":qa<CR>"),
+                dashboard.button("e", "N  > New file", ":ene <BAR> startinsert <CR>"),
+                dashboard.button("f", "F  > Find file", ":Telescope find_files<CR>"),
+                dashboard.button("r", "R  > Recent", ":Telescope oldfiles<CR>"),
+                dashboard.button("q", "Q  > Quit NVIM", ":qa<CR>"),
             }
 
             -- Send config to alpha
