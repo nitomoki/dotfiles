@@ -14,11 +14,17 @@ if not vim.loop.fs_stat(lazypath) then
         lazypath,
     }
 end
-vim.opt.runtimepath:prepend(lazypath)
+vim.opt.rtp:prepend(lazypath)
+-- vim.opt.runtimepath:prepend(lazypath)
 
 local lazy_opt = {
+    spec = {
+        { import = "plugins" },
+    },
+    change_detection = { notify = false },
+    defaults = { lazy = true },
     dev = {
         path = require("utils").local_plugins_path(),
     },
 }
-require("lazy").setup("plugins", lazy_opt)
+require("lazy").setup(lazy_opt)

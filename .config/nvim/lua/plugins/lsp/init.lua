@@ -7,7 +7,8 @@ return {
         { "williamboman/mason.nvim" },
         { "williamboman/mason-lspconfig.nvim" },
         {
-            "jose-elias-alvarez/null-ls.nvim",
+            -- "nvimtools/none-ls.nvim",
+            "ulisses-cruz/none-ls.nvim",
             dependencies = {
                 "nvim-lua/plenary.nvim",
             },
