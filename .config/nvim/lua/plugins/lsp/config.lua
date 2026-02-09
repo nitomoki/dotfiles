@@ -50,27 +50,27 @@ mason.setup {
     },
 }
 
-require("neodev").setup {}
-
-local nvim_lsp = require "lspconfig"
-require("mason-lspconfig").setup_handlers {
-    function(server_name)
-        local opts = {}
-        opts.on_attach = function(_, bufnr)
-            local bufopts = { silent = true, buffer = bufnr }
-            vim.keymap.set("n", "gD", vim.lsp.buf.declaration, bufopts)
-            vim.keymap.set("n", "gd", vim.lsp.buf.definition, bufopts)
-            vim.keymap.set("n", "K", vim.lsp.buf.hover, bufopts)
-            vim.keymap.set("n", "gi", vim.lsp.buf.implementation, bufopts)
-            vim.keymap.set("n", "gr", vim.lsp.buf.references, bufopts)
-        end
-        if server_opts[server_name] then
-            server_opts[server_name](opts)
-        end
-        --server:setup(opts)
-        nvim_lsp[server_name].setup(opts)
+-- LSP keymaps (attach時に設定)
+vim.api.nvim_create_autocmd("LspAttach", {
+    callback = function(ev)
+        local bufopts = { silent = true, buffer = ev.buf }
+        vim.keymap.set("n", "gD", vim.lsp.buf.declaration, bufopts)
+        vim.keymap.set("n", "gd", vim.lsp.buf.definition, bufopts)
+        vim.keymap.set("n", "K", vim.lsp.buf.hover, bufopts)
+        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, bufopts)
+        vim.keymap.set("n", "gr", vim.lsp.buf.references, bufopts)
     end,
-}
+})
+
+-- サーバーごとの設定を vim.lsp.config() で登録
+for name, configure in pairs(server_opts) do
+    local opts = {}
+    configure(opts)
+    vim.lsp.config(name, opts)
+end
+
+-- mason-lspconfig (automatic_enable がデフォルトで有効)
+require("mason-lspconfig").setup {}
 
 local null_ls = require "null-ls"
 local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
@@ -80,9 +80,10 @@ null_ls.setup {
         null_ls.builtins.formatting.black,
         null_ls.builtins.formatting.isort,
         null_ls.builtins.formatting.clang_format,
+        null_ls.builtins.formatting.prettier,
     },
     on_attach = function(client, bufnr)
-        if client.supports_method "textDocument/formatting" then
+        if client:supports_method "textDocument/formatting" then
             vim.api.nvim_clear_autocmds { group = augroup, buffer = bufnr }
             vim.api.nvim_create_autocmd("BufWritePre", {
                 group = augroup,
