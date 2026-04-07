@@ -51,3 +51,10 @@ if type nvr > /dev/null 2>&1; then
     alias nvro="nvr -cc q "
     alias nvrcd='pwd | xargs -I{} nvr -cc "cd {}"'
 fi
+
+# tmux
+alias tc="tmux new -A -s claude"
+alias tl="tmux ls"
+alias ta="tmux attach -t"
+alias tbit="tmux new -A -s bitburner -d 'cd ~/bitburner-scripts && npm run dev'"
+alias tnvim="tmux new -A -s neovim"
