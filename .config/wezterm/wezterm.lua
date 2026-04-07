@@ -38,6 +38,11 @@ local res = {
             mods = "ALT",
             action = wezterm.action.ShowLauncherArgs { flags = "DOMAINS" },
         },
+        {
+            key = "v",
+            mods = "ALT",
+            action = wezterm.action.PasteFrom "Clipboard",
+        },
         -- ランチャーメニュー（launch_menu の項目を選択）
         {
             key = "s",
