@@ -29,14 +29,6 @@ return {
         end,
     },
     {
-        "norcalli/nvim-colorizer.lua",
-        lazy = true,
-        event = "BufReadPost",
-        config = function()
-            require("colorizer").setup()
-        end,
-    },
-    {
         "goolord/alpha-nvim",
         event = "VimEnter",
         dependencies = { "nvim-tree/nvim-web-devicons" },
@@ -69,9 +61,12 @@ return {
             alpha.setup(dashboard.opts)
 
             -- Disable folding on alpha buffer
-            vim.cmd [[
-                autocmd FileType alpha setlocal nofoldenable
-            ]]
+            vim.api.nvim_create_autocmd("FileType", {
+                pattern = "alpha",
+                callback = function()
+                    vim.opt_local.foldenable = false
+                end,
+            })
         end,
     },
 }

@@ -38,18 +38,4 @@ require("telescope").setup {
             },
         },
     },
-    extensions = {
-        file_browser = {
-            theme = "ivy",
-            mappings = {
-                ["i"] = {
-                    ["<C-h>"] = false,
-                },
-                ["n"] = {
-                    ["<C-t>"] = false,
-                },
-            },
-            hidden = true,
-        },
-    },
 }

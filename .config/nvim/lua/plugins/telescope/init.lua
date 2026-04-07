@@ -4,7 +4,6 @@ return {
     -- module = "telescope",
     cmd = "Telescope",
     dependencies = {
-        "nvim-lua/popup.nvim",
         "nvim-lua/plenary.nvim",
         -- "nvim-telescope/telescope-file-browser.nvim",
         -- "jvgrootveld/telescope-zoxide",
