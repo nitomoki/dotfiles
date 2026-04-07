@@ -58,9 +58,20 @@ local res = {
             mods = "ALT",
             action = wezterm.action.ShowLauncherArgs { flags = "DOMAINS" },
         },
+        -- ランチャーメニュー（launch_menu の項目を選択）
+        {
+            key = "s",
+            mods = "ALT",
+            action = wezterm.action.ShowLauncherArgs { flags = "LAUNCH_MENU_ITEMS" },
+        },
+    },
+    launch_menu = {
+        { label = "Shell", args = { "/bin/zsh", "-l" } },
+        { label = "Claude", args = { "/bin/zsh", "-lc", "claude" } },
+        { label = "Neovim", args = { "nvim", "--listen", "/tmp/nvimsocket" } },
     },
     color_scheme = "tokyonight",
-    default_prog = { "/usr/local/bin/nvim", "--listen", "/tmp/nvimsocket" },
+    default_prog = { "/bin/zsh", "-l" },
 
     tab_bar_at_bottom = true,
     hide_tab_bar_if_only_one_tab = true,
