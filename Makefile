@@ -7,6 +7,9 @@ HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zpreztorc .zshrc
 # .config 以下のディレクトリ（中身を再帰的にリンク）
 CONFIG_DIRS := $(wildcard .config/??*)
 
+# deploy から除外するファイル（環境別設定は setup-wezterm-* で配置する）
+WEZTERM_ENV_FILES := %wezterm_wsl2.lua %wezterm_nucbox.lua %wezterm_windows.lua
+
 # --- コマンド ---
 LINK := ln -sfnv
 MKDIR := mkdir -pv
@@ -23,7 +26,7 @@ deploy: ## dotfiles のシンボリックリンクを作成
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
 	@$(foreach d, $(CONFIG_DIRS), \
 		$(MKDIR) $(HOME)/$(d); \
-		$(foreach f, $(filter-out %example.wsl2.lua %example.windows.lua %example.nucbox.lua, $(wildcard $(d)/*)), \
+		$(foreach f, $(filter-out $(WEZTERM_ENV_FILES), $(wildcard $(d)/*)), \
 			$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);))
 
 test: ## deploy で作成されるリンクを確認（実行はしない）
@@ -33,39 +36,27 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 	@echo ""
 	@echo "=== .config ==="
 	@$(foreach d, $(CONFIG_DIRS), \
-		$(foreach f, $(filter-out %example.wsl2.lua %example.windows.lua %example.nucbox.lua, $(wildcard $(d)/*)), \
+		$(foreach f, $(filter-out $(WEZTERM_ENV_FILES), $(wildcard $(d)/*)), \
 			echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";))
 
 init: ## 初期セットアップスクリプトを実行
 	@$(foreach val, $(sort $(wildcard etc/init/*.sh)), \
 		echo "--- $(val) ---"; bash $(val);)
 
-setup-wezterm-wsl2: ## WSL2 用の wezterm_local.lua を配置
+setup-wezterm-wsl2: ## WSL2 用の wezterm 環境設定をリンク
 	@$(MKDIR) $(HOME)/.config/wezterm
-	@if [ -f $(HOME)/.config/wezterm/wezterm_local.lua ]; then \
-		echo "wezterm_local.lua already exists, skipping"; \
-	else \
-		cp -v $(DOTFILES_DIR)/.config/wezterm/wezterm_local.example.wsl2.lua \
-			$(HOME)/.config/wezterm/wezterm_local.lua; \
-	fi
+	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_wsl2.lua \
+		$(HOME)/.config/wezterm/wezterm_env.lua
 
-setup-wezterm-nucbox: ## Nucbox 用の wezterm_local.lua を配置
+setup-wezterm-nucbox: ## Nucbox 用の wezterm 環境設定をリンク
 	@$(MKDIR) $(HOME)/.config/wezterm
-	@if [ -f $(HOME)/.config/wezterm/wezterm_local.lua ]; then \
-		echo "wezterm_local.lua already exists, skipping"; \
-	else \
-		cp -v $(DOTFILES_DIR)/.config/wezterm/wezterm_local.example.nucbox.lua \
-			$(HOME)/.config/wezterm/wezterm_local.lua; \
-	fi
+	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_nucbox.lua \
+		$(HOME)/.config/wezterm/wezterm_env.lua
 
-setup-wezterm-windows: ## Windows 用の wezterm_local.lua を配置（パスを指定: make setup-wezterm-windows WEZTERM_DIR=...)
+setup-wezterm-windows: ## Windows 用の wezterm 環境設定をリンク（パスを指定: make setup-wezterm-windows WEZTERM_DIR=...)
 	@if [ -z "$(WEZTERM_DIR)" ]; then \
 		echo "Usage: make setup-wezterm-windows WEZTERM_DIR=/path/to/wezterm/config"; \
 		exit 1; \
 	fi
-	@if [ -f $(WEZTERM_DIR)/wezterm_local.lua ]; then \
-		echo "wezterm_local.lua already exists at $(WEZTERM_DIR), skipping"; \
-	else \
-		cp -v $(DOTFILES_DIR)/.config/wezterm/wezterm_local.example.windows.lua \
-			$(WEZTERM_DIR)/wezterm_local.lua; \
-	fi
+	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_windows.lua \
+		$(WEZTERM_DIR)/wezterm_env.lua

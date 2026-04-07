@@ -1,5 +1,5 @@
--- Windows 用の wezterm_local.lua
--- WezTerm の設定ディレクトリに wezterm_local.lua としてコピーして使用
+-- Windows 用の環境別設定
+-- WezTerm の設定ディレクトリに wezterm_env.lua としてシンボリックリンクして使用
 
 local wezterm = require "wezterm"
 

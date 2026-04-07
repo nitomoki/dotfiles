@@ -54,12 +54,14 @@ local res = {
     disable_default_mouse_bindings = true,
 }
 
-local status, l = pcall(function()
-    return require "wezterm_local"
-end)
-if status then
-    for key, val in pairs(l) do
-        res[key] = val
+-- 環境別設定 (wezterm_wsl2.lua, wezterm_nucbox.lua, wezterm_windows.lua)
+-- → シンボリックリンクで wezterm_env.lua として配置
+for _, name in ipairs { "wezterm_env", "wezterm_machine" } do
+    local ok, overrides = pcall(require, name)
+    if ok then
+        for key, val in pairs(overrides) do
+            res[key] = val
+        end
     end
 end
 

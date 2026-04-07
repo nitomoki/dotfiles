@@ -2,3 +2,5 @@
 .DS_Store
 .luarc.json
 *.swp
+wezterm_machine.lua
+wezterm_env.lua

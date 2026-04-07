@@ -1,5 +1,5 @@
--- Nucbox 用の wezterm_local.lua
--- ~/.config/wezterm/wezterm_local.lua としてコピーして使用
+-- Nucbox 用の環境別設定
+-- ~/.config/wezterm/wezterm_env.lua へシンボリックリンクして使用
 
 return {
     default_prog = { "/bin/zsh", "-l" },

@@ -1,7 +1,5 @@
--- WSL2 用の wezterm_local.lua
--- ~/.config/wezterm/wezterm_local.lua としてコピーして使用
-
-local wezterm = require "wezterm"
+-- WSL2 用の環境別設定
+-- ~/.config/wezterm/wezterm_env.lua へシンボリックリンクして使用
 
 return {
     default_prog = { "/bin/zsh", "-l" },
