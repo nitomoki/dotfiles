@@ -33,7 +33,7 @@ end
 
 function M.local_plugins_path()
     local path = vim.fn.expand "~" .. "/NeovimPlugins"
-    if vim.loop.fs_stat(path) then
+    if vim.uv.fs_stat(path) then
         return path, true
     else
         return nil, false

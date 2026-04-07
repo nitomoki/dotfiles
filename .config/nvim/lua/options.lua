@@ -9,7 +9,6 @@ vim.opt.autochdir = false
 vim.opt.autoindent = true
 vim.opt.cmdheight = 0
 vim.opt.compatible = false
-vim.opt.completeopt = "menu"
 vim.opt.completeopt = { "menuone", "noinsert", "noselect" }
 vim.opt.cursorline = true
 vim.opt.encoding = "utf-8"

@@ -4,7 +4,7 @@ require "augroups"
 require "global"
 
 local lazypath = vim.fn.stdpath "data" .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
+if not vim.uv.fs_stat(lazypath) then
     vim.fn.system {
         "git",
         "clone",
@@ -23,6 +23,7 @@ local lazy_opt = {
     },
     change_detection = { notify = false },
     defaults = { lazy = true },
+    rocks = { enabled = false },
     dev = {
         path = require("utils").local_plugins_path(),
     },
