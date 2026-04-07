@@ -53,10 +53,11 @@ setup-wezterm-nucbox: ## Nucbox 用の wezterm 環境設定をリンク
 	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_nucbox.lua \
 		$(HOME)/.config/wezterm/wezterm_env.lua
 
-setup-wezterm-windows: ## Windows 用の wezterm 環境設定をリンク（パスを指定: make setup-wezterm-windows WEZTERM_DIR=...)
+setup-wezterm-windows: ## Windows 用の wezterm 設定をコピー（WSL2 から実行: make setup-wezterm-windows WEZTERM_DIR=...)
 	@if [ -z "$(WEZTERM_DIR)" ]; then \
-		echo "Usage: make setup-wezterm-windows WEZTERM_DIR=/path/to/wezterm/config"; \
+		echo "Usage: make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm"; \
 		exit 1; \
 	fi
-	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_windows.lua \
-		$(WEZTERM_DIR)/wezterm_env.lua
+	@$(MKDIR) $(WEZTERM_DIR)
+	@cp -v $(DOTFILES_DIR)/.config/wezterm/wezterm.lua $(WEZTERM_DIR)/wezterm.lua
+	@cp -v $(DOTFILES_DIR)/.config/wezterm/wezterm_windows.lua $(WEZTERM_DIR)/wezterm_env.lua
