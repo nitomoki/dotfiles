@@ -2,9 +2,11 @@ local map_tables = {
     {
         modes = { "n" },
         maps = {
-            { "<leader>.", [[<CMD>cd %:h<CR>]] },
+            { "<leader>.", function() vim.cmd.cd(vim.fn.expand "%:h") end },
             { "<leader>m", require("tools.asyncMake").run },
-            { "<leader>q", [[<CMD>bd<CR>]] },
+            { "<leader>j", vim.cmd.bnext },
+            { "<leader>k", vim.cmd.bprevious },
+            { "<leader>q", vim.cmd.bdelete },
             { "<leader>:", "q:" },
             { "j", "gj" },
             { "k", "gk" },

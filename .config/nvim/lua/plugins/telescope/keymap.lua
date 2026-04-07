@@ -28,23 +28,6 @@ vim.keymap.set(
     opts
 )
 
-vim.keymap.set(
-    "n",
-    "<leader>j",
-    event_func(function()
-        require("telescope.builtin").buffers { initial_mode = "normal", ignore_current_buffer = true, sort_mru = true }
-    end),
-    opts
-)
-
-vim.keymap.set(
-    "n",
-    "<leader>k",
-    event_func(function()
-        require("telescope.builtin").buffers { initial_mode = "normal", ignore_current_buffer = true, sort_mru = true }
-    end),
-    opts
-)
 
 vim.keymap.set(
     "n",
