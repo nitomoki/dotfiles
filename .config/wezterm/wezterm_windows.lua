@@ -1,5 +1,5 @@
 -- Windows 用の環境別設定
--- WezTerm の設定ディレクトリに wezterm_env.lua としてシンボリックリンクして使用
+-- WezTerm の設定ディレクトリに wezterm_env.lua としてコピーして使用
 
 local wezterm = require "wezterm"
 
@@ -15,23 +15,11 @@ return {
 
     font_size = 10.0,
 
-    ssh_domains = {
-        {
-            name = "nucbox",
-            remote_address = "nucbox:22",
-            username = "tomoki",
-            multiplexing = "WezTerm",
-            local_echo_threshold_ms = 100,
-            ssh_option = {
-                -- WSL2 の SSH を経由して Nucbox に接続
-                proxycommand = "wsl.exe ssh -W %h:%p nucbox",
-            },
-        },
-    },
-
     launch_menu = {
-        { label = "Shell (WSL)", args = { "wsl.exe", "--", "/bin/zsh", "-l" } },
-        { label = "Claude (WSL)", args = { "wsl.exe", "--", "/bin/zsh", "-lc", "claude" } },
+        { label = "Shell", args = { "wsl.exe", "--", "/bin/zsh", "-l" } },
+        { label = "Claude (WSL)", args = { "wsl.exe", "--", "/bin/zsh", "-lc", "tmux new -A -s claude" } },
+        { label = "Claude (Nucbox)", args = { "wsl.exe", "--", "/bin/zsh", "-lc", "autossh -M 0 -o 'ServerAliveInterval 60' -o 'ServerAliveCountMax 3' nucbox -t 'tmux new -A -s claude'" } },
+        { label = "Neovim (WSL)", args = { "wsl.exe", "--", "/bin/zsh", "-lc", "tmux new -A -s neovim" } },
         { label = "PowerShell", args = { "pwsh.exe" } },
     },
 }

@@ -5,19 +5,10 @@ return {
     default_prog = { "/bin/zsh", "-l" },
     font_size = 9.0,
 
-    ssh_domains = {
-        {
-            name = "nucbox",
-            remote_address = "nucbox:22",
-            username = "tomoki",
-            multiplexing = "WezTerm",
-            local_echo_threshold_ms = 100,
-        },
-    },
-
     launch_menu = {
         { label = "Shell", args = { "/bin/zsh", "-l" } },
-        { label = "Claude", args = { "/bin/zsh", "-lc", "claude" } },
-        { label = "Neovim", args = { "nvim", "--listen", "/tmp/nvimsocket" } },
+        { label = "Claude (local)", args = { "/bin/zsh", "-lc", "tmux new -A -s claude" } },
+        { label = "Claude (Nucbox)", args = { "/bin/zsh", "-lc", "autossh -M 0 -o 'ServerAliveInterval 60' -o 'ServerAliveCountMax 3' nucbox -t 'tmux new -A -s claude'" } },
+        { label = "Neovim", args = { "/bin/zsh", "-lc", "tmux new -A -s neovim" } },
     },
 }

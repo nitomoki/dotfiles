@@ -32,12 +32,6 @@ local res = {
             mods = "ALT",
             action = wezterm.action.ToggleFullScreen,
         },
-        -- mux ドメインへの接続/切断
-        {
-            key = "a",
-            mods = "ALT",
-            action = wezterm.action.ShowLauncherArgs { flags = "DOMAINS" },
-        },
         {
             key = "v",
             mods = "ALT",
