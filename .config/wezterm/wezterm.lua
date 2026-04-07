@@ -8,13 +8,13 @@ local res = {
             action = wezterm.action.SpawnTab "CurrentPaneDomain",
         },
         {
-            key = "h",
-            mods = "ALT",
+            key = "PageUp",
+            mods = "CTRL",
             action = wezterm.action.ActivateTabRelative(-1),
         },
         {
-            key = "l",
-            mods = "ALT",
+            key = "PageDown",
+            mods = "CTRL",
             action = wezterm.action.ActivateTabRelative(1),
         },
         {
@@ -48,7 +48,7 @@ local res = {
     color_scheme = "tokyonight",
     term = "wezterm",
 
-    tab_bar_at_bottom = true,
+    tab_bar_at_bottom = false,
     hide_tab_bar_if_only_one_tab = true,
     disable_default_key_bindings = true,
     disable_default_mouse_bindings = true,
