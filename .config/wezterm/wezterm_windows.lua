@@ -16,8 +16,10 @@ return {
     font_size = 10.0,
 
     launch_menu = {
-        { label = "Shell", args = { "/bin/zsh", "-l" } },
-        { label = "Shell (tmux)", args = { "/bin/zsh", "-lc", "tmux new" } },
+        { label = "Shell (WSL)", args = { "/bin/zsh", "-l" } },
+        { label = "Shell (WSL-tmux)", args = { "/bin/zsh", "-lc", "tmux new -A -s shell" } },
+        { label = "Shell (Nucbox)", args = { "/bin/zsh", "-lc", "autossh -M 0 -o 'ServerAliveInterval 60' -o 'ServerAliveCountMax 3' nucbox" } },
+        { label = "Shell (Nucbox-tmux)", args = { "/bin/zsh", "-lc", "autossh -M 0 -o 'ServerAliveInterval 60' -o 'ServerAliveCountMax 3' nucbox -t 'tmux new -A -s shell'" } },
         { label = "Claude (WSL)", args = { "/bin/zsh", "-lc", "tmux new -A -s claude" } },
         { label = "Claude (Nucbox)", args = { "/bin/zsh", "-lc", "autossh -M 0 -o 'ServerAliveInterval 60' -o 'ServerAliveCountMax 3' nucbox -t 'tmux new -A -s claude'" } },
         { label = "Neovim (WSL)", args = { "/bin/zsh", "-lc", "tmux new -A -s neovim" } },
