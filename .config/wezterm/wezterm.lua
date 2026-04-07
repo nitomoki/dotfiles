@@ -1,31 +1,11 @@
 local wezterm = require "wezterm"
 
-wezterm.on("gui-startup", function(cmd)
-    local _, _, window = wezterm.mux.spawn_window(cmd or {})
-    window:gui_window():maximize()
-    window:gui_window():toggle_fullscreen()
-end)
-
-wezterm.on("user-new-window", function(window, pane)
-    window:perform_action(wezterm.action.SpawnWindow, pane)
-    window:toggle_fullscreen()
-end)
--- { key = 'n', mods = 'SUPER', action = act.SpawnWindow },
-
 local res = {
     keys = {
-        -- {
-        --     key = "n",
-        --     mods = "ALT",
-        --     action = wezterm.action.SpawnTab "CurrentPaneDomain",
-        -- },
         {
             key = "z",
             mods = "ALT",
-            action = wezterm.action.SpawnCommandInNewTab {
-                args = { "/bin/zsh", "-l" },
-                domain = "CurrentPaneDomain",
-            },
+            action = wezterm.action.SpawnTab "CurrentPaneDomain",
         },
         {
             key = "h",
@@ -65,21 +45,13 @@ local res = {
             action = wezterm.action.ShowLauncherArgs { flags = "LAUNCH_MENU_ITEMS" },
         },
     },
-    launch_menu = {
-        { label = "Shell", args = { "/bin/zsh", "-l" } },
-        { label = "Claude", args = { "/bin/zsh", "-lc", "claude" } },
-        { label = "Neovim", args = { "nvim", "--listen", "/tmp/nvimsocket" } },
-    },
     color_scheme = "tokyonight",
-    default_prog = { "/bin/zsh", "-l" },
+    term = "wezterm",
 
     tab_bar_at_bottom = true,
     hide_tab_bar_if_only_one_tab = true,
     disable_default_key_bindings = true,
     disable_default_mouse_bindings = true,
-
-    font_size = 9.0,
-    term = "wezterm",
 }
 
 local status, l = pcall(function()

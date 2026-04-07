@@ -3,14 +3,21 @@
 
 local wezterm = require "wezterm"
 
+wezterm.on("gui-startup", function(cmd)
+    local _, _, window = wezterm.mux.spawn_window(cmd or {})
+    window:gui_window():maximize()
+    window:gui_window():toggle_fullscreen()
+end)
+
 return {
     -- Windows では WSL2 のデフォルトディストロをデフォルトに
     default_domain = "WSL:Ubuntu",
 
-    -- Windows ではフォントサイズを調整
     font_size = 10.0,
 
-    -- WSL ドメインは自動検出されるため設定不要
-    -- Nucbox への接続は WSL2 側の wezterm 経由で行う:
-    --   wezterm connect nucbox
+    launch_menu = {
+        { label = "Shell (WSL)", args = { "wsl.exe", "--", "/bin/zsh", "-l" } },
+        { label = "Claude (WSL)", args = { "wsl.exe", "--", "/bin/zsh", "-lc", "claude" } },
+        { label = "PowerShell", args = { "pwsh.exe" } },
+    },
 }

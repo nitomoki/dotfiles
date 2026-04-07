@@ -11,7 +11,7 @@ CONFIG_DIRS := $(wildcard .config/??*)
 LINK := ln -sfnv
 MKDIR := mkdir -pv
 
-.PHONY: deploy test init setup-wezterm-wsl2 setup-wezterm-windows help
+.PHONY: deploy test init setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows help
 
 help: ## ヘルプを表示
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -23,7 +23,7 @@ deploy: ## dotfiles のシンボリックリンクを作成
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
 	@$(foreach d, $(CONFIG_DIRS), \
 		$(MKDIR) $(HOME)/$(d); \
-		$(foreach f, $(filter-out %example.wsl2.lua %example.windows.lua, $(wildcard $(d)/*)), \
+		$(foreach f, $(filter-out %example.wsl2.lua %example.windows.lua %example.nucbox.lua, $(wildcard $(d)/*)), \
 			$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);))
 
 test: ## deploy で作成されるリンクを確認（実行はしない）
@@ -33,7 +33,7 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 	@echo ""
 	@echo "=== .config ==="
 	@$(foreach d, $(CONFIG_DIRS), \
-		$(foreach f, $(filter-out %example.wsl2.lua %example.windows.lua, $(wildcard $(d)/*)), \
+		$(foreach f, $(filter-out %example.wsl2.lua %example.windows.lua %example.nucbox.lua, $(wildcard $(d)/*)), \
 			echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";))
 
 init: ## 初期セットアップスクリプトを実行
@@ -46,6 +46,15 @@ setup-wezterm-wsl2: ## WSL2 用の wezterm_local.lua を配置
 		echo "wezterm_local.lua already exists, skipping"; \
 	else \
 		cp -v $(DOTFILES_DIR)/.config/wezterm/wezterm_local.example.wsl2.lua \
+			$(HOME)/.config/wezterm/wezterm_local.lua; \
+	fi
+
+setup-wezterm-nucbox: ## Nucbox 用の wezterm_local.lua を配置
+	@$(MKDIR) $(HOME)/.config/wezterm
+	@if [ -f $(HOME)/.config/wezterm/wezterm_local.lua ]; then \
+		echo "wezterm_local.lua already exists, skipping"; \
+	else \
+		cp -v $(DOTFILES_DIR)/.config/wezterm/wezterm_local.example.nucbox.lua \
 			$(HOME)/.config/wezterm/wezterm_local.lua; \
 	fi
 
