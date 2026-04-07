@@ -56,7 +56,7 @@ local res = {
     tab_bar_at_bottom = false,
     hide_tab_bar_if_only_one_tab = true,
     disable_default_key_bindings = true,
-    disable_default_mouse_bindings = true,
+    disable_default_mouse_bindings = false,
 }
 
 -- 環境別設定 (wezterm_wsl2.lua, wezterm_nucbox.lua, wezterm_windows.lua)
