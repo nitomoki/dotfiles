@@ -15,6 +15,20 @@ return {
 
     font_size = 10.0,
 
+    ssh_domains = {
+        {
+            name = "nucbox",
+            remote_address = "nucbox:22",
+            username = "tomoki",
+            multiplexing = "WezTerm",
+            local_echo_threshold_ms = 100,
+            ssh_option = {
+                -- WSL2 の SSH を経由して Nucbox に接続
+                proxycommand = "wsl.exe ssh -W %h:%p nucbox",
+            },
+        },
+    },
+
     launch_menu = {
         { label = "Shell (WSL)", args = { "wsl.exe", "--", "/bin/zsh", "-l" } },
         { label = "Claude (WSL)", args = { "wsl.exe", "--", "/bin/zsh", "-lc", "claude" } },
