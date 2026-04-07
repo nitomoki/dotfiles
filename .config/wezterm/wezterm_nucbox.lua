@@ -7,6 +7,7 @@ return {
 
     launch_menu = {
         { label = "Shell", args = { "/bin/zsh", "-l" } },
+        { label = "Shell (tmux)", args = { "/bin/zsh", "-lc", "tmux new" } },
         { label = "Claude", args = { "/bin/zsh", "-lc", "tmux new -A -s claude" } },
         { label = "Neovim", args = { "/bin/zsh", "-lc", "tmux new -A -s neovim" } },
     },

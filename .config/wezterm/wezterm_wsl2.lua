@@ -7,6 +7,7 @@ return {
 
     launch_menu = {
         { label = "Shell", args = { "/bin/zsh", "-l" } },
+        { label = "Shell (tmux)", args = { "/bin/zsh", "-lc", "tmux new" } },
         { label = "Claude (local)", args = { "/bin/zsh", "-lc", "tmux new -A -s claude" } },
         { label = "Claude (Nucbox)", args = { "/bin/zsh", "-lc", "autossh -M 0 -o 'ServerAliveInterval 60' -o 'ServerAliveCountMax 3' nucbox -t 'tmux new -A -s claude'" } },
         { label = "Neovim", args = { "/bin/zsh", "-lc", "tmux new -A -s neovim" } },
