@@ -62,6 +62,7 @@ local res = {
     disable_default_mouse_bindings = true,
 
     font_size = 9.0,
+    term = "wezterm",
 }
 
 local status, l = pcall(function()

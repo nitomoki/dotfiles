@@ -58,3 +58,4 @@ alias tl="tmux ls"
 alias ta="tmux attach -t"
 alias tbit="tmux new -A -s bitburner -d 'cd ~/bitburner-scripts && npm run dev'"
 alias tnvim="tmux new -A -s neovim"
+alias nbc='autossh -M 0 -o "ServerAliveInterval 60" -o "ServerAliveCountMax 3" nucbox -t "tmux new -A -s claude"'
