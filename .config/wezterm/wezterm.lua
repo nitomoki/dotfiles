@@ -2,13 +2,28 @@ local wezterm = require "wezterm"
 
 wezterm.on("format-tab-title", function(tab)
     local pane = tab.active_pane
-    local title = pane.title
-    -- プロセス名フォールバック（wslhost.exe など）を避け、OSCタイトルを優先
-    if title and title ~= "" and not title:match "^wslhost" then
+    local proc = pane.foreground_process_name or ""
+    local title = pane.title or ""
+    -- プロセス名から接続先を判定
+    if proc:match "mosh" then
+        return "mosh"
+    elseif proc:match "ssh" or proc:match "autossh" then
+        return "ssh"
+    elseif title ~= "" and not title:match "^wslhost" then
         return title
     end
-    -- フォールバック: タブインデックス表示
     return "Tab " .. (tab.tab_index + 1)
+end)
+
+-- タブバートグル (Alt+b)
+local toggle_tab_bar = wezterm.action_callback(function(window)
+    local overrides = window:get_config_overrides() or {}
+    if overrides.enable_tab_bar == nil then
+        overrides.enable_tab_bar = true
+    else
+        overrides.enable_tab_bar = not overrides.enable_tab_bar
+    end
+    window:set_config_overrides(overrides)
 end)
 
 local res = {
@@ -49,12 +64,18 @@ local res = {
             mods = "ALT",
             action = wezterm.action.ShowLauncherArgs { flags = "LAUNCH_MENU_ITEMS" },
         },
+        -- タブバー表示トグル
+        {
+            key = "b",
+            mods = "ALT",
+            action = toggle_tab_bar,
+        },
     },
     color_scheme = "tokyonight",
     term = "wezterm",
 
     tab_bar_at_bottom = false,
-    hide_tab_bar_if_only_one_tab = true,
+    enable_tab_bar = false,
     disable_default_key_bindings = true,
     disable_default_mouse_bindings = false,
 }
