@@ -1,5 +1,16 @@
 local wezterm = require "wezterm"
 
+wezterm.on("format-tab-title", function(tab)
+    local pane = tab.active_pane
+    local title = pane.title
+    -- プロセス名フォールバック（wslhost.exe など）を避け、OSCタイトルを優先
+    if title and title ~= "" and not title:match "^wslhost" then
+        return title
+    end
+    -- フォールバック: タブインデックス表示
+    return "Tab " .. (tab.tab_index + 1)
+end)
+
 local res = {
     keys = {
         {
@@ -21,11 +32,6 @@ local res = {
             key = "q",
             mods = "CTRL",
             action = wezterm.action.SendString "\x11",
-        },
-        {
-            key = "n",
-            mods = "ALT",
-            action = wezterm.action.SpawnWindow,
         },
         {
             key = "Enter",
