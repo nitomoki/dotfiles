@@ -2,7 +2,7 @@ DOTFILES_DIR := $(PWD)
 
 # --- シンボリックリンク対象 ---
 # ホームディレクトリ直下に配置するドットファイル
-HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zpreztorc .zshrc
+HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zshrc
 
 # .config 以下のディレクトリ（中身を再帰的にリンク）
 CONFIG_DIRS := $(wildcard .config/??*)
