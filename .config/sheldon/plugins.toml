@@ -8,14 +8,17 @@ github = "romkatv/powerlevel10k"
 [plugins.fast-syntax-highlighting]
 github = "zdharma/fast-syntax-highlighting"
 
+[plugins.zsh-completions]
+github = "zsh-users/zsh-completions"
+
 [plugins.zsh-autosuggestions]
 github = "zsh-users/zsh-autosuggestions"
 
 [plugins.git-open]
 github = "paulirish/git-open"
 
-[plugins.history-search-multi-word]
-github = "zdharma/history-search-multi-word"
+[plugins.zsh-history-substring-search]
+github = "zsh-users/zsh-history-substring-search"
 
 [plugins.dotfiles]
 local = "~/dotfiles/zsh"
