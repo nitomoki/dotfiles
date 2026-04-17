@@ -7,6 +7,9 @@ HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zshrc
 # .config 以下のディレクトリ（中身を再帰的にリンク）
 CONFIG_DIRS := $(wildcard .config/??*)
 
+# .claude 直下のファイル（Claude Code 設定）
+CLAUDE_FILES := $(wildcard .claude/*)
+
 # deploy から除外するファイル（環境別設定は setup-wezterm-* で配置する）
 WEZTERM_ENV_FILES := %wezterm_wsl2.lua %wezterm_nucbox.lua %wezterm_windows.lua
 
@@ -28,6 +31,9 @@ deploy: ## dotfiles のシンボリックリンクを作成
 		$(MKDIR) $(HOME)/$(d); \
 		$(foreach f, $(filter-out $(WEZTERM_ENV_FILES), $(wildcard $(d)/*)), \
 			$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);))
+	@$(MKDIR) $(HOME)/.claude
+	@$(foreach f, $(CLAUDE_FILES), \
+		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
 
 test: ## deploy で作成されるリンクを確認（実行はしない）
 	@echo "=== Home dotfiles ==="
@@ -38,6 +44,10 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 	@$(foreach d, $(CONFIG_DIRS), \
 		$(foreach f, $(filter-out $(WEZTERM_ENV_FILES), $(wildcard $(d)/*)), \
 			echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";))
+	@echo ""
+	@echo "=== .claude ==="
+	@$(foreach f, $(CLAUDE_FILES), \
+		echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";)
 
 init: ## 初期セットアップスクリプトを実行
 	@$(foreach val, $(sort $(wildcard etc/init/*.sh)), \
