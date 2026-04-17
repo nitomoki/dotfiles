@@ -19,7 +19,7 @@ if [ -n "$CLAUDE_STATUS_NERDFONT" ]; then
   waiting_icon=''  # nf-fa-bell
   idle_icon=''   # nf-fa-check
 else
-  running_icon='⚙'  # U+2699 GEAR
+  running_icon='⚡'  # U+26A1 HIGH VOLTAGE
   waiting_icon='⚠'  # U+26A0 WARNING SIGN
   idle_icon='✓'     # U+2713 CHECK MARK
 fi
