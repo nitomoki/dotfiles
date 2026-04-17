@@ -25,7 +25,7 @@ else
 fi
 
 case "$status" in
-  running) printf ' #[fg=yellow]%s#[default]' "$running_icon" ;;
-  waiting) printf ' #[fg=red,blink]%s#[default]' "$waiting_icon" ;;
-  idle)    printf ' #[fg=green]%s#[default]' "$idle_icon" ;;
+  running) printf '#[fg=yellow][%s]#[default]' "$running_icon" ;;
+  waiting) printf '#[fg=black,bg=red,blink][%s]#[default]' "$waiting_icon" ;;
+  idle)    printf '#[fg=green][%s]#[default]' "$idle_icon" ;;
 esac
