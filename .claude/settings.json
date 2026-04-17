@@ -1,0 +1,64 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "model": "claude-opus-4-7",
+  "effortLevel": "xhigh",
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; echo idle > \"/tmp/claude-status-${id}\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; echo running > \"/tmp/claude-status-${id}\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; echo idle > \"/tmp/claude-status-${id}\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; f=\"/tmp/claude-status-${id}\"; [ \"$(cat \"$f\" 2>/dev/null)\" = running ] && echo waiting > \"$f\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; rm -f \"/tmp/claude-status-${id}\""
+          }
+        ]
+      }
+    ]
+  }
+}
