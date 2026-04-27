@@ -1,11 +1,19 @@
+SHELL := /bin/bash
 DOTFILES_DIR := $(PWD)
 
 # --- シンボリックリンク対象 ---
 # ホームディレクトリ直下に配置するドットファイル
 HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zshrc
 
-# .config 以下のディレクトリ（中身を再帰的にリンク）
-CONFIG_DIRS := $(wildcard .config/??*)
+# .config 以下のディレクトリ（中身を直下までリンク）
+# .config/systemd は user/ 配下に他アプリの管理ファイルが混ざるため、
+# 個別ファイル単位でリンクする SYSTEMD_USER_FILES で扱う。
+CONFIG_DIRS := $(filter-out .config/systemd, $(wildcard .config/??*))
+
+# 個別管理する systemd --user ユニット／enable リンク
+SYSTEMD_USER_FILES := \
+	.config/systemd/user/obsidian.service \
+	.config/systemd/user/graphical-session.target.wants/obsidian.service
 
 # .claude 直下のファイル（Claude Code 設定）
 CLAUDE_FILES := $(wildcard .claude/*)
@@ -13,11 +21,16 @@ CLAUDE_FILES := $(wildcard .claude/*)
 # deploy から除外するファイル（環境別設定は setup-wezterm-* で配置する）
 WEZTERM_ENV_FILES := %wezterm_wsl2.lua %wezterm_nucbox.lua %wezterm_windows.lua
 
+# パッケージ一覧
+PACKAGES_FILE := packages.txt
+# packages-diff から除外する Ubuntu base / kernel 系
+PACKAGES_IGNORE_FILE := packages-ignore.txt
+
 # --- コマンド ---
 LINK := ln -sfnv
 MKDIR := mkdir -pv
 
-.PHONY: deploy test init setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows help
+.PHONY: deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows help
 
 help: ## ヘルプを表示
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -31,6 +44,9 @@ deploy: ## dotfiles のシンボリックリンクを作成
 		$(MKDIR) $(HOME)/$(d); \
 		$(foreach f, $(filter-out $(WEZTERM_ENV_FILES), $(wildcard $(d)/*)), \
 			$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);))
+	@$(foreach f, $(SYSTEMD_USER_FILES), \
+		$(MKDIR) $(HOME)/$(dir $(f)); \
+		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
 	@$(MKDIR) $(HOME)/.claude
 	@$(foreach f, $(CLAUDE_FILES), \
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
@@ -45,6 +61,10 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 		$(foreach f, $(filter-out $(WEZTERM_ENV_FILES), $(wildcard $(d)/*)), \
 			echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";))
 	@echo ""
+	@echo "=== systemd --user ==="
+	@$(foreach f, $(SYSTEMD_USER_FILES), \
+		echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";)
+	@echo ""
 	@echo "=== .claude ==="
 	@$(foreach f, $(CLAUDE_FILES), \
 		echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";)
@@ -52,6 +72,20 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 init: ## 初期セットアップスクリプトを実行
 	@$(foreach val, $(sort $(wildcard etc/init/*.sh)), \
 		echo "--- $(val) ---"; bash $(val);)
+
+packages-install: ## packages.txt のパッケージを apt でインストール
+	@bash etc/init/1_install.sh
+
+packages-diff: ## apt-mark showmanual と packages.txt の差分を表示（packages-ignore.txt は除外）
+	@comm -23 <(apt-mark showmanual | sort) \
+		<(cat $(PACKAGES_FILE) $(PACKAGES_IGNORE_FILE) | grep -vE '^\s*(#|$$)' | sort -u) \
+		| sed 's/^/  + /' \
+		| awk 'BEGIN{print "[ packages.txt にない手動インストール済 ]"} {print}'
+	@echo ""
+	@comm -13 <(apt-mark showmanual | sort) \
+		<(grep -vE '^\s*(#|$$)' $(PACKAGES_FILE) | sort) \
+		| sed 's/^/  - /' \
+		| awk 'BEGIN{print "[ packages.txt にあるが未インストール ]"} {print}'
 
 setup-wezterm-wsl2: ## WSL2 用の wezterm 環境設定をリンク
 	@$(MKDIR) $(HOME)/.config/wezterm

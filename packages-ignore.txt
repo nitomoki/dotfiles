@@ -1,0 +1,20 @@
+# packages-diff の差分から除外するパッケージ。
+# packages.txt に書かない (= 新マシンの apt install 対象にしない) が、
+# apt-mark showmanual には現れるため diff のノイズになる Ubuntu 標準のメタ／カーネル／
+# ブートローダを列挙する。
+#
+# これらを auto に落とすと apt autoremove で誤削除される恐れがあるため manual のまま残す。
+
+# Ubuntu インストール時に入る meta packages
+ubuntu-desktop-minimal
+ubuntu-minimal
+ubuntu-restricted-addons
+ubuntu-standard
+ubuntu-wallpapers
+
+# Kernel / boot loader (バージョン名は Ubuntu のリリース毎に変わるので注意)
+linux-generic-hwe-24.04
+grub-efi-amd64
+grub-efi-amd64-signed
+shim-signed
+efibootmgr

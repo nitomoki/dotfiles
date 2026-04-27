@@ -15,10 +15,6 @@ local server_opts = {
                     globals = {
                         -- Get the language server to recognize the `vim` global
                         "vim",
-                        -- awesome lua config
-                        "awesome",
-                        "client",
-                        "root",
                         -- plenary
                         "describe",
                         "it",

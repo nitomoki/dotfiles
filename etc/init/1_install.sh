@@ -1,50 +1,23 @@
 #!/bin/bash
+# packages.txt をもとに apt パッケージをインストール。
+# 一覧の編集は dotfiles リポジトリの packages.txt で行う。
+set -e
 
-packages=(
-    curl
-    make
-    cmake
-    git
-    zsh
-    build-essential
-    pkg-config
-    clang
-    ninja-build
-    gettext
-    libtool
-    libtool-bin
-    autoconf
-    automake
-    unzip
-    python3-pip
-    python3
-    fontconfig
-    ruby
-    gem
-    nodejs
-    npm
-    cargo
-    silversearcher-ag
-    latexmk
-    nkf
-    perl
-    xclip
-    vim
-    cpanminus
-    ripgrep
-)
+PACKAGES_FILE="$(dirname "$0")/../../packages.txt"
 
-if [ "`uname -r |grep 'arch'`" ]; then
-    sudo pacman -Syyu --noconfirm
-    for package in "${packages[@]}"; do
-        sudo pacman -Sy --noconfirm $package
-    done
-    sudo pacman -Syyu --noconfirm
-elif [ "`cat /etc/os-release | grep 'Ubuntu'`" ]; then
-    sudo apt update -y
-    sudo apt install -y ${packages[@]}
-    sudo apt upgrade -y
-    sudo apt autoremove -y
+if [ ! -f "$PACKAGES_FILE" ]; then
+    echo "packages.txt not found at $PACKAGES_FILE" >&2
+    exit 1
 fi
 
+# コメント / 空行を除外して 1 行 1 パッケージに整形
+mapfile -t packages < <(grep -vE '^\s*(#|$)' "$PACKAGES_FILE")
 
+if grep -q 'Ubuntu' /etc/os-release; then
+    sudo apt update -y
+    sudo apt install -y "${packages[@]}"
+    sudo apt upgrade -y
+    sudo apt autoremove -y
+else
+    echo "Non-Ubuntu environment; skipping apt install."
+fi

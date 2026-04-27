@@ -1,0 +1,67 @@
+# 永続的にインストールしたい apt パッケージのリスト。
+# 新マシンでセットアップ: make packages-install
+# 現在の差分を確認:       make packages-diff
+#
+# 注意: gh / tailscale / wezterm / obsidian / steam-launcher などは
+#       追加の apt source / .deb / snap が必要。本リストでカバーされない場合あり。
+#       Neovim のビルド依存 (ninja-build, gettext, libtool 等) は etc/init/neovim.sh で扱う。
+
+# --- Build & dev base ---
+build-essential
+clang
+cmake
+curl
+git
+make
+pkg-config
+unzip
+
+# --- Language runtimes ---
+cargo
+nodejs
+npm
+perl
+python3
+python3-pip
+ruby
+
+# --- Editors / shell ---
+vim
+zsh
+
+# --- CLI tools ---
+cpanminus
+gh
+mosh
+nkf
+pipx
+ripgrep
+silversearcher-ag
+tmux
+xclip
+
+# --- LaTeX ---
+latexmk
+
+# --- Fonts / locale ---
+fontconfig
+fonts-noto-cjk-extra
+gnome-user-docs-ja
+language-pack-gnome-ja
+language-pack-ja
+
+# --- Japanese IME (mozc) ---
+ibus-mozc
+libm17n-0
+m17n-db
+mozc-utils-gui
+
+# --- Network / remote access ---
+openssh-server
+tailscale
+x11vnc
+
+# --- GUI apps ---
+obsidian
+steam-launcher
+wezterm
