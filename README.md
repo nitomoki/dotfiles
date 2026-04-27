@@ -1,6 +1,6 @@
 # dotfiles
 
-Linux (Ubuntu / WSL2) 環境向けの個人 dotfiles。`make` でシンボリックリンクを張り、`packages.txt` を真実の情報源として apt パッケージを管理する。
+Linux (Ubuntu / WSL2) 環境向けの個人 dotfiles。`make` でシンボリックリンクを張り、`packages.txt` をもとに apt パッケージを管理する。
 
 ## 構成
 
@@ -39,7 +39,7 @@ WezTerm を使う環境では、続けて環境別の設定を 1 つ選択する
 
 ```sh
 make setup-wezterm-wsl2        # WSL2 (Linux 側)
-make setup-wezterm-nucbox      # Nucbox (ベアメタル Linux)
+make setup-wezterm-nucbox      # Nucbox (Linux)
 make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm
 ```
 
@@ -63,12 +63,8 @@ make setup-wezterm-*     # 環境別の wezterm 設定をリンク／コピー
 
 - `packages.txt` を編集 → `make packages-install` で反映。
 - 追加で手動インストールしたものを把握するには `make packages-diff`。
-  - `packages.txt にない手動インストール済` と `packages.txt にあるが未インストール` の双方向の差分を出す。
+  - `packages.txt にない手動インストール済` と `packages.txt にあるが未インストール` の差分を出す。
   - Ubuntu base / kernel など追跡したくないものは `packages-ignore.txt` に書く。
 - apt source / `.deb` / snap が必要なもの (gh, tailscale, wezterm, obsidian, steam-launcher など) は `packages.txt` に載せていてもインストール経路が別なことがある。
 - Neovim をソースからビルドする際の依存と手順は `etc/init/neovim.sh` 側で扱う。
 
-## ワークフロー
-
-- 修正は必ず作業ブランチで行い、`master` には直接コミットしない。
-- 完了したら `origin` に push し、PR 経由で `master` にマージする。
