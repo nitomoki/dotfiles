@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Emit a WezTerm OSC 1337 SetUserVar sequence to the controlling terminal.
+# Emit a WezTerm OSC 1337 SetUserVar sequence to the user's terminal.
 # - 値は base64 必須なので内部で encode する。
 # - tmux 内 ($TMUX があり) なら DCS passthrough で 1 層ラップする。
 #   想定経路:
@@ -7,9 +7,14 @@
 #     Win → WSL2 → et → Nucbox → tmux → ここ (tmux 1 層: Nucbox 側のみ)
 #   どちらも tmux 層は 1 つだけなので単一ラップで足りる。
 # - 多重 tmux ネスト (tmux 内 tmux 等) は想定外。
-# - 出力先は /dev/tty 固定 (stdout がリダイレクト/パイプ/captureされても
-#   制御端末まで OSC を確実に届けるため。nvim の vim.fn.system 等から呼ぶ
-#   ケースで stdout が握られても動く)。制御端末が無い環境ではエラー終了。
+#
+# 出力先 tty の決定:
+#   nvim の :! や plenary Job:new() のように子プロセスへ controlling tty を
+#   渡さない呼び出し元 (= /dev/tty が ENXIO で開けない) からも動かしたいので、
+#     1) /dev/tty が書ければ使う (素のシェルから直接叩くケース)
+#     2) ダメなら /proc 経由でプロセスツリーを上に辿り、fd 0/1/2 が
+#        /dev/pts/* な祖先を見つけて、そこへ書く (nvim 経由ケース)
+#   どちらでも見つからなければエラー終了。
 #
 # Usage:
 #   wezterm-uservar IME 1
@@ -26,10 +31,45 @@ name=$1
 value=$2
 b64=$(printf '%s' "$value" | base64 | tr -d '\n')
 
+resolve_tty() {
+    # /dev/tty は権限上は誰でも writable に見えるが、controlling tty が
+    # 無いプロセスからは ENXIO で実際には開けない。test -w では弾けないので、
+    # 実 open を試みて成否を判定する。
+    if (: >/dev/tty) 2>/dev/null; then
+        printf '/dev/tty\n'
+        return 0
+    fi
+    local pid=$$
+    while [ "$pid" -gt 1 ]; do
+        local fd link
+        for fd in 0 1 2; do
+            link=$(readlink "/proc/$pid/fd/$fd" 2>/dev/null) || continue
+            case "$link" in
+                /dev/pts/*|/dev/tty[0-9]*)
+                    if (: >"$link") 2>/dev/null; then
+                        printf '%s\n' "$link"
+                        return 0
+                    fi
+                    ;;
+            esac
+        done
+        local parent
+        parent=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+        [ -z "$parent" ] && return 1
+        pid=$parent
+    done
+    return 1
+}
+
+if ! out=$(resolve_tty); then
+    echo "$(basename "$0"): no writable terminal found in process ancestry" >&2
+    exit 1
+fi
+
 {
     if [ -n "${TMUX:-}" ]; then
         printf '\033Ptmux;\033\033]1337;SetUserVar=%s=%s\007\033\\' "$name" "$b64"
     else
         printf '\033]1337;SetUserVar=%s=%s\007' "$name" "$b64"
     fi
-} >/dev/tty
+} >"$out"
