@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Emit a WezTerm OSC 1337 SetUserVar sequence to the current pane.
+# Emit a WezTerm OSC 1337 SetUserVar sequence to the controlling terminal.
 # - 値は base64 必須なので内部で encode する。
 # - tmux 内 ($TMUX があり) なら DCS passthrough で 1 層ラップする。
 #   想定経路:
@@ -7,6 +7,9 @@
 #     Win → WSL2 → et → Nucbox → tmux → ここ (tmux 1 層: Nucbox 側のみ)
 #   どちらも tmux 層は 1 つだけなので単一ラップで足りる。
 # - 多重 tmux ネスト (tmux 内 tmux 等) は想定外。
+# - 出力先は /dev/tty 固定 (stdout がリダイレクト/パイプ/captureされても
+#   制御端末まで OSC を確実に届けるため。nvim の vim.fn.system 等から呼ぶ
+#   ケースで stdout が握られても動く)。制御端末が無い環境ではエラー終了。
 #
 # Usage:
 #   wezterm-uservar IME 1
@@ -23,8 +26,10 @@ name=$1
 value=$2
 b64=$(printf '%s' "$value" | base64 | tr -d '\n')
 
-if [ -n "${TMUX:-}" ]; then
-    printf '\033Ptmux;\033\033]1337;SetUserVar=%s=%s\007\033\\' "$name" "$b64"
-else
-    printf '\033]1337;SetUserVar=%s=%s\007' "$name" "$b64"
-fi
+{
+    if [ -n "${TMUX:-}" ]; then
+        printf '\033Ptmux;\033\033]1337;SetUserVar=%s=%s\007\033\\' "$name" "$b64"
+    else
+        printf '\033]1337;SetUserVar=%s=%s\007' "$name" "$b64"
+    fi
+} >/dev/tty
