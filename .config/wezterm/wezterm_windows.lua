@@ -9,26 +9,21 @@ wezterm.on("gui-startup", function(cmd)
     window:gui_window():toggle_fullscreen()
 end)
 
--- IME 制御 (動作確認用 / 多重診断モード):
--- リモート/ローカルから OSC 1337 SetUserVar=IME=... を受け取り、
--- 複数経路で痕跡を残して「config 読み込みが効いているか」「ハンドラが発火しているか」
--- 「外部プロセス起動が動いているか」を切り分けられるようにしている。
+-- IME 制御 (動作確認用 / spawn 検証モード):
+-- 前段の診断で WSL2 経由なら user-var-changed イベントは発火することが確定。
+-- ただし cmd.exe + ">>" リダイレクト経由の追記は走っていなかった。
+-- 本番では im-select.exe を引数だけで叩くのでリダイレクト不要。
+-- ここでは「外部プロセス起動自体が動いているか」を別経路で見る。
 --
--- テスト方法 (任意のシェルから):
---   printf '\033]1337;SetUserVar=IME=%s\007' "$(printf off | base64)"
---   printf '\033]1337;SetUserVar=IME=%s\007' "$(printf on  | base64)"
+-- 痕跡:
+--   wezterm-ime-loaded.log     ← config 読込時に追記 (Lua I/O)
+--   wezterm-ime-handler.log    ← user-var-changed 発火時に追記 (Lua I/O)
+--   wezterm-ime-test.log       ← IME 状態を Lua I/O で直書き (旧 cmd.exe 経路の代替)
+--   wezterm-ime-spawn.log      ← spawn したプロセス自身が書く (PowerShell 経由)
 --
--- 確認 (PowerShell):
---   Get-Content $env:USERPROFILE\wezterm-ime-test.log         ← 外部プロセス起動の痕跡
---   Get-Content $env:USERPROFILE\wezterm-ime-handler.log      ← ハンドラ発火の痕跡 (Lua I/O 直書き)
---   Get-Content $env:USERPROFILE\wezterm-ime-loaded.log       ← config 読み込み時に必ず1行出る
---   wezterm cli list                                          ← log_info も拾えれば
---
--- どの痕跡が出るかで層別に切り分け：
---   loaded.log すら出ない         → config 自体が読めていない
---   loaded.log だけ出る            → ハンドラが発火していない (OSC 1337 が届いていない)
---   handler.log だけ出る           → ハンドラは動くが background_child_process が動いていない
---   全部出る / ime-test.log も出る → 配線 OK
+-- 切り分け:
+--   spawn.log が出る           → background_child_process は動いている (本番で im-select.exe を呼べる)
+--   spawn.log が出ない         → 外部プロセス起動が完全に死んでいる (権限 / PATH 等を疑う)
 
 local function home_path(name)
     return (os.getenv "USERPROFILE" or os.getenv "HOME" or "") .. "\\" .. name
@@ -42,12 +37,10 @@ local function append_line(path, line)
     end
 end
 
--- (1) config が読み込まれた瞬間に必ず1行残す
 append_line(home_path "wezterm-ime-loaded.log", "[" .. os.date "%Y-%m-%d %H:%M:%S" .. "] wezterm_windows.lua loaded")
-wezterm.log_info "wezterm_windows.lua loaded (IME diag mode)"
+wezterm.log_info "wezterm_windows.lua loaded (IME spawn check mode)"
 
 wezterm.on("user-var-changed", function(_window, _pane, name, value)
-    -- (2) ハンドラに入った時点で全イベントを記録（IME 以外も含めて見える化）
     append_line(
         home_path "wezterm-ime-handler.log",
         "[" .. os.date "%Y-%m-%d %H:%M:%S" .. "] event name=" .. tostring(name) .. " value=" .. tostring(value)
@@ -58,11 +51,20 @@ wezterm.on("user-var-changed", function(_window, _pane, name, value)
         return
     end
 
-    -- (3) 外部プロセス起動経路: cmd.exe で %USERPROFILE% に追記
+    -- (a) IME 状態は Lua I/O で堅実に記録 (本番の運用ログとしてもこのまま使える形)
+    append_line(
+        home_path "wezterm-ime-test.log",
+        "[" .. os.date "%Y-%m-%d %H:%M:%S" .. "] IME=" .. tostring(value)
+    )
+
+    -- (b) 外部プロセス起動の単独検証: PowerShell で wezterm-ime-spawn.log に追記させる。
+    --     これが書ければ wezterm.background_child_process は動作しており、本番で
+     --     im-select.exe をそのまま呼び出せると確定する。
     wezterm.background_child_process {
-        "cmd.exe",
-        "/c",
-        "echo [" .. os.date "%Y-%m-%d %H:%M:%S" .. "] IME=" .. value .. " >> %USERPROFILE%\\wezterm-ime-test.log",
+        "powershell.exe",
+        "-NoProfile",
+        "-Command",
+        "Add-Content -Path \"$env:USERPROFILE\\wezterm-ime-spawn.log\" -Value (\"[\" + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + \"] spawned IME=" .. tostring(value) .. "\")",
     }
 end)
 
