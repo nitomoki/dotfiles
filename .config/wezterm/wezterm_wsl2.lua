@@ -5,11 +5,12 @@ return {
     default_prog = { "/bin/zsh", "-l" },
     font_size = 9.0,
 
+    -- 各サーバごとに「素のシェル」と「tmux 接続」の 2 種だけを並べる方針。
+    -- Nucbox への接続は Eternal Terminal (et) を使用。
     launch_menu = {
-        { label = "Shell", args = { "/bin/zsh", "-l" } },
-        { label = "Shell (tmux)", args = { "/bin/zsh", "-lc", "tmux new" } },
-        { label = "Claude (local)", args = { "/bin/zsh", "-lc", "tmux new -A -s claude" } },
-        { label = "Claude (Nucbox)", args = { "/bin/zsh", "-lc", "if command -v mosh >/dev/null 2>&1; then mosh nucbox -- tmux new -A -s claude; else autossh -M 0 -o 'ServerAliveInterval 60' -o 'ServerAliveCountMax 3' nucbox -t 'tmux new -A -s claude'; fi" } },
-        { label = "Neovim", args = { "/bin/zsh", "-lc", "tmux new -A -s neovim" } },
+        { label = "WSL", args = { "/bin/zsh", "-l" } },
+        { label = "WSL (tmux)", args = { "/bin/zsh", "-lc", "tmux new -A -s shell" } },
+        { label = "Nucbox", args = { "/bin/zsh", "-lc", "et nucbox" } },
+        { label = "Nucbox (tmux)", args = { "/bin/zsh", "-lc", "et nucbox -c 'tmux new -A -s shell'" } },
     },
 }
