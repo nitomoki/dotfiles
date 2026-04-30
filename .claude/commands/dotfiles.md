@@ -34,7 +34,9 @@ make deploy
 
 `~/.claude/CLAUDE.md` を参照し、このマシンの環境（WSL2 / Nucbox / Windows ネイティブ）を判定する。判定結果に応じて以下のいずれかを実行する。
 
-- WSL2: `make setup-wezterm-wsl2`
+- WSL2: `make setup-wezterm-wsl2` を実行したあと、**続けて Windows 側にも配布する**。
+  - WezTerm GUI 本体は Windows 側で動作しているため、WSL2 側だけでは GUI に反映されない。
+  - `ls /mnt/c/Users/` で Windows ユーザー名を確認し、`make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm` を実行する。
 - Nucbox: `make setup-wezterm-nucbox`
 - Windows ネイティブ: `make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm`
 
