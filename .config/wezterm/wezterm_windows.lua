@@ -17,32 +17,43 @@ end)
 --
 -- フォールバック:
 --   zenhan.exe が PATH に無ければ何もしない (handler は登録するが no-op)。
---   起動時に WezTerm の log に warn を出すだけで GUI には影響させない。
+--   初回イベント発火時に WezTerm の log に warn を出すだけで GUI には影響させない。
+--
+-- 注意:
+--   wezterm.run_child_process は内部で yield するため module 評価中
+--   (require の途中) に呼ぶと "attempt to yield across a C-call boundary"
+--   で require 失敗 → 設定丸ごとロード不能になる。必ずイベント
+--   ハンドラ内 (= coroutine 上) で呼び、結果は wezterm.GLOBAL に
+--   キャッシュする。
 local function find_zenhan()
-    local ok, stdout = wezterm.run_child_process { "where.exe", "zenhan.exe" }
-    if not ok or not stdout or stdout == "" then
-        return nil
+    if wezterm.GLOBAL.zenhan_path ~= nil then
+        return wezterm.GLOBAL.zenhan_path or nil
     end
-    -- where.exe は \r\n 区切りで複数返す可能性がある。先頭行を採用。
-    return (stdout:gsub("\r", ""):match "([^\n]+)")
-end
-
-local zenhan_path = find_zenhan()
-if zenhan_path then
-    wezterm.log_info("IME OSC handler: zenhan resolved at " .. zenhan_path)
-else
-    wezterm.log_warn "IME OSC handler: zenhan.exe not found on PATH; IME OSC user-var will be ignored"
+    local ok, stdout = wezterm.run_child_process { "where.exe", "zenhan.exe" }
+    local resolved = nil
+    if ok and stdout and stdout ~= "" then
+        -- where.exe は \r\n 区切りで複数返す可能性がある。先頭行を採用。
+        resolved = stdout:gsub("\r", ""):match "([^\n]+)"
+    end
+    wezterm.GLOBAL.zenhan_path = resolved or false
+    if resolved then
+        wezterm.log_info("IME OSC handler: zenhan resolved at " .. resolved)
+    else
+        wezterm.log_warn "IME OSC handler: zenhan.exe not found on PATH; IME OSC user-var will be ignored"
+    end
+    return resolved
 end
 
 wezterm.on("user-var-changed", function(_window, _pane, name, value)
     if name ~= "IME" then
         return
     end
-    if not zenhan_path then
+    local path = find_zenhan()
+    if not path then
         return
     end
     -- value は user-var の生文字列 ("0" / "1")。zenhan 第1引数にそのまま渡す。
-    wezterm.background_child_process { zenhan_path, tostring(value) }
+    wezterm.background_child_process { path, tostring(value) }
 end)
 
 return {
