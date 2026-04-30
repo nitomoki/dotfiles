@@ -9,20 +9,24 @@ wezterm.on("gui-startup", function(cmd)
     window:gui_window():toggle_fullscreen()
 end)
 
--- IME 制御: リモート/ローカルから OSC 1337 SetUserVar=IME=... を受け取り
--- im-select.exe で Windows 側 IME を切り替える
+-- IME 制御 (動作確認用): リモート/ローカルから OSC 1337 SetUserVar=IME=... を受け取り、
+-- まずは Windows 標準の cmd.exe でログファイルに追記するだけにしてある。
+-- 配線が確認できたら im-select.exe 等の実際の IME 切替コマンドに差し替える。
+--
 -- テスト方法 (任意のシェルから):
 --   printf '\033]1337;SetUserVar=IME=%s\007' "$(printf off | base64)"
 --   printf '\033]1337;SetUserVar=IME=%s\007' "$(printf on  | base64)"
+-- 確認:
+--   Windows 側で  type %TEMP%\wezterm-ime-test.log
 wezterm.on("user-var-changed", function(_window, _pane, name, value)
     if name ~= "IME" then
         return
     end
-    if value == "off" then
-        wezterm.background_child_process { "im-select.exe", "1033" } -- en-US
-    elseif value == "on" then
-        wezterm.background_child_process { "im-select.exe", "0411" } -- ja-JP IME
-    end
+    wezterm.background_child_process {
+        "cmd.exe",
+        "/c",
+        "echo [" .. os.date "%Y-%m-%d %H:%M:%S" .. "] IME=" .. value .. " >> %TEMP%\\wezterm-ime-test.log",
+    }
 end)
 
 return {
