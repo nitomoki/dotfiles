@@ -9,63 +9,40 @@ wezterm.on("gui-startup", function(cmd)
     window:gui_window():toggle_fullscreen()
 end)
 
--- IME 制御 (動作確認用 / spawn 検証モード):
--- 前段の診断で WSL2 経由なら user-var-changed イベントは発火することが確定。
--- ただし cmd.exe + ">>" リダイレクト経由の追記は走っていなかった。
--- 本番では im-select.exe を引数だけで叩くのでリダイレクト不要。
--- ここでは「外部プロセス起動自体が動いているか」を別経路で見る。
+-- IME 制御 (本番):
+--   OSC 1337 SetUserVar=IME=<0|1> を受けて zenhan.exe を spawn し、
+--   フォーカス先の IME open/close を切り替える。
+--     value=1 → zenhan 1 (IME ON / 全角)
+--     value=0 → zenhan 0 (IME OFF / 半角)
 --
--- 痕跡:
---   wezterm-ime-loaded.log     ← config 読込時に追記 (Lua I/O)
---   wezterm-ime-handler.log    ← user-var-changed 発火時に追記 (Lua I/O)
---   wezterm-ime-test.log       ← IME 状態を Lua I/O で直書き (旧 cmd.exe 経路の代替)
---   wezterm-ime-spawn.log      ← spawn したプロセス自身が書く (PowerShell 経由)
---
--- 切り分け:
---   spawn.log が出る           → background_child_process は動いている (本番で im-select.exe を呼べる)
---   spawn.log が出ない         → 外部プロセス起動が完全に死んでいる (権限 / PATH 等を疑う)
-
-local function home_path(name)
-    return (os.getenv "USERPROFILE" or os.getenv "HOME" or "") .. "\\" .. name
-end
-
-local function append_line(path, line)
-    local f = io.open(path, "a")
-    if f then
-        f:write(line .. "\n")
-        f:close()
+-- フォールバック:
+--   zenhan.exe が PATH に無ければ何もしない (handler は登録するが no-op)。
+--   起動時に WezTerm の log に warn を出すだけで GUI には影響させない。
+local function find_zenhan()
+    local ok, stdout = wezterm.run_child_process { "where.exe", "zenhan.exe" }
+    if not ok or not stdout or stdout == "" then
+        return nil
     end
+    -- where.exe は \r\n 区切りで複数返す可能性がある。先頭行を採用。
+    return (stdout:gsub("\r", ""):match "([^\n]+)")
 end
 
-append_line(home_path "wezterm-ime-loaded.log", "[" .. os.date "%Y-%m-%d %H:%M:%S" .. "] wezterm_windows.lua loaded")
-wezterm.log_info "wezterm_windows.lua loaded (IME spawn check mode)"
+local zenhan_path = find_zenhan()
+if zenhan_path then
+    wezterm.log_info("IME OSC handler: zenhan resolved at " .. zenhan_path)
+else
+    wezterm.log_warn "IME OSC handler: zenhan.exe not found on PATH; IME OSC user-var will be ignored"
+end
 
 wezterm.on("user-var-changed", function(_window, _pane, name, value)
-    append_line(
-        home_path "wezterm-ime-handler.log",
-        "[" .. os.date "%Y-%m-%d %H:%M:%S" .. "] event name=" .. tostring(name) .. " value=" .. tostring(value)
-    )
-    wezterm.log_info("user-var-changed name=" .. tostring(name) .. " value=" .. tostring(value))
-
     if name ~= "IME" then
         return
     end
-
-    -- (a) IME 状態は Lua I/O で堅実に記録 (本番の運用ログとしてもこのまま使える形)
-    append_line(
-        home_path "wezterm-ime-test.log",
-        "[" .. os.date "%Y-%m-%d %H:%M:%S" .. "] IME=" .. tostring(value)
-    )
-
-    -- (b) 外部プロセス起動の単独検証: PowerShell で wezterm-ime-spawn.log に追記させる。
-    --     これが書ければ wezterm.background_child_process は動作しており、本番で
-     --     im-select.exe をそのまま呼び出せると確定する。
-    wezterm.background_child_process {
-        "powershell.exe",
-        "-NoProfile",
-        "-Command",
-        "Add-Content -Path \"$env:USERPROFILE\\wezterm-ime-spawn.log\" -Value (\"[\" + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + \"] spawned IME=" .. tostring(value) .. "\")",
-    }
+    if not zenhan_path then
+        return
+    end
+    -- value は user-var の生文字列 ("0" / "1")。zenhan 第1引数にそのまま渡す。
+    wezterm.background_child_process { zenhan_path, tostring(value) }
 end)
 
 return {
