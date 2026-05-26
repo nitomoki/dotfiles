@@ -5,7 +5,7 @@ autoload -Uz compinit && compinit
 zstyle ':completion:*' matcher-list 'm:{[:lower:]}={[:upper:]}' '+m:{[:upper:]}={[:lower:]}'
 #zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 
-bindkey '^k' autosuggest-accept
+bindkey '^y' autosuggest-accept
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor)

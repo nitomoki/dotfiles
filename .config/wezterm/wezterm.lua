@@ -44,11 +44,6 @@ local res = {
             action = wezterm.action.ActivateTabRelative(1),
         },
         {
-            key = "q",
-            mods = "CTRL",
-            action = wezterm.action.SendString "\x11",
-        },
-        {
             key = "Enter",
             mods = "ALT",
             action = wezterm.action.ToggleFullScreen,

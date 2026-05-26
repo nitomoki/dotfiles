@@ -57,8 +57,8 @@ return {
         if not opt.enable then
             return
         end
-        -- mac は <C-M-Space>、それ以外 (Linux: WSL2 / Nucbox) は <C-Space>
-        local keymap = vim.fn.has "mac" == 1 and "<C-M-Space>" or "<C-Space>"
+        -- mac は <C-M-Space>、それ以外 (Linux: WSL2 / Nucbox) は <C-]>
+        local keymap = vim.fn.has "mac" == 1 and "<C-M-Space>" or "<C-]>"
         vim.keymap.set({ "i", "c" }, keymap, require("JPmode").toggle, { silent = true, noremap = true })
         vim.keymap.set("n", keymap, require("JPmode").off, { silent = true, noremap = true })
     end,

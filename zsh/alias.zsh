@@ -53,7 +53,7 @@ if type nvr > /dev/null 2>&1; then
 fi
 
 # tmux
-alias tc="tmux new -A -s claude"
+alias tc="tmux new -A -s shell"
 alias tl="tmux ls"
 alias ta="tmux attach -t"
 alias tbit="tmux new -A -s bitburner -d 'cd ~/bitburner-scripts && npm run dev'"
