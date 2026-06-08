@@ -34,6 +34,14 @@
             "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; echo idle > \"/tmp/claude-status-${id}\""
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/hooks/push-notify.sh\""
+          }
+        ]
       }
     ],
     "Notification": [
@@ -42,6 +50,14 @@
           {
             "type": "command",
             "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; f=\"/tmp/claude-status-${id}\"; [ \"$(cat \"$f\" 2>/dev/null)\" = running ] && echo waiting > \"$f\""
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/hooks/push-notify.sh\""
           }
         ]
       }
@@ -59,7 +75,7 @@
   },
   "enabledPlugins": {
     "claude-code-setup@claude-plugins-official": true,
-    "claude-obsidian@claude-obsidian-marketplace": true
+    "claude-obsidian@claude-obsidian-marketplace": false
   },
   "extraKnownMarketplaces": {
     "claude-obsidian-marketplace": {
@@ -71,5 +87,6 @@
   },
   "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "skipWorkflowUsageWarning": true
 }
