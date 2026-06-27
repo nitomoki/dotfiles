@@ -1,3 +1,30 @@
+-- ── Workaround: nvim 0.12-dev の vim.fs.find が入れ子 root_markers 未対応 ──
+-- nvim-lspconfig は nvim>=0.11.3 向けに入れ子形式の root_markers
+-- ({ {".luarc.json", ...}, {...}, {".git"} }) を渡すが、このビルドの
+-- vim.fs.find は入れ子テーブルを展開できず joinpath の concat でエラーになり、
+-- lua_ls / deno / eslint / ts_ls / jdtls など全 LSP の起動に失敗する。
+-- ビルドが入れ子未対応のときだけ vim.fs.root をラップして markers を平坦化する。
+-- nvim 本体が修正されれば probe が成功し、このパッチは適用されない（将来削除可）。
+if not pcall(vim.fs.root, vim.fn.getcwd(), { { ".git" } }) then
+    local orig_fs_root = vim.fs.root
+    vim.fs.root = function(source, marker)
+        if type(marker) == "table" then
+            local flat = {}
+            for _, m in ipairs(marker) do
+                if type(m) == "table" then
+                    for _, s in ipairs(m) do
+                        flat[#flat + 1] = s
+                    end
+                else
+                    flat[#flat + 1] = m
+                end
+            end
+            marker = flat
+        end
+        return orig_fs_root(source, marker)
+    end
+end
+
 local server_opts = {
     ["lua_ls"] = function(opts)
         local runtime_path = vim.split(package.path, ";")
