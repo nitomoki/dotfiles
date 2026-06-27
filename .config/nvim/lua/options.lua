@@ -4,6 +4,13 @@ vim.g.tex_conceal = ""
 vim.g.tex_flavor = "latex"
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
+-- 未使用の言語プロバイダを無効化（:checkhealth の警告/エラーを抑止）。
+-- ruby は 0.12 で provider#ruby#Detect が削除されており、無効化しないと
+-- 旧 provider healthcheck が E117 を出すため明示的に 0 にする。
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_node_provider = 0
+vim.g.loaded_python3_provider = 0
 vim.opt.mouse = nil
 vim.opt.autochdir = false
 vim.opt.autoindent = true
