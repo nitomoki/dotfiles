@@ -9,8 +9,9 @@ local ts = require("nvim-treesitter")
 -- 既定値で動くため setup{} は必須ではないが、明示しておく。
 ts.setup {}
 
--- 旧 ensure_installed = "all" 相当。全パーサを非同期インストールする(導入済みは no-op)。
--- 重い/不安定で困る場合は "all" を { "stable" } などティア指定や明示リストに変更する。
+-- 旧 ensure_installed = "all" 相当。全パーサ(329)を非同期インストールする(導入済みは no-op)。
+-- main は parser を tree-sitter CLI でビルドするため初回は重い。ティアでは実用的に
+-- 絞れない(stable=7 / unstable=315)ので、減らすなら明示リスト ts.install { "lua", ... } に。
 ts.install("all")
 
 -- 旧 highlight = { enable = true } / indent = { enable = true } 相当。
