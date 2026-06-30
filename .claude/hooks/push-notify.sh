@@ -16,8 +16,12 @@ PROJ="$(basename "${CWD:-Claude}")"
 
 case "$EVENT" in
   Notification)
+    NMSG="$(printf '%s' "$INPUT" | jq -r '.message // "入力待ちです"')"
+    # 60秒アイドルの汎用催促 ("Claude is waiting for your input") は push しない。
+    # permission 承認待ち等の本物の「要対応」だけ通知する。
+    [ "$NMSG" = "Claude is waiting for your input" ] && exit 0
     TITLE="Claude: 要対応"
-    MSG="$(printf '%s' "$INPUT" | jq -r '.message // "入力待ちです"') ($PROJ)"
+    MSG="$NMSG ($PROJ)"
     ;;
   Stop)
     TITLE="Claude: 応答完了"

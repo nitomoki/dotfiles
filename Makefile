@@ -18,6 +18,12 @@ SYSTEMD_USER_FILES := \
 # .claude 直下のファイル（Claude Code 設定）
 CLAUDE_FILES := $(wildcard .claude/*)
 
+# settings.json は .claude/ 直下に置くと dotfiles リポジトリ内で作業した際に
+# Claude Code の「プロジェクト設定」として user 設定と二重ロードされ、hook
+# （push 通知等）が2回発火する。これを避けるため配布元は claude/ 配下に置き、
+# ~/.claude/settings.json へは個別に symlink する。
+CLAUDE_SETTINGS_SRC := claude/settings.json
+
 # deploy から除外するファイル（環境別設定は setup-wezterm-* で配置する）
 WEZTERM_ENV_FILES := %wezterm_wsl2.lua %wezterm_nucbox.lua %wezterm_windows.lua
 
@@ -50,6 +56,7 @@ deploy: ## dotfiles のシンボリックリンクを作成
 	@$(MKDIR) $(HOME)/.claude
 	@$(foreach f, $(CLAUDE_FILES), \
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
+	@$(LINK) $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) $(HOME)/.claude/settings.json
 
 test: ## deploy で作成されるリンクを確認（実行はしない）
 	@echo "=== Home dotfiles ==="
@@ -68,6 +75,7 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 	@echo "=== .claude ==="
 	@$(foreach f, $(CLAUDE_FILES), \
 		echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";)
+	@echo "  $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json"
 
 init: ## 初期セットアップスクリプトを実行
 	@$(foreach val, $(sort $(wildcard etc/init/*.sh)), \
