@@ -1,0 +1,5 @@
+# bat のページャに less を使い、マウスホイールを less 自身に処理させる。
+# こうすると tmux (mouse on) がスクロールを横取りして copy-mode に入らず、
+# bat の表示内でスクロールできる（Moshi/iOS の二本指スクロール対策）。
+# less 549+ が --mouse に対応。値にスペースを含むのでクォート必須。
+--pager="less -R --mouse --wheel-lines=3"
