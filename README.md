@@ -10,7 +10,7 @@ Linux (Ubuntu / WSL2) 環境向けの個人 dotfiles。`make` でシンボリッ
 ├── .config/                                     # ~/.config 以下にリンク
 │   ├── nvim/        # Neovim 設定 (init.lua + lua/)
 │   ├── sheldon/     # zsh プラグインマネージャ
-│   ├── tmux/        # tmux.conf と claude-status.sh
+│   ├── tmux/        # tmux.conf
 │   ├── wezterm/     # 環境別 (wsl2 / nucbox / windows) 設定あり
 │   ├── polybar/, stylua/
 │   └── systemd/     # ユーザユニット (obsidian.service など)

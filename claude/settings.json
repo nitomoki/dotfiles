@@ -5,36 +5,9 @@
   "permissions": {
     "defaultMode": "auto"
   },
+  "model": "opus[1m]",
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; echo idle > \"/tmp/claude-status-${id}\""
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; echo running > \"/tmp/claude-status-${id}\""
-          }
-        ]
-      }
-    ],
     "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; echo idle > \"/tmp/claude-status-${id}\""
-          }
-        ]
-      },
       {
         "hooks": [
           {
@@ -49,25 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; f=\"/tmp/claude-status-${id}\"; [ \"$(cat \"$f\" 2>/dev/null)\" = running ] && echo waiting > \"$f\""
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "bash \"$HOME/.claude/hooks/push-notify.sh\""
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "id=\"${TMUX_PANE:-$(jq -r .session_id)}\"; rm -f \"/tmp/claude-status-${id}\""
           }
         ]
       }
@@ -86,8 +41,8 @@
     }
   },
   "effortLevel": "xhigh",
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
-  "skipAutoPermissionPrompt": true,
-  "tui": "fullscreen"
+  "skipAutoPermissionPrompt": true
 }
