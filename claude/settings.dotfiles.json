@@ -1,0 +1,125 @@
+{
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true,
+    "claude-obsidian@claude-obsidian-marketplace": false
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "extraKnownMarketplaces": {
+    "claude-obsidian-marketplace": {
+      "source": {
+        "repo": "AgriciDaniel/claude-obsidian",
+        "source": "github"
+      }
+    }
+  },
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "async": false,
+            "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "AskUserQuestion"
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "ExitPlanMode"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "AskUserQuestion"
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "ExitPlanMode"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "skipAutoPermissionPrompt": true,
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
+  "tui": "fullscreen"
+}

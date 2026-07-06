@@ -20,9 +20,13 @@ CLAUDE_FILES := $(wildcard .claude/*)
 
 # settings.json は .claude/ 直下に置くと dotfiles リポジトリ内で作業した際に
 # Claude Code の「プロジェクト設定」として user 設定と二重ロードされ、hook
-# （push 通知等）が2回発火する。これを避けるため配布元は claude/ 配下に置き、
-# ~/.claude/settings.json へは個別に symlink する。
-CLAUDE_SETTINGS_SRC := claude/settings.json
+# （push 通知等）が2回発火する。これを避けるため配布元は claude/ 配下に置く。
+# さらに ~/.claude/settings.json は symlink にせず、deploy 時に jq で共有設定
+# （この settings.dotfiles.json）をローカル実ファイルへマージする。model /
+# effortLevel は各 PC 固有なのでローカル側にのみ持ち、マージ時に保全する
+# （/model の書き込み先は ~/.claude/settings.json なので、そこを実ファイルに
+# して dotfiles を汚さず・上書きもされずに保持できる）。
+CLAUDE_SETTINGS_SRC := claude/settings.dotfiles.json
 
 # deploy から除外するファイル（環境別設定は setup-wezterm-* で配置する）
 WEZTERM_ENV_FILES := %wezterm_wsl2.lua %wezterm_nucbox.lua %wezterm_windows.lua
@@ -56,7 +60,17 @@ deploy: ## dotfiles のシンボリックリンクを作成
 	@$(MKDIR) $(HOME)/.claude
 	@$(foreach f, $(CLAUDE_FILES), \
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
-	@$(LINK) $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) $(HOME)/.claude/settings.json
+	@echo "  merge  $(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json (model/effortLevel は保全)"
+	@if [ ! -f $(HOME)/.claude/settings.json ]; then \
+		cp $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) $(HOME)/.claude/settings.json; \
+	elif command -v jq >/dev/null 2>&1; then \
+		jq -s '.[1] + (.[0] | {model, effortLevel} | with_entries(select(.value != null)))' \
+			$(HOME)/.claude/settings.json $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) \
+			> $(HOME)/.claude/settings.json.tmp \
+			&& mv $(HOME)/.claude/settings.json.tmp $(HOME)/.claude/settings.json; \
+	else \
+		echo "  [warn] jq が無いため settings.json のマージをスキップ（既存を保持）"; \
+	fi
 
 test: ## deploy で作成されるリンクを確認（実行はしない）
 	@echo "=== Home dotfiles ==="
@@ -75,7 +89,7 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 	@echo "=== .claude ==="
 	@$(foreach f, $(CLAUDE_FILES), \
 		echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";)
-	@echo "  $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json"
+	@echo "  merge $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json (jq)"
 
 init: ## 初期セットアップスクリプトを実行
 	@$(foreach val, $(sort $(wildcard etc/init/*.sh)), \
