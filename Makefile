@@ -61,6 +61,7 @@ deploy: ## dotfiles のシンボリックリンクを作成
 	@$(foreach f, $(CLAUDE_FILES), \
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
 	@echo "  merge  $(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json (model/effortLevel は保全)"
+	@if [ -L $(HOME)/.claude/settings.json ]; then rm -f $(HOME)/.claude/settings.json; fi
 	@if [ ! -f $(HOME)/.claude/settings.json ]; then \
 		cp $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) $(HOME)/.claude/settings.json; \
 	elif command -v jq >/dev/null 2>&1; then \
