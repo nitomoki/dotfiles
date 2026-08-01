@@ -15,8 +15,13 @@ SYSTEMD_USER_FILES := \
 	.config/systemd/user/obsidian.service \
 	.config/systemd/user/graphical-session.target.wants/obsidian.service
 
-# .claude 直下のファイル（Claude Code 設定）
-CLAUDE_FILES := $(wildcard .claude/*)
+# .claude 配下（Claude Code 設定）
+# ディレクトリは symlink せず、.config と同じく中身を1ファイルずつリンクする。
+# ~/.claude/commands のように Claude Code 側が実ディレクトリを作っている場合、
+# ディレクトリを ln -sfn すると ~/.claude/commands/commands という入れ子 symlink に
+# なり、同じコマンド/スキルが2パスから見えて二重に列挙されるため。
+CLAUDE_DIRS  := $(patsubst %/,%,$(wildcard .claude/*/))
+CLAUDE_FILES := $(filter-out $(CLAUDE_DIRS), $(wildcard .claude/*))
 
 # settings.json は .claude/ 直下に置くと dotfiles リポジトリ内で作業した際に
 # Claude Code の「プロジェクト設定」として user 設定と二重ロードされ、hook
@@ -60,6 +65,12 @@ deploy: ## dotfiles のシンボリックリンクを作成
 	@$(MKDIR) $(HOME)/.claude
 	@$(foreach f, $(CLAUDE_FILES), \
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
+	@$(foreach d, $(CLAUDE_DIRS), \
+		if [ -L $(HOME)/$(d) ]; then rm -f $(HOME)/$(d); fi; \
+		if [ -L $(HOME)/$(d)/$(notdir $(d)) ]; then rm -f $(HOME)/$(d)/$(notdir $(d)); fi; \
+		$(MKDIR) $(HOME)/$(d); \
+		$(foreach f, $(wildcard $(d)/*), \
+			$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);))
 	@echo "  merge  $(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json (model/effortLevel は保全)"
 	@if [ -L $(HOME)/.claude/settings.json ]; then rm -f $(HOME)/.claude/settings.json; fi
 	@if [ ! -f $(HOME)/.claude/settings.json ]; then \
@@ -90,6 +101,9 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 	@echo "=== .claude ==="
 	@$(foreach f, $(CLAUDE_FILES), \
 		echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";)
+	@$(foreach d, $(CLAUDE_DIRS), \
+		$(foreach f, $(wildcard $(d)/*), \
+			echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";))
 	@echo "  merge $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json (jq)"
 
 init: ## 初期セットアップスクリプトを実行
