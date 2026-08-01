@@ -52,6 +52,16 @@
       {
         "hooks": [
           {
+            "async": false,
+            "command": "if command -v python3 >/dev/null 2>&1 && [ -f \"$HOME/.claude/hooks/deny-grep.py\" ]; then exec python3 \"$HOME/.claude/hooks/deny-grep.py\"; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
+      },
+      {
+        "hooks": [
+          {
             "async": true,
             "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
             "type": "command"
@@ -116,7 +126,16 @@
     ]
   },
   "permissions": {
-    "defaultMode": "auto"
+    "defaultMode": "auto",
+    "deny": [
+      "Bash(grep:*)",
+      "Bash(egrep:*)",
+      "Bash(fgrep:*)",
+      "Bash(rgrep:*)",
+      "Bash(zgrep:*)",
+      "Bash(zegrep:*)",
+      "Bash(zfgrep:*)"
+    ]
   },
   "skipAutoPermissionPrompt": true,
   "skipDangerousModePermissionPrompt": true,
