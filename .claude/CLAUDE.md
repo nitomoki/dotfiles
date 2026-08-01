@@ -22,6 +22,28 @@
 - WezTerm GUI 本体は Windows 上で動いている。Nucbox / WSL2 側で `~/dotfiles/.config/wezterm/` を編集しても**手元の表示には即反映されない**（dotfiles を Windows 側にデプロイして初めて効く）。
 - IME（Windows IME / Mozc）も Windows 側にある。Nucbox など遠隔の Linux マシンから IME を制御したい場合は OSC エスケープシーケンス経由でローカル WezTerm に通知する構成になる（`im-select.exe` 等は Linux マシンには無い）。
 
+# grep 禁止（ripgrep / ag を使う）
+
+シェルから `grep` / `egrep` / `fgrep` / `zgrep` 系を **実行してはいけない**。
+`PreToolUse` hook（`.claude/hooks/deny-grep.py`）と `permissions.deny` の両方でブロックされる。
+
+## 理由
+
+- GNU grep は改行の無い巨大ファイル（minified JS・ログ・バイナリ）に当たると 1 行をまるごとメモリに載せ、数 GB を確保して OOM を起こす。
+- さらに Claude Code はシェルスナップショットで `grep` を関数として乗っ取り `claude -G`（Node 製 ugrep）へ転送するため、grep 1 回ごとに Node プロセスが立ち上がる。パイプやループで多重起動するとメモリ上限のあるマシン（NucBox の `user-1000.slice` は 10G 上限）を簡単に食い潰す。
+
+## 代替
+
+| やりたいこと | 使うもの |
+| --- | --- |
+| ファイル内容の検索 | **Grep ツール**（内蔵 ripgrep）を最優先 |
+| シェルから内容検索 | `rg -n PAT dir` / `rg -l PAT dir` / `rg -F 'literal'` |
+| パイプの絞り込み | `cmd \| rg PAT` / `rg -v` / `rg -c` |
+| git 管理下の検索 | `git grep`（別実装なので許可されている） |
+| rg が無い環境 | `ag` |
+
+`pgrep` と `git log --grep=` は grep ではないので通常どおり使ってよい。
+
 # ローマ字直書き入力への対応
 
 ユーザーは iPhone など IME が使いにくい環境から、**かな漢字変換せずローマ字のまま**メッセージを送ることがある（例：`konoyouninihongowohennkannsezunyuuryokusuru`）。以下を守ること。
