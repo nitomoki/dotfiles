@@ -15,6 +15,7 @@ Linux (Ubuntu / WSL2) 環境向けの個人 dotfiles。`make` でシンボリッ
 │   ├── polybar/, stylua/
 │   └── systemd/     # ユーザユニット (obsidian.service など)
 ├── .claude/         # Claude Code 設定 (settings.json)
+├── bin/             # 補助スクリプト (.zshrc が PATH に追加する)
 ├── zsh/             # alias.zsh など .zshrc から読み込まれる断片
 ├── etc/init/        # 新マシン初期セットアップスクリプト群
 ├── doc/             # 設定の参考資料
@@ -44,6 +45,23 @@ make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm
 ```
 
 `wezterm_env.lua` は `.gitignore` 済みで、上記コマンドで machine-local なリンク／コピーが作られる。
+
+## WezTerm から画像を渡す (Alt+i)
+
+Windows のクリップボードにある画像を保存し、その絶対パスを端末にタイプする。Nucbox の Claude Code のようにリモートで動くプログラムへ画像を渡すための経路。
+
+| キー | 置き先 | タイプされるパス |
+| --- | --- | --- |
+| `Alt+i` | `$WEZTERM_IMGPASTE_HOST` (既定 `nucbox`) | リモートの絶対パス |
+| `Alt+Shift+i` | WSL2 ローカル | WSL2 の絶対パス |
+
+リモートのプロセスは Windows のクリップボードを見られない（読めるのは自分が動いているマシンのクリップボードだけ）ので、`Ctrl+V` での画像貼り付けは原理的に成立しない。そこで画像そのものは端末を通さず `ssh` で送り、mosh / et のセッションには「保存先パスの文字列」だけを流す。
+
+- 実体は `bin/wezterm-imgpaste`（WSL2 上で動き、`powershell.exe` でクリップボードを読む）とキーバインド定義の `.config/wezterm/wezterm_windows.lua`。
+- 保存先は両側とも `${XDG_CACHE_HOME:-~/.cache}/wezterm-imgpaste/` で、新しい 50 件だけ残して間引かれる。
+- 置き先は自動判定しない。ペインの前面プロセス名からの推測は et / tmux 越しだと当てにならず、外すと存在しないパスを黙って打ち込むことになるため、キーで明示する。
+- Explorer でコピーしたファイルも同じキーで送れる（1 つ目のみ、32 MiB まで）。
+- キーバインドは Windows 環境のみ。環境別設定から共通の `keys` を潰さずに追加するため、`wezterm_windows.lua` は `extra_keys` で渡し、`wezterm.lua` 側で結合している。
 
 ## Makefile ターゲット
 

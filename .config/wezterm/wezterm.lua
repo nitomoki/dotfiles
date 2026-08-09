@@ -77,11 +77,22 @@ local res = {
 
 -- 環境別設定 (wezterm_wsl2.lua, wezterm_nucbox.lua, wezterm_windows.lua)
 -- → シンボリックリンクで wezterm_env.lua として配置
+--
+-- keys は上書きではなく追加したいことがある (例: Windows だけの画像貼り付け)。
+-- 素直に keys を返すと共通のキーバインドを丸ごと潰してしまうので、環境別設定
+-- からは extra_keys で「足したいものだけ」を渡す。extra_keys 自体は WezTerm の
+-- 設定キーではないため res には入れない。
 for _, name in ipairs { "wezterm_env", "wezterm_machine" } do
     local ok, overrides = pcall(require, name)
     if ok then
         for key, val in pairs(overrides) do
-            res[key] = val
+            if key == "extra_keys" then
+                for _, binding in ipairs(val) do
+                    table.insert(res.keys, binding)
+                end
+            else
+                res[key] = val
+            end
         end
     end
 end

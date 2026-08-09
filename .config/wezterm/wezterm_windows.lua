@@ -56,9 +56,68 @@ wezterm.on("user-var-changed", function(_window, _pane, name, value)
     wezterm.background_child_process { path, tostring(value) }
 end)
 
+-- 画像貼り付け (Alt+i: Nucbox へ / Alt+Shift+i: WSL2 ローカルへ)
+--
+--   Windows のクリップボードにある画像を wezterm-imgpaste (WSL2 側) で保存し、
+--   保存先の絶対パスを端末にタイプする。Claude Code のようにリモートで動く
+--   プログラムへ画像を渡すための経路で、Ctrl+V が原理的に効かない穴を埋める
+--   (リモートのプロセスからは Windows のクリップボードが見えない)。
+--
+--   置き先は自動判定しない。ペインの前面プロセス名からの推測は et / tmux 越し
+--   だと当てにならず、外すと「存在しないパス」を黙って打ち込むことになるので、
+--   キーで明示的に選ばせる。
+--
+--   run_child_process はイベントハンドラ内 (= coroutine 上) なので GUI は
+--   固まらない。転送は端末ではなく ssh を通るため、mosh / et のセッションに
+--   大きなデータを流し込まずに済む。
+local function imgpaste(scope)
+    return wezterm.action_callback(function(window, pane)
+        local ok, stdout, stderr = wezterm.run_child_process {
+            "wsl.exe",
+            "-d",
+            "Ubuntu",
+            "-e",
+            "bash",
+            "-c",
+            -- Windows 側の argv 引用と wsl.exe のパース越しに二重引用符を通すと
+            -- 壊れやすいので、コマンド文字列には " を入れない ($HOME に空白は
+            -- 入らない前提)。ログインシェルにしないのは motd 等で stdout が
+            -- 汚れるのを避けるため。
+            "$HOME/dotfiles/bin/wezterm-imgpaste " .. scope,
+        }
+        local path = (stdout or ""):gsub("%s+$", "")
+        if not ok or path == "" then
+            local detail = (stderr or ""):gsub("%s+$", "")
+            window:toast_notification(
+                "wezterm-imgpaste",
+                detail ~= "" and detail or "クリップボードに画像がありません",
+                nil,
+                4000
+            )
+            return
+        end
+        window:perform_action(wezterm.action.SendString(path), pane)
+    end)
+end
+
 return {
     -- Windows では WSL2 のデフォルトディストロをデフォルトに
     default_domain = "WSL:Ubuntu",
+
+    -- 共通の keys を潰さないよう、追加分は extra_keys で渡す (wezterm.lua 側で結合)
+    extra_keys = {
+        {
+            key = "i",
+            mods = "ALT",
+            action = imgpaste "",
+        },
+        -- SHIFT 併用時は WezTerm 既定バインドと同じくシフト後の文字 ("I") で書く
+        {
+            key = "I",
+            mods = "ALT|SHIFT",
+            action = imgpaste "--local",
+        },
+    },
 
     font_size = 10.0,
 
