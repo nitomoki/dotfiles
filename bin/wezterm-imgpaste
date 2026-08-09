@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+# Windows のクリップボードにある画像を保存し、保存先の絶対パスを stdout へ
+# 1 行だけ出す。診断メッセージはすべて stderr に出す（stdout はそのまま端末に
+# タイプされるため）。
+#
+# 想定呼び出し元:
+#   Windows 側 WezTerm のキーバインド (Alt+i / Alt+Shift+i) から
+#     wsl.exe -d Ubuntu -e bash -c '"$HOME"/dotfiles/bin/wezterm-imgpaste ...'
+#   として呼ばれ、stdout のパスを SendString で端末に打ち込む。
+#   したがって WSL2 上でしか動かない（powershell.exe と wslpath が要る）。
+#
+# なぜこの経路か:
+#   Claude Code のようにリモート (Nucbox) で動くプログラムは、Ctrl+V を押しても
+#   Windows のクリップボードを見られない。読めるのは「自分が動いているマシンの
+#   クリップボード」だけなので、画像の貼り付けは原理的に成立しない。
+#   一方 mosh / et が運ぶのはキーストロークだけなので、画像そのものは端末を
+#   通さず ssh で直接送りつけ、端末には「保存先パスの文字列」だけを流す。
+#   これで「貼り付け」を「ファイル + パス入力」に読み替える。
+#
+# クリップボードの扱い:
+#   - 画像 (Win+Shift+S のスクリーンショット等) → PNG に保存して転送
+#   - Explorer でコピーしたファイル → その 1 つ目をそのまま転送
+#
+# Usage:
+#   wezterm-imgpaste            # 既定のリモート ($WEZTERM_IMGPASTE_HOST, 既定 nucbox) へ送る
+#   wezterm-imgpaste --local    # WSL2 ローカルに置く
+#   wezterm-imgpaste --to HOST  # 任意の ssh ホストへ送る
+
+set -euo pipefail
+
+# 保存先に残す最大件数。古いものからこの件数まで間引く。
+PRUNE_KEEP=50
+# 転送を許す最大バイト数 (32 MiB)。Explorer から巨大ファイルを掴んだときの保険。
+MAX_BYTES=$((32 * 1024 * 1024))
+
+target=remote
+host=${WEZTERM_IMGPASTE_HOST:-nucbox}
+
+usage() {
+    cat <<'USAGE'
+usage: wezterm-imgpaste [--local | --to HOST]
+
+  --local     WSL2 ローカル ($XDG_CACHE_HOME/wezterm-imgpaste) に置く
+  --to HOST   指定した ssh ホストへ送る
+  (既定)      $WEZTERM_IMGPASTE_HOST (既定 nucbox) へ送る
+USAGE
+}
+
+die() {
+    echo "wezterm-imgpaste: $*" >&2
+    exit 1
+}
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        --local)
+            target=local
+            shift
+            ;;
+        --to)
+            [ $# -ge 2 ] || die "--to にホスト名が必要です"
+            target=remote
+            host=$2
+            shift 2
+            ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        *)
+            usage >&2
+            die "不明なオプション: $1"
+            ;;
+    esac
+done
+
+command -v wslpath >/dev/null 2>&1 || die "WSL2 上で実行してください (wslpath が無い)"
+command -v iconv >/dev/null 2>&1 || die "iconv が必要です"
+
+# powershell.exe は通常 WSL の interop PATH で引けるが、appendWindowsPath を
+# 切っている環境も想定して既定の絶対パスへフォールバックする。
+find_powershell() {
+    if command -v powershell.exe >/dev/null 2>&1; then
+        command -v powershell.exe
+        return 0
+    fi
+    local fallback=/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
+    if [ -x "$fallback" ]; then
+        printf '%s\n' "$fallback"
+        return 0
+    fi
+    return 1
+}
+
+pwsh=$(find_powershell) || die "powershell.exe が見つかりません"
+
+# クリップボードを読む PowerShell 側。1 行目に種別 (image|file)、2 行目に
+# Windows パスを出す。
+#
+# 注意:
+#   - Get-Clipboard -Format Image は STA スレッドでないと常に $null を返すため
+#     -Sta を明示する (Windows PowerShell 5.1 は既定 STA だが pwsh は MTA)。
+#   - bash からの引用符地獄を避けるため、UTF-16LE + base64 にして
+#     -EncodedCommand で渡す。
+read -r -d '' ps_script <<'PS' || true
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Drawing
+$img = Get-Clipboard -Format Image
+if ($img) {
+    $out = Join-Path ([System.IO.Path]::GetTempPath()) ('wezterm-imgpaste-' + [guid]::NewGuid().ToString('N') + '.png')
+    $img.Save($out, [System.Drawing.Imaging.ImageFormat]::Png)
+    Write-Output 'image'
+    Write-Output $out
+    exit 0
+}
+$files = Get-Clipboard -Format FileDropList
+if ($files -and @($files).Count -gt 0) {
+    Write-Output 'file'
+    Write-Output @($files)[0].FullName
+    exit 0
+}
+[Console]::Error.WriteLine('clipboard has no image or file')
+exit 1
+PS
+
+encoded=$(printf '%s' "$ps_script" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n')
+
+# WSL のパスを cwd にしたまま Windows の exe を起動すると UNC 警告が stderr に
+# 出るので、Windows から見えるディレクトリへ移ってから呼ぶ。
+cd /mnt/c 2>/dev/null || cd /
+
+ps_err=$(mktemp)
+trap 'rm -f "$ps_err"' EXIT
+
+if ! ps_out=$("$pwsh" -NoProfile -NonInteractive -Sta -EncodedCommand "$encoded" 2>"$ps_err"); then
+    detail=$(tr -d '\r' <"$ps_err" | tr '\n' ' ')
+    die "クリップボードに画像がありません${detail:+ ($detail)}"
+fi
+
+ps_out=${ps_out//$'\r'/}
+kind=""
+winpath=""
+{
+    IFS= read -r kind || true
+    IFS= read -r winpath || true
+} <<<"$ps_out"
+
+[ -n "$winpath" ] || die "クリップボードの読み取りに失敗しました"
+
+src=$(wslpath -u "$winpath") || die "パスの変換に失敗しました: $winpath"
+[ -f "$src" ] || die "ファイルが見つかりません: $src"
+
+# 一時 PNG は転送後に消す。Explorer からコピーした実ファイルは消さない。
+if [ "$kind" = "image" ]; then
+    trap 'rm -f "$ps_err" "$src"' EXIT
+fi
+
+bytes=$(stat -c %s "$src")
+if [ "$bytes" -gt "$MAX_BYTES" ]; then
+    die "ファイルが大きすぎます ($((bytes / 1024 / 1024)) MiB > $((MAX_BYTES / 1024 / 1024)) MiB)"
+fi
+
+# 保存名。時刻 + ランダムで衝突しないようにし、拡張子だけ元から引き継ぐ。
+# 拡張子はリモートのシェルへ埋め込む都合上、英数字だけに落とす。
+ext=$(printf '%s' "${winpath##*.}" | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9')
+[ -n "$ext" ] && [ ${#ext} -le 8 ] || ext=png
+name="$(date +%Y%m%d-%H%M%S)-$(od -An -tx1 -N4 /dev/urandom | tr -d ' \n').$ext"
+
+prune_dir() {
+    local dir=$1
+    # pipefail 下で ls の失敗がスクリプト全体を落とさないようにする。
+    # 間引きは best-effort でよい。
+    ls -1t "$dir" 2>/dev/null | tail -n +$((PRUNE_KEEP + 1)) | while IFS= read -r f; do
+        rm -f -- "$dir/$f"
+    done || true
+}
+
+if [ "$target" = local ]; then
+    dir="${XDG_CACHE_HOME:-$HOME/.cache}/wezterm-imgpaste"
+    mkdir -p "$dir"
+    cp -- "$src" "$dir/$name"
+    prune_dir "$dir"
+    printf '%s\n' "$dir/$name"
+    exit 0
+fi
+
+# リモートは ssh 1 本で mkdir → 受信 → 間引き → 保存先パスの出力までやる。
+# scp と別に「保存先はどこか」を問い合わせる往復を省くため。
+# $name は上で英数字と '-' '.' に正規化済みなので、そのまま埋め込んで安全。
+remote_script='
+d="${XDG_CACHE_HOME:-$HOME/.cache}/wezterm-imgpaste"
+mkdir -p "$d"
+cat > "$d/__NAME__"
+ls -1t "$d" 2>/dev/null | tail -n +__KEEP__ | while IFS= read -r f; do rm -f -- "$d/$f"; done
+printf %s "$d/__NAME__"
+'
+remote_script=${remote_script//__NAME__/$name}
+remote_script=${remote_script//__KEEP__/$((PRUNE_KEEP + 1))}
+
+# BatchMode: パスワードプロンプトで GUI ごと固まるのを避け、鍵が無ければ即失敗させる。
+if ! remote_path=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$host" "$remote_script" <"$src"); then
+    die "$host への転送に失敗しました"
+fi
+
+remote_path=${remote_path//$'\r'/}
+[ -n "$remote_path" ] || die "$host から保存先パスが返りませんでした"
+
+printf '%s\n' "$remote_path"
