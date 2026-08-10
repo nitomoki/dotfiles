@@ -114,6 +114,8 @@ make setup-wezterm-*     # 環境別の wezterm 設定をリンク／コピー
 
 `make deploy` は冪等で、既存リンクは `ln -sfnv` で張り直される。`.config/systemd/user/` だけは他アプリの管理ファイルが混ざる場所なので、Makefile の `SYSTEMD_USER_FILES` で個別管理しているユニット (例: `obsidian.service`) のみリンクされる。
 
+`make deploy` はリンク配置に加えて `sheldon lock` も実行する。sheldon の lock ファイルには `zsh/*.zsh` を展開した結果のファイル一覧が焼き込まれており、lock が作り直されるのは `plugins.toml` が変わったときだけ。`zsh/` にファイルを新規追加しても `plugins.toml` は無変更なので、lock を再生成しない限り新しいファイルは永久に読み込まれない (`zsh/tmux.zsh` 追加時にこれで `tc` が壊れた)。
+
 ## パッケージ管理
 
 - `packages.txt` を編集 → `make packages-install` で反映。

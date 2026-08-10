@@ -83,6 +83,19 @@ deploy: ## dotfiles のシンボリックリンクを作成
 	else \
 		echo "  [warn] jq が無いため settings.json のマージをスキップ（既存を保持）"; \
 	fi
+# sheldon の lock には zsh/*.zsh を展開した「ファイル一覧」が焼き込まれる。
+# sheldon が lock を作り直すのは plugins.toml が変わったときだけなので、zsh/ に
+# ファイルを新規追加しても plugins.toml は無変更 → 新しいファイルが永久に読まれ
+# ない。実際 zsh/tmux.zsh 追加時に tc/t が未定義のまま（tc が /usr/sbin/tc に
+# 解決される）という事故が起きたため、deploy のたびに lock を作り直す。
+# 既存プラグインの更新はしたくないので --update は付けない。
+	@echo "  lock   sheldon (zsh/*.zsh の一覧を再生成)"
+	@if command -v sheldon >/dev/null 2>&1; then \
+		out=$$(sheldon lock 2>&1) \
+			|| echo "  [warn] sheldon lock に失敗（既存の lock を保持）: $$out"; \
+	else \
+		echo "  [warn] sheldon が無いため lock をスキップ"; \
+	fi
 
 test: ## deploy で作成されるリンクを確認（実行はしない）
 	@echo "=== Home dotfiles ==="
