@@ -4,6 +4,9 @@
 # 使い方:
 #   tmux-sessionizer            fzf で選択して切り替え。一覧に無い名前を入力して
 #                               Enter すれば、その名前でセッションを新規作成する。
+#   tmux-sessionizer switch NAME
+#                               指定セッションへ移動（無ければ作成）。tmux の中なら
+#                               switch-client、外なら attach-session。
 #   tmux-sessionizer add NAME   プリセットに追加
 #   tmux-sessionizer del NAME   プリセットから削除（起動中のセッションは消さない）
 #   tmux-sessionizer list       プリセットを表示
@@ -129,6 +132,20 @@ cmd_menu() {
     '
 }
 
+# 指定名のセッションへ移動する（無ければ作成）。
+# tmux の中なら switch-client、外なら attach-session。
+goto_session() {
+    local name
+    name=$(normalize_name "${1:-}")
+    [ -z "$name" ] && return 0
+    tmux has-session -t "=$name" 2>/dev/null || tmux new-session -d -s "$name" || return 1
+    if [ -n "${TMUX:-}" ]; then
+        tmux switch-client -t "=$name"
+    else
+        tmux attach-session -t "=$name"
+    fi
+}
+
 cmd_pick() {
     command -v fzf > /dev/null 2>&1 || die "fzf が見つかりません（prefix + S の choose-tree を使ってください）"
 
@@ -153,18 +170,11 @@ cmd_pick() {
     sel=$(printf '%s\n' "$out" | tail -1 | awk '
         { if ($1 == "●" || $1 == "○") sub(/^[^ ]+ /, ""); print }
     ')
-    sel=$(normalize_name "$sel")
-    [ -z "$sel" ] && return 0
-
-    tmux has-session -t "=$sel" 2>/dev/null || tmux new-session -d -s "$sel" || return 1
-    if [ -n "${TMUX:-}" ]; then
-        tmux switch-client -t "=$sel"
-    else
-        tmux attach-session -t "=$sel"
-    fi
+    goto_session "$sel"
 }
 
 case "${1:-}" in
+    switch) shift; goto_session "${1:-}" ;;
     add)  shift; cmd_add "$@" ;;
     del)  shift; cmd_del "${1:-}" ;;
     list) presets ;;

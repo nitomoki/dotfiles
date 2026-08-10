@@ -52,19 +52,5 @@ if type nvr > /dev/null 2>&1; then
     alias nvrcd='pwd | xargs -I{} nvr -cc "cd {}"'
 fi
 
-# tmux
-alias tc="tmux new -A -s shell"
-alias tl="tmux ls"
-alias ta="tmux attach -t"
-alias tbit="tmux new -A -s bitburner -d 'cd ~/bitburner-scripts && npm run dev'"
-alias tnvim="tmux new -A -s neovim"
-# t <name> : そのセッションへ attach（無ければ作成）
-# t        : fzf でセッションを選択（tmux の外からでも使える）
-t() {
-    if [ $# -eq 0 ]; then
-        tmux-sessionizer
-    else
-        tmux new -A -s "$1"
-    fi
-}
+# tmux 関連は補完 (compdef) を伴うため zsh/tmux.zsh に分離している
 alias nbc='if command -v mosh >/dev/null 2>&1; then mosh nucbox -- tmux new -A -s claude; else autossh -M 0 -o "ServerAliveInterval 60" -o "ServerAliveCountMax 3" nucbox -t "tmux new -A -s claude"; fi'

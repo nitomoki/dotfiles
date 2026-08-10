@@ -79,11 +79,18 @@ popup の中身は `bin/tmux-sessionizer`。シェルから直接呼んでもよ
 
 ```sh
 t                       # fzf で選択（tmux の外からなら attach）
-t htb                   # そのセッションへ attach、無ければ作成
+tc <TAB>                # 候補から選ぶ（起動中のセッション + 未起動のプリセット）
+tc htb                  # そのセッションへ移動、無ければ作成
+tc                      # 引数なしは従来どおり shell セッション
+ta <TAB>                # attach 用。起動中のセッションのみ補完する
 tmux-sessionizer add reading   # プリセットに追加
 tmux-sessionizer del novel     # プリセットから削除（起動中セッションは消さない）
 tmux-sessionizer list / edit   # プリセットの表示 / $EDITOR で編集
 ```
+
+`t` / `tc` は tmux の中から呼べば `switch-client`、外から呼べば `attach-session` になる（`tmux new -A -s` は前者の用途に使えないため）。実体は `tmux-sessionizer switch <name>`。
+
+zsh の補完定義は `zsh/tmux.zsh` に置いている。`compdef` は `compinit` の後でないと使えず、sheldon は `zsh/*.zsh` をアルファベット順に読むため、`compinit` を実行する `config.zsh` より後ろに来る名前にする必要がある（`alias.zsh` に書くと読み込み順が逆になり動かない）。
 
 fzf の中では `ctrl-a` で入力中の名前（空なら選択行）をプリセットへ追加、`ctrl-x` で選択行をプリセットから削除できる。一覧の `●` は起動中のセッション、`○` はプリセットのみ（未起動）。
 
