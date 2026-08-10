@@ -122,14 +122,24 @@ cmd_menu() {
     if [ -n "${TMUX:-}" ]; then
         current=$(tmux display-message -p '#S' 2>/dev/null) || current=""
     fi
+    # 「タグ TAB 名前」で組み立て、表示用の記号は最後に付ける。ロケール対策:
+    #   - mawk は C ロケール（LANG の無い zsh -lc 等）だと多バイト文字を '_' に
+    #     潰すので、●/○ を awk に通さない。awk が見るのは ASCII のタグ (R/P)。
+    #   - tmux の -F にタブは渡せない。UTF-8 では通るが C ロケールでは '_' に
+    #     置換されるため、tmux には名前だけ出させてタグ付けは awk 側で行う。
+    # 区切りをタブにしておくと、名前に空白があっても後段の抽出がずれない。
     {
-        tmux list-sessions -F '● #S' 2>/dev/null
-        presets | awk '{ print "○ " $0 }'
-    } | awk -v cur="$current" '
-        { name = $0; sub(/^[^ ]+ /, "", name) }
-        name == cur { next }
-        !seen[name]++ { print }
-    '
+        tmux list-sessions -F '#S' 2>/dev/null | awk '{ print "R\t" $0 }'
+        presets | awk '{ print "P\t" $0 }'
+    } | awk -F'\t' -v cur="$current" '
+        $2 == cur { next }
+        !seen[$2]++ { print }
+    ' | while IFS=$'\t' read -r kind name; do
+        case "$kind" in
+            R) printf '●\t%s\n' "$name" ;;
+            *) printf '○\t%s\n' "$name" ;;
+        esac
+    done
 }
 
 # 指定名のセッションへ移動する（無ければ作成）。
@@ -154,8 +164,9 @@ cmd_pick() {
         --reverse \
         --prompt='session> ' \
         --header='enter:切替/作成  ctrl-a:プリセット追加  ctrl-x:プリセット削除' \
-        --bind="ctrl-a:execute-silent('$SELF' add {q} {2..})+reload('$SELF' menu)" \
-        --bind="ctrl-x:execute-silent('$SELF' del {2..})+reload('$SELF' menu)" \
+        --delimiter=$'\t' --nth=2 --tabstop=2 \
+        --bind="ctrl-a:execute-silent('$SELF' add {q} {2})+reload('$SELF' menu)" \
+        --bind="ctrl-x:execute-silent('$SELF' del {2})+reload('$SELF' menu)" \
         --print-query)
     rc=$?
     # 0: 選択あり / 1: 一致なし（＝入力した名前で新規作成）
@@ -166,10 +177,9 @@ cmd_pick() {
         *) return 0 ;;
     esac
 
-    # 最終行が「選択行（記号つき）」または「入力文字列（記号なし）」。記号を落とす
-    sel=$(printf '%s\n' "$out" | tail -1 | awk '
-        { if ($1 == "●" || $1 == "○") sub(/^[^ ]+ /, ""); print }
-    ')
+    # 最終行は「選択行（記号 TAB 名前）」か「入力文字列（タブ無し）」。
+    # タブ区切りの最終フィールドを取れば、記号が何であっても名前だけが残る。
+    sel=$(printf '%s\n' "$out" | tail -1 | awk -F'\t' '{ print $NF }')
     goto_session "$sel"
 }
 

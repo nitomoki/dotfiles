@@ -98,6 +98,8 @@ fzf の中では `ctrl-a` で入力中の名前（空なら選択行）をプリ
 
 現在のセッション名はステータスラインの左端（マシン名の隣）に表示される。
 
+WezTerm の launch menu の「(tmux)」系エントリも固定セッションではなくこのピッカーを開く。`zsh -lc` は `.zshrc` を読まないため zsh 関数 `t` は使えず、PATH も通らないので `~/dotfiles/bin/tmux-sessionizer` をフルパスで起動している。
+
 ## Makefile ターゲット
 
 ```
