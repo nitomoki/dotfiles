@@ -63,6 +63,34 @@ Windows のクリップボードにある画像を保存し、その絶対パス
 - Explorer でコピーしたファイルも同じキーで送れる（1 つ目のみ、32 MiB まで）。
 - キーバインドは Windows 環境のみ。環境別設定から共通の `keys` を潰さずに追加するため、`wezterm_windows.lua` は `extra_keys` で渡し、`wezterm.lua` 側で結合している。
 
+## tmux セッションの切り替え (prefix + Space)
+
+ゲーム / 仕事 / HTB / 小説 のようにテーマごとに tmux セッションを分け、それを横断するための仕組み。
+
+| キー | 動作 |
+| --- | --- |
+| `prefix + Space` | fzf の popup でセッションを選択。一覧に無い名前を入力して Enter すると、その名前でセッションを新規作成して切り替える |
+| `prefix + Tab` | 直前のセッションへトグル |
+| `prefix + S` | 組み込みの `choose-tree`（fzf / スクリプトが無い環境でも動く保険） |
+
+tmux 既定の `prefix + s` (choose-tree) と `prefix + L` (last-session) は、この設定では `split-window` / `resize-pane` に割り当て済みで潰れている。上記はその代替。
+
+popup の中身は `bin/tmux-sessionizer`。シェルから直接呼んでもよい。
+
+```sh
+t                       # fzf で選択（tmux の外からなら attach）
+t htb                   # そのセッションへ attach、無ければ作成
+tmux-sessionizer add reading   # プリセットに追加
+tmux-sessionizer del novel     # プリセットから削除（起動中セッションは消さない）
+tmux-sessionizer list / edit   # プリセットの表示 / $EDITOR で編集
+```
+
+fzf の中では `ctrl-a` で入力中の名前（空なら選択行）をプリセットへ追加、`ctrl-x` で選択行をプリセットから削除できる。一覧の `●` は起動中のセッション、`○` はプリセットのみ（未起動）。
+
+プリセットの実体は `~/.config/tmux/sessions`（`$TMUX_SESSIONS_FILE` で変更可）。**dotfiles には含めないローカルファイル**で、初回実行時に既定のテーマで自動生成される。マシンごとにテーマが違うため共有していない。
+
+現在のセッション名はステータスラインの左端（マシン名の隣）に表示される。
+
 ## Makefile ターゲット
 
 ```

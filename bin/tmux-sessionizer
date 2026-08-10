@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# tmux-sessionizer — テーマ別 tmux セッションの選択 / 作成 / プリセット管理
+#
+# 使い方:
+#   tmux-sessionizer            fzf で選択して切り替え。一覧に無い名前を入力して
+#                               Enter すれば、その名前でセッションを新規作成する。
+#   tmux-sessionizer add NAME   プリセットに追加
+#   tmux-sessionizer del NAME   プリセットから削除（起動中のセッションは消さない）
+#   tmux-sessionizer list       プリセットを表示
+#   tmux-sessionizer edit       プリセットを $EDITOR で開く
+#   tmux-sessionizer menu       fzf に渡す一覧を出力（内部利用）
+#
+# fzf 内のキー:
+#   enter   選択（無ければ作成）して切り替え
+#   ctrl-a  入力中の名前（空なら選択行）をプリセットへ追加
+#   ctrl-x  選択行をプリセットから削除
+#
+# 一覧の記号:
+#   ●  起動中のセッション
+#   ○  プリセットのみ（未起動）
+#
+# プリセットの実体は $TMUX_SESSIONS_FILE（既定 ~/.config/tmux/sessions）。
+# dotfiles には含めないローカルファイルなので、マシンごとに違うテーマを持てる。
+# 初回実行時に既定のテーマで自動生成される。
+
+set -uo pipefail
+
+CONF="${TMUX_SESSIONS_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux/sessions}"
+# fzf の --bind から自分自身を再実行するため、絶対パスに解決しておく
+# （popup の非対話シェルでは PATH に ~/dotfiles/bin が無いことがある）。
+SELF=$(readlink -f -- "$(command -v -- "$0")" 2>/dev/null) || SELF="$0"
+
+die() {
+    printf 'tmux-sessionizer: %s\n' "$*" >&2
+    exit 1
+}
+
+# 前後の空白を落とし、tmux と同じ規則で '.' ':' を '_' に置換する。
+# tmux はセッション名のこの 2 文字を黙って '_' にするため、先に同じ正規化を
+# しておかないと、作成後の has-session / switch-client が別名を指して失敗する。
+normalize_name() {
+    local s="$1"
+    s="${s#"${s%%[![:space:]]*}"}"
+    s="${s%"${s##*[![:space:]]}"}"
+    printf '%s' "${s//[.:]/_}"
+}
+
+init_conf() {
+    [ -f "$CONF" ] && return 0
+    mkdir -p -- "$(dirname -- "$CONF")" || return 1
+    cat > "$CONF" <<'EOF'
+# tmux-sessionizer のプリセット。1 行 1 セッション名。
+# '#' で始まる行と空行は無視される。
+game
+work
+htb
+novel
+EOF
+}
+
+# プリセットを正規化して出力（コメント・空行・前後の空白を除去）
+presets() {
+    init_conf || return 1
+    awk '
+        { sub(/^[[:space:]]+/, ""); sub(/[[:space:]]+$/, "") }
+        NF && $0 !~ /^#/ { print }
+    ' "$CONF"
+}
+
+cmd_add() {
+    # 最初の空でない引数を名前として採用する
+    # （fzf からは `add {q} {2..}` で「入力中の文字列 → 選択行」の順に渡される）
+    local name="" a
+    for a in "$@"; do
+        if [ -n "$a" ]; then
+            name="$a"
+            break
+        fi
+    done
+    name=$(normalize_name "$name")
+    [ -z "$name" ] && return 0
+    init_conf || return 1
+    # 既に登録済みなら何もしない
+    if presets | awk -v n="$name" '$0 == n { found = 1 } END { exit !found }'; then
+        return 0
+    fi
+    printf '%s\n' "$name" >> "$CONF"
+}
+
+cmd_del() {
+    local name="${1:-}"
+    [ -z "$name" ] && return 0
+    init_conf || return 1
+    local tmp
+    tmp=$(mktemp -- "${CONF}.XXXXXX") || return 1
+    if awk -v n="$name" '
+        { line = $0; sub(/^[[:space:]]+/, "", line); sub(/[[:space:]]+$/, "", line) }
+        line == n { next }
+        { print }
+    ' "$CONF" > "$tmp"; then
+        mv -f -- "$tmp" "$CONF"
+    else
+        rm -f -- "$tmp"
+        return 1
+    fi
+}
+
+cmd_edit() {
+    init_conf || return 1
+    exec "${EDITOR:-vi}" "$CONF"
+}
+
+# 起動中セッション（●）→ 未起動のプリセット（○）の順に並べ、現在のセッションは除く
+cmd_menu() {
+    # tmux の外から実行した場合は除外対象なし。$TMUX 未設定でも display-message は
+    # 「最後に使われたクライアント」のセッションを返してしまい、attach したい
+    # セッションが一覧から消えるため、tmux 内にいるときだけ現在名を取る。
+    local current=""
+    if [ -n "${TMUX:-}" ]; then
+        current=$(tmux display-message -p '#S' 2>/dev/null) || current=""
+    fi
+    {
+        tmux list-sessions -F '● #S' 2>/dev/null
+        presets | awk '{ print "○ " $0 }'
+    } | awk -v cur="$current" '
+        { name = $0; sub(/^[^ ]+ /, "", name) }
+        name == cur { next }
+        !seen[name]++ { print }
+    '
+}
+
+cmd_pick() {
+    command -v fzf > /dev/null 2>&1 || die "fzf が見つかりません（prefix + S の choose-tree を使ってください）"
+
+    local out rc sel
+    out=$(cmd_menu | fzf \
+        --reverse \
+        --prompt='session> ' \
+        --header='enter:切替/作成  ctrl-a:プリセット追加  ctrl-x:プリセット削除' \
+        --bind="ctrl-a:execute-silent('$SELF' add {q} {2..})+reload('$SELF' menu)" \
+        --bind="ctrl-x:execute-silent('$SELF' del {2..})+reload('$SELF' menu)" \
+        --print-query)
+    rc=$?
+    # 0: 選択あり / 1: 一致なし（＝入力した名前で新規作成）
+    # 130 (Esc, C-c) などは何もしない。--print-query は中断時も query を出すため
+    # 終了コードで分岐しないと、Esc で意図しないセッションを作ってしまう。
+    case $rc in
+        0 | 1) ;;
+        *) return 0 ;;
+    esac
+
+    # 最終行が「選択行（記号つき）」または「入力文字列（記号なし）」。記号を落とす
+    sel=$(printf '%s\n' "$out" | tail -1 | awk '
+        { if ($1 == "●" || $1 == "○") sub(/^[^ ]+ /, ""); print }
+    ')
+    sel=$(normalize_name "$sel")
+    [ -z "$sel" ] && return 0
+
+    tmux has-session -t "=$sel" 2>/dev/null || tmux new-session -d -s "$sel" || return 1
+    if [ -n "${TMUX:-}" ]; then
+        tmux switch-client -t "=$sel"
+    else
+        tmux attach-session -t "=$sel"
+    fi
+}
+
+case "${1:-}" in
+    add)  shift; cmd_add "$@" ;;
+    del)  shift; cmd_del "${1:-}" ;;
+    list) presets ;;
+    edit) cmd_edit ;;
+    menu) cmd_menu ;;
+    -h | --help | help)
+        # 先頭のコメントブロック（shebang を除く）をそのままヘルプとして出す
+        awk '
+            NR == 1 { next }
+            /^#/    { sub(/^#[[:space:]]?/, ""); print; next }
+            { exit }
+        ' "$SELF"
+        ;;
+    "")   cmd_pick ;;
+    *)    die "unknown subcommand: $1（--help を参照）" ;;
+esac
