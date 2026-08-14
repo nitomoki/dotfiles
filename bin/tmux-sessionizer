@@ -7,9 +7,12 @@
 #   tmux-sessionizer switch NAME
 #                               指定セッションへ移動（無ければ作成）。tmux の中なら
 #                               switch-client、外なら attach-session。
-#   tmux-sessionizer add NAME   プリセットに追加
+#   tmux-sessionizer add NAME [DIR]
+#                               プリセットに追加。DIR を省略し、そのセッションが
+#                               起動中なら現在のディレクトリを記録する。
 #   tmux-sessionizer del NAME   プリセットから削除（起動中のセッションは消さない）
-#   tmux-sessionizer list       プリセットを表示
+#   tmux-sessionizer list       プリセットの「名前だけ」を表示（zsh 補完が使う）
+#   tmux-sessionizer dir [NAME] テーマのディレクトリを表示（省略時は現在のセッション）
 #   tmux-sessionizer edit       プリセットを $EDITOR で開く
 #   tmux-sessionizer menu       fzf に渡す一覧を出力（内部利用）
 #
@@ -25,6 +28,22 @@
 # プリセットの実体は $TMUX_SESSIONS_FILE（既定 ~/.config/tmux/sessions）。
 # dotfiles には含めないローカルファイルなので、マシンごとに違うテーマを持てる。
 # 初回実行時に既定のテーマで自動生成される。
+#
+# ── プリセットの書式 ──────────────────────────────────────────────
+#   1 行 1 セッション。「名前」または「名前<空白>ディレクトリ」。
+#
+#     game    ~/games/grimdawn
+#     work    ~/kanden-python
+#     any
+#
+#   ディレクトリを書くと、そのテーマのセッションを新規作成するとき
+#   `new-session -c <dir>` で開く。テーマとディレクトリを 1:1 に固定するのが
+#   狙いで、Claude Code の bg ジョブが cwd で分類される（`claude agents --cwd`
+#   で絞れる）ことと噛み合わせるためにある。
+#   ディレクトリ無しの行は従来どおり動く（作成時の cwd は tmux 任せ）。
+#   名前は最初の空白まで。名前自体に空白を含めたい場合はプリセットに置けない
+#   （fzf で直接打ち込めば作成はできる）。
+#   先頭の `~` は $HOME に展開する。それ以外の変数展開はしない。
 
 set -uo pipefail
 
@@ -32,6 +51,8 @@ CONF="${TMUX_SESSIONS_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux/sessions}"
 # fzf の --bind から自分自身を再実行するため、絶対パスに解決しておく
 # （popup の非対話シェルでは PATH に ~/dotfiles/bin が無いことがある）。
 SELF=$(readlink -f -- "$(command -v -- "$0")" 2>/dev/null) || SELF="$0"
+
+TAB=$'\t'
 
 die() {
     printf 'tmux-sessionizer: %s\n' "$*" >&2
@@ -48,12 +69,37 @@ normalize_name() {
     printf '%s' "${s//[.:]/_}"
 }
 
+# 先頭の `~` だけ展開する。eval は使わない（プリセットは手で編集するファイルで、
+# 任意のコマンドを実行できてしまうのは割に合わない）。
+expand_path() {
+    local p="$1"
+    case "$p" in
+        '~') printf '%s' "$HOME" ;;
+        '~/'*) printf '%s/%s' "$HOME" "${p#\~/}" ;;
+        *) printf '%s' "$p" ;;
+    esac
+}
+
+# 表示用に $HOME を ~ へ畳む
+shorten_path() {
+    local p="$1"
+    case "$p" in
+        "$HOME") printf '~' ;;
+        "$HOME"/*) printf '~/%s' "${p#"$HOME"/}" ;;
+        *) printf '%s' "$p" ;;
+    esac
+}
+
 init_conf() {
     [ -f "$CONF" ] && return 0
     mkdir -p -- "$(dirname -- "$CONF")" || return 1
     cat > "$CONF" <<'EOF'
-# tmux-sessionizer のプリセット。1 行 1 セッション名。
-# '#' で始まる行と空行は無視される。
+# tmux-sessionizer のプリセット。
+# 1 行 1 セッション。「名前」または「名前<空白>ディレクトリ」。
+# '#' で始まる行と空行は無視される。先頭の ~ は $HOME に展開される。
+#
+#   game    ~/games/grimdawn
+#   any
 game
 work
 htb
@@ -61,33 +107,83 @@ novel
 EOF
 }
 
-# プリセットを正規化して出力（コメント・空行・前後の空白を除去）
-presets() {
+# プリセットを「名前 TAB ディレクトリ(生)」で出力する。
+# ディレクトリ未指定の行は 2 列目が空になる。
+presets_raw() {
     init_conf || return 1
-    awk '
+    awk -v OFS='\t' '
         { sub(/^[[:space:]]+/, ""); sub(/[[:space:]]+$/, "") }
-        NF && $0 !~ /^#/ { print }
+        !NF || /^#/ { next }
+        {
+            # 最初の空白までが名前、残りがディレクトリ
+            i = match($0, /[[:space:]]/)
+            if (i == 0) { print $0, "" }
+            else {
+                name = substr($0, 1, i - 1)
+                dir  = substr($0, i + 1)
+                sub(/^[[:space:]]+/, "", dir)
+                print name, dir
+            }
+        }
     ' "$CONF"
+}
+
+# 名前だけ（zsh 補完が `list` の出力をそのまま使うので、ここは変えない）
+presets() {
+    presets_raw | cut -f1
+}
+
+# 起動中セッションの現在地（アクティブペインの cwd）。
+# display-message -t '=name' はセッション名をペイン target に解決できず空を返す
+# （実測）ので、list-panes -s から拾う。
+session_cwd() {
+    local name="$1"
+    tmux list-panes -s -t "=$name" -F '#{?pane_active,#{pane_current_path},}' 2> /dev/null \
+        | awk 'NF { print; exit }'
+}
+
+# 指定テーマのディレクトリを展開して返す（未設定なら空）
+preset_dir() {
+    local name="$1" raw
+    raw=$(presets_raw | awk -F'\t' -v n="$name" '$1 == n { print $2; exit }')
+    [ -z "$raw" ] && return 0
+    expand_path "$raw"
 }
 
 cmd_add() {
     # 最初の空でない引数を名前として採用する
-    # （fzf からは `add {q} {2..}` で「入力中の文字列 → 選択行」の順に渡される）
-    local name="" a
+    # （fzf からは `add {q} {2}` で「入力中の文字列 → 選択行」の順に渡される）
+    local name="" dir="" a
     for a in "$@"; do
-        if [ -n "$a" ]; then
+        # '/' や '~' で始まる引数はディレクトリ指定とみなす。fzf から渡ってくる
+        # 名前候補と取り違えないための判定。
+        case "$a" in
+            /* | '~'/* | '~') [ -z "$dir" ] && dir="$a"; continue ;;
+        esac
+        if [ -n "$a" ] && [ -z "$name" ]; then
             name="$a"
-            break
         fi
     done
     name=$(normalize_name "$name")
     [ -z "$name" ] && return 0
     init_conf || return 1
+
+    # DIR 省略時、そのセッションが起動中なら現在地を拾って記録する
+    if [ -z "$dir" ] && tmux has-session -t "=$name" 2> /dev/null; then
+        local cur
+        cur=$(session_cwd "$name")
+        [ -n "$cur" ] && dir=$(shorten_path "$cur")
+    fi
+
     # 既に登録済みなら何もしない
     if presets | awk -v n="$name" '$0 == n { found = 1 } END { exit !found }'; then
         return 0
     fi
-    printf '%s\n' "$name" >> "$CONF"
+    if [ -n "$dir" ]; then
+        printf '%s\t%s\n' "$name" "$dir" >> "$CONF"
+    else
+        printf '%s\n' "$name" >> "$CONF"
+    fi
 }
 
 cmd_del() {
@@ -96,10 +192,17 @@ cmd_del() {
     init_conf || return 1
     local tmp
     tmp=$(mktemp -- "${CONF}.XXXXXX") || return 1
+    # 名前の列だけを見て消す（ディレクトリ付きの行にも効くように）
     if awk -v n="$name" '
-        { line = $0; sub(/^[[:space:]]+/, "", line); sub(/[[:space:]]+$/, "", line) }
-        line == n { next }
-        { print }
+        {
+            line = $0
+            sub(/^[[:space:]]+/, "", line); sub(/[[:space:]]+$/, "", line)
+            if (line == "" || line ~ /^#/) { print; next }
+            i = match(line, /[[:space:]]/)
+            nm = (i == 0) ? line : substr(line, 1, i - 1)
+            if (nm == n) next
+            print
+        }
     ' "$CONF" > "$tmp"; then
         mv -f -- "$tmp" "$CONF"
     else
@@ -113,7 +216,25 @@ cmd_edit() {
     exec "${EDITOR:-vi}" "$CONF"
 }
 
+# テーマのディレクトリを表示する。引数を省くと今いるセッションを見る。
+# `claude agents --cwd "$(tmux-sessionizer dir)"` のように使う想定。
+cmd_dir() {
+    local name="${1:-}"
+    if [ -z "$name" ] && [ -n "${TMUX:-}" ]; then
+        name=$(tmux display-message -p '#S' 2> /dev/null) || name=""
+    fi
+    [ -z "$name" ] && return 0
+    local d
+    d=$(preset_dir "$name")
+    # プリセットに無ければ、起動中セッションの現在地で代替する
+    if [ -z "$d" ] && tmux has-session -t "=$name" 2> /dev/null; then
+        d=$(session_cwd "$name")
+    fi
+    [ -n "$d" ] && printf '%s\n' "$d"
+}
+
 # 起動中セッション（●）→ 未起動のプリセット（○）の順に並べ、現在のセッションは除く
+# 出力は「記号 TAB 名前 TAB ディレクトリ(表示用)」。
 cmd_menu() {
     # tmux の外から実行した場合は除外対象なし。$TMUX 未設定でも display-message は
     # 「最後に使われたクライアント」のセッションを返してしまい、attach したい
@@ -135,9 +256,12 @@ cmd_menu() {
         $2 == cur { next }
         !seen[$2]++ { print }
     ' | while IFS=$'\t' read -r kind name; do
+        local d
+        d=$(preset_dir "$name")
+        [ -n "$d" ] && d=$(shorten_path "$d")
         case "$kind" in
-            R) printf '●\t%s\n' "$name" ;;
-            *) printf '○\t%s\n' "$name" ;;
+            R) printf '●\t%s\t%s\n' "$name" "$d" ;;
+            *) printf '○\t%s\t%s\n' "$name" "$d" ;;
         esac
     done
 }
@@ -148,7 +272,18 @@ goto_session() {
     local name
     name=$(normalize_name "${1:-}")
     [ -z "$name" ] && return 0
-    tmux has-session -t "=$name" 2>/dev/null || tmux new-session -d -s "$name" || return 1
+    if ! tmux has-session -t "=$name" 2>/dev/null; then
+        # プリセットにディレクトリがあればそこで開く。無い / 存在しない場合は
+        # tmux 任せ（従来どおり）にして、作成自体は失敗させない。
+        local dir
+        dir=$(preset_dir "$name")
+        if [ -n "$dir" ] && [ -d "$dir" ]; then
+            tmux new-session -d -s "$name" -c "$dir" || return 1
+        else
+            [ -n "$dir" ] && printf 'tmux-sessionizer: %s: ディレクトリが無いので既定の場所で作成します\n' "$dir" >&2
+            tmux new-session -d -s "$name" || return 1
+        fi
+    fi
     if [ -n "${TMUX:-}" ]; then
         tmux switch-client -t "=$name"
     else
@@ -164,7 +299,7 @@ cmd_pick() {
         --reverse \
         --prompt='session> ' \
         --header='enter:切替/作成  ctrl-a:プリセット追加  ctrl-x:プリセット削除' \
-        --delimiter=$'\t' --nth=2 --tabstop=2 \
+        --delimiter=$'\t' --nth=2 --with-nth='1,2,3' --tabstop=2 \
         --bind="ctrl-a:execute-silent('$SELF' add {q} {2})+reload('$SELF' menu)" \
         --bind="ctrl-x:execute-silent('$SELF' del {2})+reload('$SELF' menu)" \
         --print-query)
@@ -177,9 +312,10 @@ cmd_pick() {
         *) return 0 ;;
     esac
 
-    # 最終行は「選択行（記号 TAB 名前）」か「入力文字列（タブ無し）」。
-    # タブ区切りの最終フィールドを取れば、記号が何であっても名前だけが残る。
-    sel=$(printf '%s\n' "$out" | tail -1 | awk -F'\t' '{ print $NF }')
+    # 最終行は「選択行（記号 TAB 名前 TAB ディレクトリ）」か「入力文字列（タブ無し）」。
+    # 列が増えたので $NF（＝ディレクトリ）ではなく、2 列目を名前として取る。
+    # タブが無い行（入力文字列）は 1 列目がそのまま名前になる。
+    sel=$(printf '%s\n' "$out" | tail -1 | awk -F'\t' '{ print (NF >= 2 ? $2 : $1) }')
     goto_session "$sel"
 }
 
@@ -188,6 +324,7 @@ case "${1:-}" in
     add)  shift; cmd_add "$@" ;;
     del)  shift; cmd_del "${1:-}" ;;
     list) presets ;;
+    dir)  shift; cmd_dir "${1:-}" ;;
     edit) cmd_edit ;;
     menu) cmd_menu ;;
     -h | --help | help)
