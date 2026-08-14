@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+# tmux-agents — テーマ別 tmux セッションと Claude Code の Agent view をつなぐ
+#
+# 使い方:
+#   tmux-agents open [SESSION]   そのテーマの Agent view ウィンドウを開く。
+#                                既に開いていればそのウィンドウへ移動する。
+#   tmux-agents handoff [PANE]   そのペインの会話をバックグラウンドへ渡し、
+#                                ペインを元のコマンド（通常はシェル）へ戻す。
+#
+# ── なぜこれが要るか ──────────────────────────────────────────────
+# Claude Code の分類軸はディレクトリで、バックグラウンドジョブは
+# `claude agents --cwd <dir>` でそのディレクトリ配下のものだけに絞れる。
+# 一方こちらの分類軸は tmux セッション（テーマ）。tmux-sessionizer が
+# テーマ↔ディレクトリを 1:1 で持っているので、それを --cwd に渡せば
+# 「テーマ別セッションの中ではそのテーマのジョブしか見えない」状態を作れる。
+#
+# ← キーで開く Agent view はスコープを引き継がず、常に全ジョブを出す。
+# しかも押したペインに居座り続ける（自動では戻らない）ので、複数のテーマで
+# 押すと同じ全体リストがあちこちのペインに残ってしまう。handoff はその
+# 後始末までを 1 操作にまとめたもの。
+#
+# ── handoff が待ち合わせをする理由 ────────────────────────────────
+# ← を押してから実際にバックグラウンドジョブが生まれるまでには間がある。
+# 完了前にペインを潰すと会話が宙に浮きかねないので、対話セッションの
+# 記録（~/.claude/sessions/<pid>.json の parkedJobId）に引き渡し先の
+# ジョブ ID が入るのを待ってから片付ける。時間内に入らなければ何もしない。
+
+set -uo pipefail
+
+SESSIONIZER=$(command -v tmux-sessionizer 2>/dev/null) \
+    || SESSIONIZER="$HOME/dotfiles/bin/tmux-sessionizer"
+HANDOFF_TIMEOUT=${TMUX_AGENTS_HANDOFF_TIMEOUT:-25}
+# Claude Code がセッション情報を書く場所。テストで差し替えられるようにしておく
+# （実物を触らずに handoff の待ち合わせを検証するため）。
+CLAUDE_SESSIONS_DIR=${CLAUDE_SESSIONS_DIR:-$HOME/.claude/sessions}
+
+# tmux の中なら status 行へ、外なら標準エラーへ。
+# 無条件に display-message すると、tmux の外から呼んだときに既定ソケットの
+# サーバ（＝常用のセッション）へメッセージを出してしまう。
+note() {
+    if [ -n "${TMUX:-}" ]; then
+        tmux display-message "tmux-agents: $*" 2> /dev/null && return 0
+    fi
+    printf 'tmux-agents: %s\n' "$*" >&2
+}
+
+theme_dir() {
+    local sess="$1"
+    [ -x "$SESSIONIZER" ] || return 0
+    "$SESSIONIZER" dir "$sess" 2> /dev/null
+}
+
+# ── open ─────────────────────────────────────────────────────────
+cmd_open() {
+    [ -n "${TMUX:-}" ] || { note "tmux の中で実行してください"; return 1; }
+    command -v claude > /dev/null 2>&1 || { note "claude が見つかりません"; return 1; }
+
+    local sess="${1:-}"
+    [ -z "$sess" ] && sess=$(tmux display-message -p '#S' 2> /dev/null)
+    [ -z "$sess" ] && return 1
+
+    local win
+    win=$(tmux show -gv @agents_window 2> /dev/null)
+    [ -z "$win" ] && win=agents
+
+    # 既に開いていればそこへ移動する（テーマごとに 1 枚あれば足りる）
+    if tmux list-windows -t "=$sess" -F '#{window_name}' 2> /dev/null \
+        | awk -v w="$win" '$0 == w { found = 1 } END { exit !found }'; then
+        tmux select-window -t "=$sess:$win"
+        return 0
+    fi
+
+    local dir
+    dir=$(theme_dir "$sess")
+    if [ -n "$dir" ] && [ -d "$dir" ]; then
+        # --cwd を付けるとそのディレクトリ配下のジョブだけになる
+        tmux new-window -t "=$sess" -n "$win" -c "$dir" "claude agents --cwd '$dir'"
+    else
+        # テーマにディレクトリが無い場合は全体を出す（絞りようがない）
+        tmux new-window -t "=$sess" -n "$win" "claude agents"
+    fi
+}
+
+# ── handoff ──────────────────────────────────────────────────────
+
+# ペインで走っている claude のセッション記録を探す。
+# ペインのプロセス（通常はシェル）とその直下の子まで見る。
+find_session_json() {
+    local pane="$1" ppid p
+    ppid=$(tmux display-message -p -t "$pane" '#{pane_pid}' 2> /dev/null) || return 1
+    [ -z "$ppid" ] && return 1
+    for p in "$ppid" $(pgrep -P "$ppid" 2> /dev/null); do
+        if [ -f "$CLAUDE_SESSIONS_DIR/$p.json" ]; then
+            printf '%s' "$CLAUDE_SESSIONS_DIR/$p.json"
+            return 0
+        fi
+    done
+    return 1
+}
+
+read_parked() {
+    python3 - "$1" <<'PY' 2> /dev/null
+import json, sys
+try:
+    print(json.load(open(sys.argv[1])).get("parkedJobId") or "")
+except Exception:
+    print("")
+PY
+}
+
+# parkedJobId が新しく入るまで待つ。入ったらその ID を出力して 0 を返す。
+wait_parked() {
+    python3 - "$1" "$2" "$3" <<'PY'
+import json, sys, time
+path, before, timeout = sys.argv[1], sys.argv[2], float(sys.argv[3])
+deadline = time.time() + timeout
+while time.time() < deadline:
+    try:
+        cur = json.load(open(path)).get("parkedJobId") or ""
+        if cur and cur != before:
+            print(cur)
+            sys.exit(0)
+    except Exception:
+        pass
+    time.sleep(0.3)
+sys.exit(1)
+PY
+}
+
+cmd_handoff() {
+    [ -n "${TMUX:-}" ] || { note "tmux の中で実行してください"; return 1; }
+
+    local pane="${1:-}"
+    [ -z "$pane" ] && pane=$(tmux display-message -p '#{pane_id}' 2> /dev/null)
+    [ -z "$pane" ] && return 1
+
+    local cmd
+    cmd=$(tmux display-message -p -t "$pane" '#{pane_current_command}' 2> /dev/null)
+    case "$cmd" in
+        claude*) ;;
+        *) note "このペインで claude が動いていません ($cmd)"; return 1 ;;
+    esac
+
+    local json
+    json=$(find_session_json "$pane") \
+        || { note "セッション情報が見つかりません"; return 1; }
+
+    local before
+    before=$(read_parked "$json")
+
+    # ← が Agent view を開き、会話をバックグラウンドへ渡す
+    tmux send-keys -t "$pane" Left
+
+    local jobid
+    if ! jobid=$(wait_parked "$json" "$before" "$HANDOFF_TIMEOUT"); then
+        note "引き渡しを確認できませんでした。ペインはそのままにします"
+        return 1
+    fi
+
+    # ここまで来れば会話は daemon 側のジョブになっている。ペインは畳んでよい。
+    # コマンド無しの respawn-pane は元のコマンド（通常は既定のシェル）を
+    # 引数ごと復元する。現在のディレクトリは -c で引き継ぐ。
+    local path
+    path=$(tmux display-message -p -t "$pane" '#{pane_current_path}' 2> /dev/null)
+    if [ -n "$path" ] && [ -d "$path" ]; then
+        tmux respawn-pane -k -c "$path" -t "$pane" 2> /dev/null
+    else
+        tmux respawn-pane -k -t "$pane" 2> /dev/null
+    fi
+    note "バックグラウンドへ渡しました ($jobid)"
+}
+
+case "${1:-open}" in
+    open) shift 2> /dev/null; cmd_open "${1:-}" ;;
+    handoff) shift; cmd_handoff "${1:-}" ;;
+    -h | --help | help)
+        awk '
+            NR == 1 { next }
+            /^#/    { sub(/^#[[:space:]]?/, ""); print; next }
+            { exit }
+        ' "$(readlink -f -- "$0")"
+        ;;
+    *) printf 'tmux-agents: unknown subcommand: %s（--help を参照）\n' "$1" >&2; exit 1 ;;
+esac
