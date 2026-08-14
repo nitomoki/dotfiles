@@ -10,6 +10,8 @@
 #   tmux-sessionizer add NAME [DIR]
 #                               プリセットに追加。DIR を省略し、そのセッションが
 #                               起動中なら現在のディレクトリを記録する。
+#                               既に登録済みでディレクトリが空の行は、そこへ
+#                               埋める（既に入っている値は上書きしない）。
 #   tmux-sessionizer del NAME   プリセットから削除（起動中のセッションは消さない）
 #   tmux-sessionizer list       プリセットの「名前だけ」を表示（zsh 補完が使う）
 #   tmux-sessionizer dir [NAME] テーマのディレクトリを表示（省略時は現在のセッション）
@@ -18,7 +20,11 @@
 #
 # fzf 内のキー:
 #   enter   選択（無ければ作成）して切り替え
-#   ctrl-a  入力中の名前（空なら選択行）をプリセットへ追加
+#   ctrl-a  入力中の名前（空なら選択行）をプリセットへ追加。
+#           選択したセッションが起動中なら、その現在地をディレクトリとして
+#           一緒に記録する。未起動の名前を打って追加した場合はディレクトリが
+#           空のまま入るので、あとでそのセッションを作って作業してから
+#           もう一度 ctrl-a を押せば埋まる。
 #   ctrl-x  選択行をプリセットから削除
 #
 # 一覧の記号:
@@ -175,10 +181,37 @@ cmd_add() {
         [ -n "$cur" ] && dir=$(shorten_path "$cur")
     fi
 
-    # 既に登録済みなら何もしない
+    # 既に登録済みの場合は、ディレクトリが空のときだけ埋める。
+    # 「名前だけで登録 → セッションを作って作業 → もう一度 ctrl-a」で後から
+    # ディレクトリを記録できるようにするため。既に入っている値は触らない
+    # （ペインが一時的にサブディレクトリに居るだけで上書きされると困る。
+    #   変更したいときは `edit` でファイルを直す）。
     if presets | awk -v n="$name" '$0 == n { found = 1 } END { exit !found }'; then
+        [ -z "$dir" ] && return 0
+        local existing
+        existing=$(presets_raw | awk -F'\t' -v n="$name" '$1 == n { print $2; exit }')
+        [ -n "$existing" ] && return 0
+        local tmp
+        tmp=$(mktemp -- "${CONF}.XXXXXX") || return 1
+        if awk -v n="$name" -v d="$dir" '
+            {
+                line = $0
+                sub(/^[[:space:]]+/, "", line); sub(/[[:space:]]+$/, "", line)
+                if (line == "" || line ~ /^#/) { print; next }
+                i = match(line, /[[:space:]]/)
+                nm = (i == 0) ? line : substr(line, 1, i - 1)
+                if (nm == n && i == 0) { printf "%s\t%s\n", n, d; next }
+                print
+            }
+        ' "$CONF" > "$tmp"; then
+            mv -f -- "$tmp" "$CONF"
+        else
+            rm -f -- "$tmp"
+            return 1
+        fi
         return 0
     fi
+
     if [ -n "$dir" ]; then
         printf '%s\t%s\n' "$name" "$dir" >> "$CONF"
     else

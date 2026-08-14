@@ -95,6 +95,16 @@ bareone" "$(ts list)"
 ts del game
 check "del 後に残るもの" "bareone" "$(ts list)"
 
+echo "=== 既存行のディレクトリが空なら後から埋まる ==="
+write_conf 'game' 'work	/var'
+ts add game /tmp
+check "空の行は埋まる" "/tmp" "$(ts dir game)"
+check "他の行は壊れない" "/var" "$(ts dir work)"
+ts add game /usr
+check "既に入っている値は上書きしない" "/tmp" "$(ts dir game)"
+check "行数は増えない" "game
+work" "$(ts list)"
+
 echo "=== add でディレクトリを自動採取（起動中セッションの現在地） ==="
 write_conf '# empty'
 ts add base
