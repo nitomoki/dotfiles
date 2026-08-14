@@ -17,6 +17,10 @@
 #   tmux-sessionizer dir [NAME] テーマのディレクトリを表示（省略時は現在のセッション）
 #   tmux-sessionizer edit       プリセットを $EDITOR で開く
 #   tmux-sessionizer menu       fzf に渡す一覧を出力（内部利用）
+#   tmux-sessionizer on-session-changed CLIENT SESSION
+#                               セッション終了で飛ばされたクライアントを
+#                               フォールバック先へ寄せ直す（内部利用。tmux の
+#                               client-session-changed フックから呼ばれる）
 #
 # fzf 内のキー:
 #   enter   選択（無ければ作成）して切り替え
@@ -266,6 +270,57 @@ cmd_dir() {
     [ -n "$d" ] && printf '%s\n' "$d"
 }
 
+# tmux の client-session-changed フックから呼ばれる（内部利用）。
+#
+# セッションが終了すると、既定ではそのクライアントはデタッチされてしまう。
+# tmux.conf 側で detach-on-destroy off にしてデタッチは防いでいるが、その場合の
+# 行き先は「残っているセッションのうち最後に使ったもの」で固定できない
+# （実測でも、直前まで居た work ではなく any に飛んだ）。
+# そこで「消えたセッションから強制的に移された」ときだけフォールバック先へ
+# 寄せ直す。自分で切り替えた場合は何もしない。
+#
+# 判定にはクライアントごとの直前のセッション名を記録して使う。強制移動なら
+# 「直前のセッションがもう存在しない」ため区別できる。session-closed フックでは
+# hook_client が空になり、どのクライアントが巻き込まれたか分からない（実測）
+# ので、この方法を採っている。
+#
+# 記録先はランタイムディレクトリ（tmpfs、再起動で消える）。クライアントの tty
+# 名をファイル名に使う。
+cmd_on_session_changed() {
+    local client="${1:-}" now="${2:-}"
+    [ -z "$client" ] && return 0
+
+    local state key prev fb
+    state="${XDG_RUNTIME_DIR:-/tmp}/tmux-sessionizer-$(id -u)"
+    mkdir -p -- "$state" 2> /dev/null || return 0
+    key="$state/$(printf '%s' "$client" | tr -c 'A-Za-z0-9._-' '_')"
+
+    prev=$(cat -- "$key" 2> /dev/null)
+    printf '%s' "$now" > "$key" 2> /dev/null
+
+    # 初回（記録が無い）は何もしない。attach しただけで飛ばされると困る。
+    [ -z "$prev" ] && return 0
+    # 直前のセッションがまだ在る＝自分で切り替えた。触らない。
+    tmux has-session -t "=$prev" 2> /dev/null && return 0
+
+    fb=$(tmux show -gv @fallback_session 2> /dev/null)
+    [ -z "$fb" ] && fb=any
+    # フォールバック先そのものが閉じた場合や、既にそこに居る場合は何もしない
+    [ "$now" = "$fb" ] && return 0
+    [ "$prev" = "$fb" ] && return 0
+
+    if ! tmux has-session -t "=$fb" 2> /dev/null; then
+        local d
+        d=$(preset_dir "$fb")
+        if [ -n "$d" ] && [ -d "$d" ]; then
+            tmux new-session -d -s "$fb" -c "$d" 2> /dev/null || return 0
+        else
+            tmux new-session -d -s "$fb" 2> /dev/null || return 0
+        fi
+    fi
+    tmux switch-client -c "$client" -t "=$fb" 2> /dev/null
+}
+
 # 起動中セッション（●）→ 未起動のプリセット（○）の順に並べ、現在のセッションは除く
 # 出力は「記号 TAB 名前 TAB ディレクトリ(表示用)」。
 cmd_menu() {
@@ -360,6 +415,7 @@ case "${1:-}" in
     dir)  shift; cmd_dir "${1:-}" ;;
     edit) cmd_edit ;;
     menu) cmd_menu ;;
+    on-session-changed) shift; cmd_on_session_changed "${1:-}" "${2:-}" ;;
     -h | --help | help)
         # 先頭のコメントブロック（shebang を除く）をそのままヘルプとして出す
         awk '
