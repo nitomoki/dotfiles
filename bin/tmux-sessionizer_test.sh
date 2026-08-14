@@ -145,6 +145,67 @@ sleep 0.5
 check "セッションは作られる" "ghost" \
     "$(tmux -L "$SOCK" has-session -t '=ghost' 2> /dev/null && echo ghost)"
 
+echo "=== セッション終了時のフォールバック ==="
+# 実クライアントが要るので、外側の tmux も使い捨てソケットに立てる。
+# 既定ソケット（常用サーバ）に外側セッションを作ってはいけない。
+OUT="${SOCK}-outer"
+fb_setup() {
+    tmux -L "$SOCK" kill-server 2> /dev/null
+    tmux -L "$OUT" kill-server 2> /dev/null
+    sleep 1
+    rm -rf "${XDG_RUNTIME_DIR:-/tmp}/tmux-sessionizer-$(id -u)"
+    tmux -L "$SOCK" new-session -d -s any  -c /tmp
+    tmux -L "$SOCK" new-session -d -s work -c /usr
+    tmux -L "$SOCK" new-session -d -s game -c /var
+    tmux -L "$SOCK" set -g detach-on-destroy off
+    tmux -L "$SOCK" set-hook -g client-session-changed \
+        "run-shell -b \"TMUX_SESSIONS_FILE=$TMUX_SESSIONS_FILE $TS on-session-changed #{hook_client} #{client_session}\""
+    tmux -L "$OUT" new-session -d -s host "TERM=xterm-256color tmux -L $SOCK attach -t work"
+    sleep 2
+    CL=$(tmux -L "$SOCK" list-clients -F '#{client_tty}' | head -1)
+}
+fb_where() { tmux -L "$SOCK" list-clients -F '#{client_session}' 2> /dev/null | head -1; }
+
+write_conf 'any	/tmp' 'work	/usr' 'game	/var'
+
+fb_setup
+tmux -L "$SOCK" switch-client -c "$CL" -t game; sleep 2
+check "手動の切り替えでは動かない" "game" "$(fb_where)"
+tmux -L "$SOCK" kill-session -t game; sleep 3
+check "居るセッションが終了したら移る" "any" "$(fb_where)"
+
+fb_setup
+tmux -L "$SOCK" switch-client -c "$CL" -t game; sleep 2
+tmux -L "$SOCK" kill-session -t work; sleep 3
+check "無関係なセッションの終了では動かない" "game" "$(fb_where)"
+
+# tmux 既定の行き先（この構成では any）と違う所を指定して、フックが効いている
+# ことを決定的に確かめる。これが無いと「たまたま any だった」と区別が付かない。
+fb_setup
+tmux -L "$SOCK" new-session -d -s zzz -c /etc
+tmux -L "$SOCK" set -g @fallback_session zzz
+tmux -L "$SOCK" switch-client -c "$CL" -t game; sleep 2
+tmux -L "$SOCK" kill-session -t game; sleep 3
+check "@fallback_session の指定を尊重する" "zzz" "$(fb_where)"
+
+fb_setup
+tmux -L "$SOCK" kill-session -t any; sleep 1
+tmux -L "$SOCK" switch-client -c "$CL" -t game; sleep 2
+tmux -L "$SOCK" kill-session -t game; sleep 3
+check "フォールバック先が無ければ作る" "any" "$(fb_where)"
+check "作成時はプリセットの cwd を使う" "/tmp" \
+    "$(tmux -L "$SOCK" list-panes -s -t '=any' -F '#{pane_current_path}' 2> /dev/null | head -1)"
+
+fb_setup
+tmux -L "$SOCK" switch-client -c "$CL" -t any; sleep 2
+tmux -L "$SOCK" kill-session -t any; sleep 3
+check "フォールバック先自身の終了で暴れない" "yes" \
+    "$([ -n "$(fb_where)" ] && echo yes || echo no)"
+
+tmux -L "$OUT" kill-server 2> /dev/null
+rm -f "/tmp/tmux-$(id -u)/$OUT"
+rm -rf "${XDG_RUNTIME_DIR:-/tmp}/tmux-sessionizer-$(id -u)"
+
 echo
 if [ "$fail" -eq 0 ]; then
     echo "全 $pass 件 成功"
