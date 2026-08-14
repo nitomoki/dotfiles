@@ -124,7 +124,7 @@ check "エラーで終わる" "1" "$rc"
 check "ペインは再生成されない" "$before_pid" \
     "$(tmux -L "$SOCK" list-panes -t '=themed:0' -F '#{pane_pid}' | head -1)"
 
-echo "=== handoff: 引き渡しを確認できたらペインを畳む ==="
+echo "=== handoff: 引き渡せたらペインを閉じる（他にペインがある場合） ==="
 start_server
 tmux -L "$SOCK" new-window -t '=themed' -n cc -c "$TMPDIR_T/themedir" "$STUB2/claude 600"
 sleep 1.5
@@ -139,8 +139,30 @@ ta handoff "$pane" > /dev/null 2>&1
 rc=$?
 sleep 1
 check "成功で終わる" "0" "$rc"
-check "ペインが再生成される（pid が変わる）" "changed" \
-    "$([ "$(tmux -L "$SOCK" list-panes -t '=themed:cc' -F '#{pane_pid}' | head -1)" != "$ppid" ] && echo changed || echo same)"
+check "ペインが閉じる" "gone" \
+    "$(tmux -L "$SOCK" list-panes -s -t '=themed' -F '#{pane_id}' | rg -q "^$pane$" && echo alive || echo gone)"
+check "セッションは残る" "themed" \
+    "$(tmux -L "$SOCK" has-session -t '=themed' 2> /dev/null && echo themed)"
+wait 2> /dev/null
+
+echo "=== handoff: セッション最後の 1 つなら作り直して器を残す ==="
+start_server
+tmux -L "$SOCK" new-session -d -s solo -c "$TMPDIR_T/themedir" "$STUB2/claude 600"
+sleep 1.5
+check "solo は 1 ペインだけ" "1" \
+    "$(tmux -L "$SOCK" list-panes -s -t '=solo' -F '#{pane_id}' | wc -l)"
+pane=$(tmux -L "$SOCK" list-panes -t '=solo' -F '#{pane_id}' | head -1)
+ppid=$(tmux -L "$SOCK" list-panes -t '=solo' -F '#{pane_pid}' | head -1)
+printf '{"pid":%s,"parkedJobId":null}\n' "$ppid" > "$CLAUDE_SESSIONS_DIR/$ppid.json"
+( sleep 2; printf '{"pid":%s,"parkedJobId":"cafe"}\n' "$ppid" > "$CLAUDE_SESSIONS_DIR/$ppid.json" ) &
+ta handoff "$pane" > /dev/null 2>&1
+rc=$?
+sleep 1
+check "成功で終わる" "0" "$rc"
+check "セッションが消えない" "solo" \
+    "$(tmux -L "$SOCK" has-session -t '=solo' 2> /dev/null && echo solo)"
+check "ペインは作り直される（pid が変わる）" "changed" \
+    "$([ "$(tmux -L "$SOCK" list-panes -s -t '=solo' -F '#{pane_pid}' | head -1)" != "$ppid" ] && echo changed || echo same)"
 wait 2> /dev/null
 
 echo "=== handoff: 確認できなければペインを残す ==="

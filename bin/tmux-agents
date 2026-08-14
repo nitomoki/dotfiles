@@ -5,7 +5,9 @@
 #   tmux-agents open [SESSION]   そのテーマの Agent view ウィンドウを開く。
 #                                既に開いていればそのウィンドウへ移動する。
 #   tmux-agents handoff [PANE]   そのペインの会話をバックグラウンドへ渡し、
-#                                ペインを元のコマンド（通常はシェル）へ戻す。
+#                                ペインを閉じる。そのセッションで最後の 1 つ
+#                                だった場合だけ、セッションが消えないよう
+#                                元のコマンド（通常はシェル）で作り直す。
 #
 # ── なぜこれが要るか ──────────────────────────────────────────────
 # Claude Code の分類軸はディレクトリで、バックグラウンドジョブは
@@ -17,7 +19,8 @@
 # ← キーで開く Agent view はスコープを引き継がず、常に全ジョブを出す。
 # しかも押したペインに居座り続ける（自動では戻らない）ので、複数のテーマで
 # 押すと同じ全体リストがあちこちのペインに残ってしまう。handoff はその
-# 後始末までを 1 操作にまとめたもの。
+# 後始末までを 1 操作にまとめたもの。渡した先はテーマの Agent view
+# （tmux-agents open）から見る前提なので、元のペインは残さず閉じる。
 #
 # ── handoff が待ち合わせをする理由 ────────────────────────────────
 # ← を押してから実際にバックグラウンドジョブが生まれるまでには間がある。
@@ -157,17 +160,28 @@ cmd_handoff() {
         return 1
     fi
 
-    # ここまで来れば会話は daemon 側のジョブになっている。ペインは畳んでよい。
-    # コマンド無しの respawn-pane は元のコマンド（通常は既定のシェル）を
-    # 引数ごと復元する。現在のディレクトリは -c で引き継ぐ。
-    local path
-    path=$(tmux display-message -p -t "$pane" '#{pane_current_path}' 2> /dev/null)
-    if [ -n "$path" ] && [ -d "$path" ]; then
-        tmux respawn-pane -k -c "$path" -t "$pane" 2> /dev/null
+    # ここまで来れば会話は daemon 側のジョブになっている。ペインは用済み。
+    # 基本は閉じる。ただしそのセッションで最後の 1 つだった場合に閉じると
+    # セッションごと消えてしまうので、そのときだけ作り直して器を残す。
+    local sess count
+    sess=$(tmux display-message -p -t "$pane" '#{session_name}' 2> /dev/null)
+    count=$(tmux list-panes -s -t "=$sess" -F '#{pane_id}' 2> /dev/null | wc -l)
+
+    if [ "${count:-0}" -gt 1 ]; then
+        tmux kill-pane -t "$pane" 2> /dev/null
+        note "バックグラウンドへ渡してペインを閉じました ($jobid)"
     else
-        tmux respawn-pane -k -t "$pane" 2> /dev/null
+        # コマンド無しの respawn-pane は元のコマンド（通常は既定のシェル）を
+        # 引数ごと復元する。現在のディレクトリは -c で引き継ぐ。
+        local path
+        path=$(tmux display-message -p -t "$pane" '#{pane_current_path}' 2> /dev/null)
+        if [ -n "$path" ] && [ -d "$path" ]; then
+            tmux respawn-pane -k -c "$path" -t "$pane" 2> /dev/null
+        else
+            tmux respawn-pane -k -t "$pane" 2> /dev/null
+        fi
+        note "バックグラウンドへ渡しました ($jobid)"
     fi
-    note "バックグラウンドへ渡しました ($jobid)"
 }
 
 case "${1:-open}" in
