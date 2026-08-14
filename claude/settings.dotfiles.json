@@ -15,12 +15,43 @@
     }
   },
   "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.claude/hooks/cc-status.sh\" ]; then exec \"$HOME/.claude/hooks/cc-status.sh\" waiting; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "permission_prompt|agent_needs_input"
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.claude/hooks/cc-status.sh\" ]; then exec \"$HOME/.claude/hooks/cc-status.sh\" done; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "agent_completed"
+      }
+    ],
     "PermissionRequest": [
       {
         "hooks": [
           {
             "async": false,
             "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.claude/hooks/cc-status.sh\" ]; then exec \"$HOME/.claude/hooks/cc-status.sh\" waiting; fi",
             "type": "command"
           }
         ]
@@ -46,6 +77,16 @@
           }
         ],
         "matcher": "ExitPlanMode"
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.claude/hooks/cc-status.sh\" ]; then exec \"$HOME/.claude/hooks/cc-status.sh\" busy; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "AskUserQuestion|ExitPlanMode"
       }
     ],
     "PreToolUse": [
@@ -78,6 +119,16 @@
           }
         ],
         "matcher": "ExitPlanMode"
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.claude/hooks/cc-status.sh\" ]; then exec \"$HOME/.claude/hooks/cc-status.sh\" waiting; fi",
+            "type": "command"
+          }
+        ],
+        "matcher": "AskUserQuestion|ExitPlanMode"
       }
     ],
     "SessionEnd": [
@@ -86,6 +137,15 @@
           {
             "async": true,
             "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.claude/hooks/cc-status.sh\" ]; then exec \"$HOME/.claude/hooks/cc-status.sh\" clear; fi",
             "type": "command"
           }
         ]
@@ -111,6 +171,26 @@
             "type": "command"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.claude/hooks/cc-status.sh\" ]; then exec \"$HOME/.claude/hooks/cc-status.sh\" done; fi",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.claude/hooks/cc-status.sh\" ]; then exec \"$HOME/.claude/hooks/cc-status.sh\" waiting; fi",
+            "type": "command"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -119,6 +199,15 @@
           {
             "async": true,
             "command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi",
+            "type": "command"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "async": true,
+            "command": "if [ -x \"$HOME/.claude/hooks/cc-status.sh\" ]; then exec \"$HOME/.claude/hooks/cc-status.sh\" busy; fi",
             "type": "command"
           }
         ]
