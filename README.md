@@ -14,7 +14,8 @@ Linux (Ubuntu / WSL2) 環境向けの個人 dotfiles。`make` でシンボリッ
 │   ├── wezterm/     # 環境別 (wsl2 / nucbox / windows) 設定あり
 │   ├── polybar/, stylua/
 │   └── systemd/     # ユーザユニット (obsidian.service など)
-├── .claude/         # Claude Code 設定 (settings.json)
+├── .claude/         # Claude Code の CLAUDE.md / hooks / skills / commands
+├── claude/          # ~/.claude/settings.json へ jq でマージする共有設定
 ├── bin/             # 補助スクリプト (.zshrc が PATH に追加する)
 ├── zsh/             # alias.zsh など .zshrc から読み込まれる断片
 ├── etc/init/        # 新マシン初期セットアップスクリプト群
