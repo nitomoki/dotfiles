@@ -1,5 +1,8 @@
 SHELL := /bin/bash
-DOTFILES_DIR := $(PWD)
+# $(PWD) ではなく $(CURDIR) を使う。$(PWD) は呼び出し元シェルの環境変数なので
+# `make -C <dir>` でディレクトリを移しても追従せず、worktree ガードの配布元と
+# .deploy-test の位置が本体側にずれる（実際に踏んだ）。
+DOTFILES_DIR := $(CURDIR)
 
 # --- worktree 内での deploy ガード ---
 # dotfiles が配るのは symlink なので、worktree の中で `make deploy` を走らせると
