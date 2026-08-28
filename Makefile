@@ -1,6 +1,30 @@
 SHELL := /bin/bash
 DOTFILES_DIR := $(PWD)
 
+# --- worktree 内での deploy ガード ---
+# dotfiles が配るのは symlink なので、worktree の中で `make deploy` を走らせると
+# ~/.claude/CLAUDE.md や ~/.zshrc が worktree 内を指してしまい、worktree を消した
+# 瞬間に全部リンク切れになる。拒否はせず、HOME を worktree 内のテスト用
+# ディレクトリへ振り替えて「配布結果は確認できるが本物は壊さない」状態にする。
+# Makefile のパスはすべて $(HOME) 経由なので、これだけで成立する。
+#
+# 判定は git-dir 比較。worktree では --absolute-git-dir が
+# <本体>/.git/worktrees/<name> になり、--git-common-dir（<本体>/.git）と食い違う。
+# git が無い / リポジトリ外なら GIT_DIR が空になるので、その場合は素通しする。
+GIT_DIR        := $(shell git rev-parse --absolute-git-dir 2>/dev/null)
+GIT_COMMON_DIR := $(shell git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+IN_WORKTREE    := $(if $(GIT_DIR),$(if $(filter $(GIT_DIR),$(GIT_COMMON_DIR)),,yes))
+
+ifeq ($(IN_WORKTREE),yes)
+ifndef ALLOW_WORKTREE_DEPLOY
+# override はコマンドラインの HOME= 指定に負けないようにするため。
+override HOME := $(DOTFILES_DIR)/.deploy-test
+# sheldon lock はテスト HOME に大量に clone する（設定は実 HOME から読むのに
+# データはテスト HOME へ書くため。実測 87MB）ので、このモードでは走らせない。
+SKIP_SHELDON := yes
+endif
+endif
+
 # --- シンボリックリンク対象 ---
 # ホームディレクトリ直下に配置するドットファイル
 HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zshrc
@@ -79,6 +103,7 @@ help: ## ヘルプを表示
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2}'
 
 deploy: ## dotfiles のシンボリックリンクを作成
+	@[ -z "$(SKIP_SHELDON)" ] || echo "  [worktree] HOME=$(HOME) へ配ります（本物の ~ は触りません / 解除は ALLOW_WORKTREE_DEPLOY=1）"
 	@$(MKDIR) $(HOME)/.config
 	@$(foreach f, $(HOME_DOTFILES), \
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
@@ -123,8 +148,10 @@ deploy: ## dotfiles のシンボリックリンクを作成
 # ない。実際 zsh/tmux.zsh 追加時に tc/t が未定義のまま（tc が /usr/sbin/tc に
 # 解決される）という事故が起きたため、deploy のたびに lock を作り直す。
 # 既存プラグインの更新はしたくないので --update は付けない。
-	@echo "  lock   sheldon (zsh/*.zsh の一覧を再生成)"
-	@if command -v sheldon >/dev/null 2>&1; then \
+	@if [ -n "$(SKIP_SHELDON)" ]; then \
+		echo "  skip   sheldon lock (worktree テストモード)"; \
+	elif command -v sheldon >/dev/null 2>&1; then \
+		echo "  lock   sheldon (zsh/*.zsh の一覧を再生成)"; \
 		out=$$(sheldon lock 2>&1) \
 			|| echo "  [warn] sheldon lock に失敗（既存の lock を保持）: $$out"; \
 	else \
@@ -132,6 +159,7 @@ deploy: ## dotfiles のシンボリックリンクを作成
 	fi
 
 test: ## deploy で作成されるリンクを確認（実行はしない）
+	@[ -z "$(SKIP_SHELDON)" ] || echo "[worktree] HOME=$(HOME)（本物の ~ には配りません / 解除は ALLOW_WORKTREE_DEPLOY=1）"
 	@echo "=== Home dotfiles ==="
 	@$(foreach f, $(HOME_DOTFILES), \
 		echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";)

@@ -40,6 +40,9 @@ check() {
 }
 
 mkdir -p "$STUB" "$CLAUDE_SESSIONS_DIR" "$TMPDIR_T/themedir"
+# peer spawn は git 管理下のときだけ -w（worktree）を付ける。両方の枝を試すため、
+# themed のディレクトリだけリポジトリにしておく（themed2 は git 管理外のまま）。
+git init -q "$TMPDIR_T/themedir" 2> /dev/null
 # claude のスタブ。起動しっぱなしにして pane_current_command を claude にする。
 cat > "$STUB/claude" <<'EOF'
 #!/bin/sh
@@ -294,9 +297,9 @@ p=$(live_pid)
 out=$(ta peer spawn themed spawn-ok); rc=$?
 check "成功で終わる" "0" "$rc"
 check "名前を標準出力へ" "spawn-ok" "$out"
-check "claude -n で起動する" "yes" \
+check "claude -n と -w で起動する" "yes" \
     "$(tmux -L "$SOCK" list-panes -s -t '=themed' -F '#{pane_start_command}' \
-        | rg -q "claude -n 'spawn-ok'" && echo yes || echo no)"
+        | rg -q "claude -n 'spawn-ok' -w 'spawn-ok'" && echo yes || echo no)"
 
 echo "=== peer spawn: 同名が生きていたら増やさない ==="
 before=$(tmux -L "$SOCK" list-windows -t '=themed' -F '#{window_id}' | wc -l)
@@ -330,6 +333,11 @@ check "ウィンドウは残す" "yes" \
         | rg -q "claude -n 'never-shows'" && echo yes || echo no)"
 check "信頼ダイアログの可能性を伝える" "yes" \
     "$(printf '%s' "$out" | rg -q '信頼ダイアログ' && echo yes || echo no)"
+check "git 管理外なら worktree なしと伝える" "yes" \
+    "$(printf '%s' "$out" | rg -q 'git 管理下ではない' && echo yes || echo no)"
+check "git 管理外なら -w を付けない" "no" \
+    "$(tmux -L "$SOCK" list-panes -s -t '=themed2' -F '#{pane_start_command}' \
+        | rg -q -- "-w " && echo yes || echo no)"
 
 echo "=== peer ensure: 既定は spawn（受け入れ可の既存が居ても相乗りしない） ==="
 clear_reg

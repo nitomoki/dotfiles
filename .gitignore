@@ -6,3 +6,4 @@ wezterm_machine.lua
 wezterm_env.lua
 __pycache__/
 .claude/worktrees/
+.deploy-test/

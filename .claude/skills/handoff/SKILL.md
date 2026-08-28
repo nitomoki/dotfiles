@@ -40,6 +40,9 @@ tmux-agents peer ensure <theme> <name> # 宛先の名前を確保する（既定
   その場合はユーザーにそのウィンドウで承認してもらう。
 - `resolve` / `ensure --reuse` は**自分自身を候補にしない**（$TMUX_PANE で判別）。
   自分宛てに送っても何も起きないため。
+- `spawn` は git 管理下のテーマなら `claude -n <name> -w <name>` で
+  **セッション専用の worktree ごと**立てる（後述）。git 管理外のテーマでは
+  worktree なしで起動する（stderr にその旨が出る）。
 
 名前が取れたら、送る前に `ListAgents` で実在を確認する。`peer ensure` が返した名前が
 そのまま `SendMessage` の `to` になる。
@@ -73,6 +76,8 @@ tmux-agents peer ensure <theme> <name> # 宛先の名前を確保する（既定
   「@name」だけの行にしない。
 - 本文は短くまとめ、**詳細は引き継ぎ文書の絶対パス**で渡す。
 - 触ってほしくないもの（進行中の PR、別ブランチ等）があれば明記する。
+- **完了時に `AskUserQuestion` で worktree の扱いを確認するよう本文に書く**（後述）。
+  相手は自分の worktree を勝手に消してはいけない。
 
 ### 4. コールバックを決める
 
@@ -101,6 +106,49 @@ tmux-agents peer ensure <theme> <name> # 宛先の名前を確保する（既定
 
 相乗りさせるのは、ユーザーが明示的にそう言ったときか、渡す作業が**相手が今やっている
 ことの続き**であるときだけ。
+
+## worktree（移管先は専用のチェックアウトで作業する）
+
+同じチェックアウトを複数セッションで共有すると、**片方がブランチを切り替えたときに
+もう片方が巻き添えになる**。`peer spawn` が `-w <name>` を付けるのはこれを防ぐため。
+git は同一ブランチの二重チェックアウトを拒むので、1 セッション 1 ブランチが
+git 側で強制される。
+
+- worktree は `<リポジトリ>/.claude/worktrees/<name>` に作られる（gitignore 済み）
+- 分岐元は設定 `worktree.baseRef`。既定 `fresh`（`origin/<default>` から）/ `head`（現 HEAD から）
+- worktree 側の `.git` はディレクトリではなく**ファイル**
+- **移管先の cwd は worktree であって本体ではない。** 引き継ぎ文書に絶対パスを書くときは
+  リポジトリ相対で書くか、本体を指したいのか worktree を指したいのかを明示する
+
+### dotfiles で `make deploy` する場合
+
+dotfiles は symlink を配るので、**worktree の中で素の `make deploy` を走らせると
+`~/.claude/CLAUDE.md` 等が worktree 内を指し、worktree を消した瞬間に全部リンク切れになる**。
+
+Makefile 側にガードが入っていて、worktree 内では `HOME` が `<worktree>/.deploy-test` に
+振り替わる（`sheldon lock` もスキップされる）。**本物の `~` へ配るのはマージ後に本体で行う。**
+どうしても worktree から本物へ配る必要があるときだけ `ALLOW_WORKTREE_DEPLOY=1` を付ける。
+
+## 完了時の確認（移管先セッションがやること）
+
+worktree の掃除は移管先の責務。ただし**ユーザーが後から作業を見に行く**ので、
+勝手に消さない。作業が終わったら `AskUserQuestion` で聞く。
+
+1. 完了。worktree もブランチも削除してよい
+2. 完了だが worktree は残す（後で自分で見る）
+3. まだ完了ではない
+
+削除するときのブランチの扱い:
+
+- PR がマージ済み → `git worktree remove` + `git branch -D <branch>`
+- 未マージ → worktree だけ削除し、**ブランチは残す**
+
+補足:
+
+- `git worktree remove .` は**自分自身の中からでも実行できる**。ただし cwd が消えるので、
+  本体（`git rev-parse --path-format=absolute --git-common-dir` の親）へ `cd` してから実行する
+- `git worktree remove` は**ブランチを消さない**。手で `rm -rf` した場合は `git worktree prune`
+- この確認は fire-and-forget と両立する。**聞く相手は呼び出し元セッションではなく人間**
 
 ## 相手側の受信設定 `crossSessionInbound`
 

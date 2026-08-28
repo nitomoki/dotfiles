@@ -391,7 +391,22 @@ cmd_peer_spawn() {
 
     # 名前は必ず -n で明示する。既定の派生名は再起動のたびに変わるため
     # （実観測: dotfiles-fc → dotfiles-9a）、宛先として当てにできない。
-    tmux new-window -t "=$theme:" -c "$dir" "claude -n '$name'" 2> /dev/null \
+    #
+    # -w はセッション専用の worktree を作る（.claude/worktrees/<name>）。同じ
+    # チェックアウトを共有していると、片方がブランチを切り替えたときにもう片方が
+    # 巻き添えになる。worktree を分ければ git が同一ブランチの二重チェックアウトを
+    # 拒むので、1 セッション 1 ブランチが自然に強制される。
+    # git 管理下でないテーマ（~/accenture など）では -w が使えないので付けない。
+    # --tmux は付けない。worktree 用の tmux セッションを別に作る指定で、
+    # ウィンドウはこちらで用意しているため二重になる。
+    local cmd="claude -n '$name'"
+    if git -C "$dir" rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        cmd="$cmd -w '$name'"
+    else
+        peer_warn "peer spawn: $dir は git 管理下ではないので worktree なしで起動します"
+    fi
+
+    tmux new-window -t "=$theme:" -c "$dir" "$cmd" 2> /dev/null \
         || { peer_warn "peer spawn: ウィンドウを作れませんでした"; return 1; }
 
     if ! wait_named "$name" "$PEER_TIMEOUT"; then
