@@ -115,8 +115,11 @@ git は同一ブランチの二重チェックアウトを拒むので、1 セ�
 git 側で強制される。
 
 - worktree は `<リポジトリ>/.claude/worktrees/<name>` に作られる（gitignore 済み）
+- **ブランチ名は `worktree-<name>`**（`<name>` そのものではない）
 - 分岐元は設定 `worktree.baseRef`。既定 `fresh`（`origin/<default>` から）/ `head`（現 HEAD から）
 - worktree 側の `.git` はディレクトリではなく**ファイル**
+- **Claude Code は worktree を lock する**（理由文字列に pid が入る）。
+  この lock は**セッションが終わっても残る**ので、掃除には `git worktree unlock` が要る
 - **移管先の cwd は worktree であって本体ではない。** 引き継ぎ文書に絶対パスを書くときは
   リポジトリ相対で書くか、本体を指したいのか worktree を指したいのかを明示する
 
@@ -138,15 +141,25 @@ worktree の掃除は移管先の責務。ただし**ユーザーが後から作
 2. 完了だが worktree は残す（後で自分で見る）
 3. まだ完了ではない
 
-削除するときのブランチの扱い:
+削除する場合の手順（**unlock を忘れない**）:
 
-- PR がマージ済み → `git worktree remove` + `git branch -D <branch>`
+```sh
+cd <本体>                                        # cwd が消えるので先に出る
+git worktree unlock .claude/worktrees/<name>     # 無いと "cannot remove a locked working tree"
+git worktree remove .claude/worktrees/<name>
+git branch -D worktree-<name>                    # マージ済みのときだけ
+```
+
+ブランチの扱い:
+
+- PR がマージ済み → worktree 削除 + `git branch -D worktree-<name>`
 - 未マージ → worktree だけ削除し、**ブランチは残す**
 
 補足:
 
-- `git worktree remove .` は**自分自身の中からでも実行できる**。ただし cwd が消えるので、
+- `git worktree remove .` は**自分自身の中からでも実行できる**が、cwd が消えるので
   本体（`git rev-parse --path-format=absolute --git-common-dir` の親）へ `cd` してから実行する
+- **`remove -f -f` で lock を無視しない。** `--force` は未コミットの作業ごと捨てる
 - `git worktree remove` は**ブランチを消さない**。手で `rm -rf` した場合は `git worktree prune`
 - この確認は fire-and-forget と両立する。**聞く相手は呼び出し元セッションではなく人間**
 
