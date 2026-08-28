@@ -288,6 +288,7 @@
       "Bash(zfgrep:*)"
     ]
   },
+  "remoteControlAtStartup": false,
   "skipAutoPermissionPrompt": true,
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,

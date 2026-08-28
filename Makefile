@@ -27,11 +27,16 @@ CLAUDE_FILES := $(filter-out $(CLAUDE_DIRS), $(wildcard .claude/*))
 # Claude Code の「プロジェクト設定」として user 設定と二重ロードされ、hook
 # （push 通知等）が2回発火する。これを避けるため配布元は claude/ 配下に置く。
 # さらに ~/.claude/settings.json は symlink にせず、deploy 時に jq で共有設定
-# （この settings.dotfiles.json）をローカル実ファイルへマージする。model /
-# effortLevel は各 PC 固有なのでローカル側にのみ持ち、マージ時に保全する
+# （この settings.dotfiles.json）をローカル実ファイルへマージする。CLAUDE_LOCAL_KEYS
+# のキーはローカル側にのみ持ち、マージ時に保全する
 # （/model の書き込み先は ~/.claude/settings.json なので、そこを実ファイルに
 # して dotfiles を汚さず・上書きもされずに保持できる）。
 CLAUDE_SETTINGS_SRC := claude/settings.dotfiles.json
+
+# マージ時にローカル側の値を保全するキー。model / effortLevel は各 PC 固有、
+# agentPushNotifEnabled は /config でセッション内から切り替えるもので、いずれも
+# 配布物では持たない。ここに挙げ忘れたキーは deploy のたびに黙って消えるので注意。
+CLAUDE_LOCAL_KEYS := model, effortLevel, agentPushNotifEnabled
 
 # deploy から除外するファイル（環境別設定は setup-wezterm-* で配置する）
 WEZTERM_ENV_FILES := %wezterm_wsl2.lua %wezterm_nucbox.lua %wezterm_windows.lua
@@ -71,12 +76,12 @@ deploy: ## dotfiles のシンボリックリンクを作成
 		$(MKDIR) $(HOME)/$(d); \
 		$(foreach f, $(wildcard $(d)/*), \
 			$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);))
-	@echo "  merge  $(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json (model/effortLevel は保全)"
+	@echo "  merge  $(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json ($(CLAUDE_LOCAL_KEYS) は保全)"
 	@if [ -L $(HOME)/.claude/settings.json ]; then rm -f $(HOME)/.claude/settings.json; fi
 	@if [ ! -f $(HOME)/.claude/settings.json ]; then \
 		cp $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) $(HOME)/.claude/settings.json; \
 	elif command -v jq >/dev/null 2>&1; then \
-		jq -s '.[1] + (.[0] | {model, effortLevel} | with_entries(select(.value != null)))' \
+		jq -s '.[1] + (.[0] | {$(CLAUDE_LOCAL_KEYS)} | with_entries(select(.value != null)))' \
 			$(HOME)/.claude/settings.json $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) \
 			> $(HOME)/.claude/settings.json.tmp \
 			&& mv $(HOME)/.claude/settings.json.tmp $(HOME)/.claude/settings.json; \
