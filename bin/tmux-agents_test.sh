@@ -13,6 +13,8 @@ STUB="$TMPDIR_T/stub"
 export CLAUDE_SESSIONS_DIR="$TMPDIR_T/sessions"
 export TMUX_SESSIONS_FILE="$TMPDIR_T/presets"
 export TMUX_AGENTS_HANDOFF_TIMEOUT=6
+export CC_PEER_TIMEOUT=4
+LIVE_PID_FILE="$TMPDIR_T/live-pids"
 
 pass=0
 fail=0
@@ -20,6 +22,8 @@ fail=0
 cleanup() {
     tmux -L "$SOCK" kill-server 2> /dev/null
     rm -f "/tmp/tmux-$(id -u)/$SOCK"
+    # peer のテストが借りた sleep を片付ける（残すと 10 分居座る）
+    [ -f "$LIVE_PID_FILE" ] && xargs -r kill < "$LIVE_PID_FILE" 2> /dev/null
     rm -rf "$TMPDIR_T"
 }
 trap cleanup EXIT
@@ -36,6 +40,9 @@ check() {
 }
 
 mkdir -p "$STUB" "$CLAUDE_SESSIONS_DIR" "$TMPDIR_T/themedir"
+# peer spawn は git 管理下のときだけ -w（worktree）を付ける。両方の枝を試すため、
+# themed のディレクトリだけリポジトリにしておく（themed2 は git 管理外のまま）。
+git init -q "$TMPDIR_T/themedir" 2> /dev/null
 # claude のスタブ。起動しっぱなしにして pane_current_command を claude にする。
 cat > "$STUB/claude" <<'EOF'
 #!/bin/sh
@@ -50,6 +57,39 @@ mkdir -p "$STUB2"
 cp -- "$(command -v sleep)" "$STUB2/claude"
 printf 'themed\t%s\n' "$TMPDIR_T/themedir" > "$TMUX_SESSIONS_FILE"
 printf 'nodir\n' >> "$TMUX_SESSIONS_FILE"
+# peer spawn がテーマの tmux セッションごと作る枝を試すため、起動していない
+# テーマもプリセットに置いておく。
+mkdir -p "$TMPDIR_T/themedir2"
+printf 'themed2\t%s\n' "$TMPDIR_T/themedir2" >> "$TMUX_SESSIONS_FILE"
+
+# ── peer 用のヘルパ ──────────────────────────────────────────────
+# レジストリの偽エントリ。tmux-agents は pid の生存を見るので、生きた sleep の
+# pid を借りて割り当てる。バックグラウンド起動の出力はコマンド置換のパイプを
+# 掴んだままにしないよう捨てる。
+live_pid() {
+    sleep 600 > /dev/null 2>&1 &
+    local p=$!
+    printf '%s\n' "$p" >> "$LIVE_PID_FILE"
+    printf '%s' "$p"
+}
+
+# 既に死んでいる pid（消し損ねた残骸を作るため）
+dead_pid() {
+    sleep 0.1 > /dev/null 2>&1 &
+    local p=$!
+    wait "$p" 2> /dev/null
+    printf '%s' "$p"
+}
+
+# reg_json PID NAME CWD TMUX KIND STATUS UPDATED_AT
+reg_json() {
+    printf '{"pid":%s,"sessionId":"t","cwd":"%s","tmux":"%s","kind":"%s","name":"%s","nameSource":"user","status":"%s","updatedAt":%s}\n' \
+        "$1" "$3" "$4" "$5" "$2" "$6" "$7" > "$CLAUDE_SESSIONS_DIR/$1.json"
+}
+
+clear_reg() {
+    rm -f "$CLAUDE_SESSIONS_DIR"/*.json
+}
 
 # 使い捨てサーバはスタブを PATH に入れて起動する（窓の中の claude もスタブになる）
 start_server() {
@@ -60,9 +100,12 @@ start_server() {
     sleep 0.5
 }
 
-# スクリプトを使い捨てサーバに向けて実行する
+# スクリプトを使い捨てサーバに向けて実行する。
+# $TMUX_PANE は「呼び出し元自身を候補から外す」判定に使われるため、外から
+# 継承した値が混ざらないよう常に明示する（TA_PANE で差し替えられる）。
 ta() {
-    env TMUX="$(tmux -L "$SOCK" display -p '#{socket_path}'),0,0" PATH="$STUB:$PATH" "$TA" "$@"
+    env TMUX="$(tmux -L "$SOCK" display -p '#{socket_path}'),0,0" \
+        TMUX_PANE="${TA_PANE:-%999}" PATH="$STUB:$PATH" "$TA" "$@"
 }
 
 start_server
@@ -177,6 +220,161 @@ rc=$?
 check "エラーで終わる" "1" "$rc"
 check "ペインはそのまま残る" "$ppid" \
     "$(tmux -L "$SOCK" list-panes -t '=themed:cc2' -F '#{pane_pid}' | head -1)"
+
+echo "=== セッションと同名のウィンドウが在っても新しい窓を作れる ==="
+# new-window の -t は「ウィンドウ指定」なので、コロンを付け忘れると同名の
+# ウィンドウに当たって "index 0 in use" で落ちる（実際に踏んだ）。
+start_server
+clear_reg
+tmux -L "$SOCK" rename-window -t '=themed:0' themed
+ta open themed > /dev/null 2>&1
+sleep 1
+check "open: agents ウィンドウができる" "agents" \
+    "$(tmux -L "$SOCK" list-windows -t '=themed' -F '#{window_name}' | rg '^agents$')"
+p=$(live_pid)
+( sleep 1.5; reg_json "$p" same-name "$TMPDIR_T/themedir" "themed:@9.%9" interactive idle 100 ) &
+out=$(ta peer spawn themed same-name); rc=$?
+check "peer spawn: 成功で終わる" "0" "$rc"
+check "peer spawn: 名前を返す" "same-name" "$out"
+
+# ── peer ─────────────────────────────────────────────────────────
+# レジストリは pid の生存で選り分けるので、偽エントリにも実プロセスを割り当てる
+# （生きた sleep の pid を借りる）。tmux 側の状態は使い捨てサーバのものを使う。
+
+start_server
+themed_pane=$(tmux -L "$SOCK" list-panes -t '=themed:0' -F '#{pane_id}' | head -1)
+
+echo "=== peer resolve: テーマの担当セッション名を返す ==="
+clear_reg
+p=$(live_pid); reg_json "$p" peer-old "$TMPDIR_T/themedir" "themed:@0.$themed_pane" interactive idle 100
+check "候補が 1 つならそれを返す" "peer-old" "$(ta peer resolve themed)"
+
+p=$(live_pid); reg_json "$p" peer-new "$TMPDIR_T/themedir" "themed:@1.%9" interactive idle 200
+check "複数なら updatedAt が最新" "peer-new" "$(ta peer resolve themed)"
+
+p=$(live_pid); reg_json "$p" peer-job "$TMPDIR_T/themedir" "themed:@2.%9" background idle 300
+check "interactive 以外は選ばない" "peer-new" "$(ta peer resolve themed)"
+
+p=$(live_pid); reg_json "$p" peer-cwd "$TMPDIR_T/themedir/sub" "other:@3.%9" interactive idle 400
+check "別テーマでも cwd 配下なら拾う" "peer-cwd" "$(ta peer resolve themed)"
+
+dead=$(dead_pid); reg_json "$dead" peer-stale "$TMPDIR_T/themedir" "themed:@4.%9" interactive idle 500
+check "死んだ pid の残骸は無視する" "peer-cwd" "$(ta peer resolve themed)"
+
+echo "=== peer resolve: 呼び出し元自身は候補にしない ==="
+clear_reg
+p=$(live_pid); reg_json "$p" self-session "$TMPDIR_T/themedir" "themed:@0.%77" interactive idle 200
+p=$(live_pid); reg_json "$p" other-session "$TMPDIR_T/themedir" "themed:@1.%78" interactive idle 100
+check "無関係なペインからなら最新を返す" "self-session" "$(ta peer resolve themed)"
+TA_PANE=%77
+check "自分のペインのセッションは外す" "other-session" "$(ta peer resolve themed)"
+unset TA_PANE
+
+echo "=== peer resolve: 担当が居なければ黙って失敗しない ==="
+out=$(ta peer resolve ghost 2>&1); rc=$?
+check "担当が居なければ exit 1" "1" "$rc"
+check "理由は標準エラーへ" "yes" \
+    "$(printf '%s' "$out" | rg -q '担当する対話セッション' && echo yes || echo no)"
+
+echo "=== peer list: 受け入れ可否を添えて一覧する ==="
+clear_reg
+p=$(live_pid); reg_json "$p" list-idle "$TMPDIR_T/themedir" "themed:@0.%9" interactive idle 100
+p=$(live_pid); reg_json "$p" list-busy "$TMPDIR_T/themedir" "themed:@1.%9" interactive busy 200
+p=$(live_pid); reg_json "$p" list-job "$TMPDIR_T/themedir" "themed:@2.%9" background idle 300
+p=$(live_pid); reg_json "$p" list-wait "$TMPDIR_T/themedir" "themed:@3.$themed_pane" interactive idle 400
+tmux -L "$SOCK" set -p -t "$themed_pane" @cc_state waiting
+listing=$(ta peer list)
+check "idle は yes" "yes" "$(printf '%s\n' "$listing" | awk '$2 == "list-idle" { print $6 }')"
+check "registry busy は busy" "busy" "$(printf '%s\n' "$listing" | awk '$2 == "list-busy" { print $6 }')"
+check "バックグラウンドジョブは job" "job" "$(printf '%s\n' "$listing" | awk '$2 == "list-job" { print $6 }')"
+check "@cc_state waiting は waiting" "waiting" "$(printf '%s\n' "$listing" | awk '$2 == "list-wait" { print $6 }')"
+tmux -L "$SOCK" set -p -t "$themed_pane" -u @cc_state
+
+echo "=== peer spawn: -n で明示名を付けて起動し、登録を待つ ==="
+clear_reg
+p=$(live_pid)
+( sleep 1.5; reg_json "$p" spawn-ok "$TMPDIR_T/themedir" "themed:@8.%9" interactive idle 800 ) &
+out=$(ta peer spawn themed spawn-ok); rc=$?
+check "成功で終わる" "0" "$rc"
+check "名前を標準出力へ" "spawn-ok" "$out"
+check "claude -n と -w で起動する" "yes" \
+    "$(tmux -L "$SOCK" list-panes -s -t '=themed' -F '#{pane_start_command}' \
+        | rg -q "claude -n 'spawn-ok' -w 'spawn-ok'" && echo yes || echo no)"
+
+echo "=== peer spawn: 同名が生きていたら増やさない ==="
+before=$(tmux -L "$SOCK" list-windows -t '=themed' -F '#{window_id}' | wc -l)
+out=$(ta peer spawn themed spawn-ok 2>&1); rc=$?
+check "exit 1" "1" "$rc"
+check "既に居ると伝える" "yes" \
+    "$(printf '%s' "$out" | rg -q '既に起動しています' && echo yes || echo no)"
+check "ウィンドウは増えない" "$before" \
+    "$(tmux -L "$SOCK" list-windows -t '=themed' -F '#{window_id}' | wc -l)"
+
+echo "=== peer spawn: ディレクトリが分からないテーマは起動しない ==="
+out=$(ta peer spawn ghost 2>&1); rc=$?
+check "exit 1" "1" "$rc"
+check "ディレクトリ不明と伝える" "yes" \
+    "$(printf '%s' "$out" | rg -q 'ディレクトリが分かりません' && echo yes || echo no)"
+
+echo "=== peer spawn: 名前に使えない文字は弾く ==="
+out=$(ta peer spawn themed 'bad name;rm' 2>&1); rc=$?
+check "exit 1" "1" "$rc"
+check "文字種を伝える" "yes" \
+    "$(printf '%s' "$out" | rg -q '名前に使えるのは' && echo yes || echo no)"
+
+echo "=== peer spawn: 時間内に現れなければ exit 1（ウィンドウは残す） ==="
+clear_reg
+out=$(ta peer spawn themed2 never-shows 2>&1); rc=$?
+check "exit 1" "1" "$rc"
+check "テーマのセッションが無ければ作る" "themed2" \
+    "$(tmux -L "$SOCK" has-session -t '=themed2' 2> /dev/null && echo themed2)"
+check "ウィンドウは残す" "yes" \
+    "$(tmux -L "$SOCK" list-panes -s -t '=themed2' -F '#{pane_start_command}' \
+        | rg -q "claude -n 'never-shows'" && echo yes || echo no)"
+check "信頼ダイアログの可能性を伝える" "yes" \
+    "$(printf '%s' "$out" | rg -q '信頼ダイアログ' && echo yes || echo no)"
+check "git 管理外なら worktree なしと伝える" "yes" \
+    "$(printf '%s' "$out" | rg -q 'git 管理下ではない' && echo yes || echo no)"
+check "git 管理外なら -w を付けない" "no" \
+    "$(tmux -L "$SOCK" list-panes -s -t '=themed2' -F '#{pane_start_command}' \
+        | rg -q -- "-w " && echo yes || echo no)"
+
+echo "=== peer ensure: 既定は spawn（受け入れ可の既存が居ても相乗りしない） ==="
+clear_reg
+p=$(live_pid); reg_json "$p" ensure-idle "$TMPDIR_T/themedir" "themed:@0.%9" interactive idle 100
+p=$(live_pid)
+( sleep 1.5; reg_json "$p" themed-cc "$TMPDIR_T/themedir" "themed:@9.%9" interactive idle 900 ) &
+out=$(ta peer ensure themed); rc=$?
+check "成功で終わる" "0" "$rc"
+check "既存ではなく新規の <theme>-cc" "themed-cc" "$out"
+
+echo "=== peer ensure --reuse: 受け入れ可なら既存を返す ==="
+clear_reg
+p=$(live_pid); reg_json "$p" reuse-ok "$TMPDIR_T/themedir" "themed:@0.$themed_pane" interactive idle 100
+before=$(tmux -L "$SOCK" list-windows -t '=themed' -F '#{window_id}' | wc -l)
+check "既存の名前を返す" "reuse-ok" "$(ta peer ensure themed --reuse)"
+check "起動しない" "$before" \
+    "$(tmux -L "$SOCK" list-windows -t '=themed' -F '#{window_id}' | wc -l)"
+
+echo "=== peer ensure --reuse: registry が busy なら spawn にフォールバック ==="
+clear_reg
+p=$(live_pid); reg_json "$p" reuse-busy "$TMPDIR_T/themedir" "themed:@0.$themed_pane" interactive busy 100
+p=$(live_pid)
+( sleep 1.5; reg_json "$p" fallback-busy "$TMPDIR_T/themedir" "themed:@10.%9" interactive idle 1000 ) &
+out=$(ta peer ensure themed fallback-busy --reuse 2> /dev/null); rc=$?
+check "成功で終わる" "0" "$rc"
+check "新規起動した名前を返す" "fallback-busy" "$out"
+
+echo "=== peer ensure --reuse: @cc_state が waiting なら spawn にフォールバック ==="
+clear_reg
+tmux -L "$SOCK" set -p -t "$themed_pane" @cc_state waiting
+p=$(live_pid); reg_json "$p" reuse-wait "$TMPDIR_T/themedir" "themed:@0.$themed_pane" interactive idle 100
+p=$(live_pid)
+( sleep 1.5; reg_json "$p" fallback-wait "$TMPDIR_T/themedir" "themed:@11.%9" interactive idle 1100 ) &
+out=$(ta peer ensure themed fallback-wait --reuse 2> /dev/null); rc=$?
+check "成功で終わる" "0" "$rc"
+check "新規起動した名前を返す" "fallback-wait" "$out"
+tmux -L "$SOCK" set -p -t "$themed_pane" -u @cc_state
 
 echo
 if [ "$fail" -eq 0 ]; then

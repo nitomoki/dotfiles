@@ -8,6 +8,17 @@
 #                                ペインを閉じる。そのセッションで最後の 1 つ
 #                                だった場合だけ、セッションが消えないよう
 #                                元のコマンド（通常はシェル）で作り直す。
+#   tmux-agents peer list        起動中の Claude Code を theme / name / 受け入れ
+#                                可否で一覧する（--reuse の判断用）。
+#   tmux-agents peer resolve THEME
+#                                そのテーマを担当している対話セッションの名前を
+#                                標準出力へ。居なければ exit 1。
+#   tmux-agents peer spawn THEME [NAME]
+#                                そのテーマに Claude Code を新規起動し、名前を
+#                                標準出力へ。NAME 省略時は <THEME>-cc。
+#   tmux-agents peer ensure THEME [NAME] [--reuse]
+#                                移管先の名前を確保する。既定は spawn。--reuse を
+#                                付けたときだけ既存セッションへの相乗りを試す。
 #
 # ── なぜこれが要るか ──────────────────────────────────────────────
 # Claude Code の分類軸はディレクトリで、バックグラウンドジョブは
@@ -27,12 +38,21 @@
 # 完了前にペインを潰すと会話が宙に浮きかねないので、対話セッションの
 # 記録（~/.claude/sessions/<pid>.json の parkedJobId）に引き渡し先の
 # ジョブ ID が入るのを待ってから片付ける。時間内に入らなければ何もしない。
+#
+# ── peer が別サブコマンドになっている理由 ────────────────────────
+# handoff は「ペイン → バックグラウンドジョブ」で、渡す先は同じ会話の続き。
+# peer は「別 tmux セッションで走る別の Claude Code」への移管で、渡す先は
+# 別人格。紛らわしいので handoff という語は既存の意味に予約し、こちらは
+# peer サブ名前空間に置く。peer が返すのは SendMessage の宛先になる名前だけで、
+# 送信そのものはしない（何を書いて送るかは Skill 側の判断）。
 
 set -uo pipefail
 
 SESSIONIZER=$(command -v tmux-sessionizer 2>/dev/null) \
     || SESSIONIZER="$HOME/dotfiles/bin/tmux-sessionizer"
 HANDOFF_TIMEOUT=${TMUX_AGENTS_HANDOFF_TIMEOUT:-25}
+# peer spawn が「起動した claude がレジストリに載る」のを待つ上限。
+PEER_TIMEOUT=${CC_PEER_TIMEOUT:-30}
 # Claude Code がセッション情報を書く場所。テストで差し替えられるようにしておく
 # （実物を触らずに handoff の待ち合わせを検証するため）。
 CLAUDE_SESSIONS_DIR=${CLAUDE_SESSIONS_DIR:-$HOME/.claude/sessions}
@@ -75,12 +95,16 @@ cmd_open() {
 
     local dir
     dir=$(theme_dir "$sess")
+    # -t にはコロンを付けてセッション指定にする。付けないと new-window は
+    # 「ウィンドウ指定」として解釈し、同名のウィンドウが在るとその index に
+    # 作ろうとして "index N in use" で失敗する（セッションと同名のウィンドウは
+    # 普通に起こりうる）。コロンを付ければ空いている index に作る。
     if [ -n "$dir" ] && [ -d "$dir" ]; then
         # --cwd を付けるとそのディレクトリ配下のジョブだけになる
-        tmux new-window -t "=$sess" -n "$win" -c "$dir" "claude agents --cwd '$dir'"
+        tmux new-window -t "=$sess:" -n "$win" -c "$dir" "claude agents --cwd '$dir'"
     else
         # テーマにディレクトリが無い場合は全体を出す（絞りようがない）
-        tmux new-window -t "=$sess" -n "$win" "claude agents"
+        tmux new-window -t "=$sess:" -n "$win" "claude agents"
     fi
 }
 
@@ -184,9 +208,273 @@ cmd_handoff() {
     fi
 }
 
+# ── peer ─────────────────────────────────────────────────────────
+
+peer_warn() {
+    printf 'tmux-agents: %s\n' "$*" >&2
+}
+
+# レジストリ (~/.claude/sessions/<pid>.json) を TSV に潰す。
+#   pid \t name \t cwd \t theme \t pane \t kind \t status \t updatedAt
+# updatedAt の降順。tmux フィールドは "<theme>:@<window>.%<pane>" 形式で、
+# tmux はセッション名の '.' ':' を '_' にするため最初の ':' で割れば足りる。
+#
+# json はセッション終了時に自動削除されるが、SIGKILL 等で消し損ねた残骸を
+# 掴むと「送ったつもりで誰も居ない」状態になるので、生存確認だけは入れる。
+registry_tsv() {
+    python3 - "$CLAUDE_SESSIONS_DIR" <<'PY' 2> /dev/null
+import json, os, sys
+
+d = sys.argv[1]
+try:
+    names = os.listdir(d)
+except OSError:
+    sys.exit(0)
+
+rows = []
+for fn in names:
+    if not fn.endswith(".json"):
+        continue
+    try:
+        with open(os.path.join(d, fn)) as fh:
+            s = json.load(fh)
+    except Exception:
+        continue
+    try:
+        os.kill(int(s.get("pid")), 0)
+    except ProcessLookupError:
+        continue
+    except PermissionError:
+        pass
+    except (TypeError, ValueError):
+        continue
+    theme, _, rest = (s.get("tmux") or "").partition(":")
+    rows.append([
+        str(s.get("pid") or ""),
+        s.get("name") or "",
+        s.get("cwd") or "",
+        theme,
+        rest.rpartition(".")[2],
+        s.get("kind") or "",
+        s.get("status") or "",
+        str(s.get("updatedAt") or 0),
+    ])
+
+rows.sort(key=lambda r: int(r[7] or 0), reverse=True)
+for r in rows:
+    print("\t".join(r))
+PY
+}
+
+# ペインごとの @cc_state をまとめて引く（1 行 = "<pane_id>\t<state>"）。
+# 1 件ずつ show-options で引くと未設定のときにエラーになるので、cc-status.sh と
+# 同じくフォーマット文字列で取る。
+pane_states() {
+    tmux list-panes -a -F '#{pane_id}	#{@cc_state}' 2> /dev/null
+}
+
+lookup_state() {
+    printf '%s\n' "$2" | awk -F'\t' -v p="$1" '$1 == p { print $2; exit }'
+}
+
+# テーマに対応する対話セッションを updatedAt 降順で返す。
+# 名前では引かない（派生名は再起動で変わる）。tmux のテーマ部分か、テーマの
+# ディレクトリ配下の cwd かで判定する。バックグラウンドジョブ（kind が
+# interactive 以外）は移管先にしないので落とす。
+# 呼び出し元自身は候補から外す。移管先が自分だと SendMessage が自分宛てになって
+# 何も起きない。Claude Code のフックやツールには $TMUX_PANE がそのまま渡るので、
+# それをレジストリの pane と突き合わせて見分ける。
+peer_candidates() {
+    local theme="$1" dir
+    dir=$(theme_dir "$theme")
+    registry_tsv | awk -F'\t' -v theme="$theme" -v dir="$dir" -v self="${TMUX_PANE:-}" '
+        $6 != "interactive" || $2 == "" { next }
+        self != "" && $5 == self { next }
+        $4 == theme { print; next }
+        dir != "" && ($3 == dir || index($3, dir "/") == 1) { print }
+    '
+}
+
+# 起動した claude がレジストリに現れるまで待つ（handoff の wait_parked と同じ流儀）
+wait_named() {
+    python3 - "$CLAUDE_SESSIONS_DIR" "$1" "$2" <<'PY'
+import json, os, sys, time
+
+d, want, timeout = sys.argv[1], sys.argv[2], float(sys.argv[3])
+deadline = time.time() + timeout
+while time.time() < deadline:
+    try:
+        names = os.listdir(d)
+    except OSError:
+        names = []
+    for fn in names:
+        if not fn.endswith(".json"):
+            continue
+        try:
+            with open(os.path.join(d, fn)) as fh:
+                if json.load(fh).get("name") == want:
+                    sys.exit(0)
+        except Exception:
+            continue
+    time.sleep(0.3)
+sys.exit(1)
+PY
+}
+
+cmd_peer_list() {
+    local fmt='%-14s %-22s %-8s %-7s %-8s %s\n' states
+    states=$(pane_states)
+    # shellcheck disable=SC2059
+    printf "$fmt" THEME NAME PID STATUS CC_STATE ACCEPT
+    local pid name cwd theme pane kind status upd st accept
+    while IFS=$'\t' read -r pid name cwd theme pane kind status upd; do
+        st=$(lookup_state "$pane" "$states")
+        if [ "$kind" != interactive ]; then
+            accept=job
+        elif [ "$status" = busy ]; then
+            accept=busy
+        elif [ "$st" = waiting ]; then
+            accept=waiting
+        else
+            accept=yes
+        fi
+        # shellcheck disable=SC2059
+        printf "$fmt" "${theme:--}" "${name:--}" "${pid:--}" "${status:--}" "${st:--}" "$accept"
+    done < <(registry_tsv)
+}
+
+cmd_peer_resolve() {
+    local theme="${1:-}"
+    [ -z "$theme" ] && { peer_warn "peer resolve: テーマ名を指定してください"; return 1; }
+
+    local name
+    name=$(peer_candidates "$theme" | awk -F'\t' 'NR == 1 { print $2 }')
+    [ -z "$name" ] && {
+        peer_warn "peer resolve: $theme を担当する対話セッションがありません"
+        return 1
+    }
+    printf '%s\n' "$name"
+}
+
+cmd_peer_spawn() {
+    local theme="${1:-}" name="${2:-}"
+    [ -z "$theme" ] && { peer_warn "peer spawn: テーマ名を指定してください"; return 1; }
+    command -v claude > /dev/null 2>&1 || { peer_warn "peer spawn: claude が見つかりません"; return 1; }
+
+    local dir
+    dir=$(theme_dir "$theme")
+    if [ -z "$dir" ] || [ ! -d "$dir" ]; then
+        peer_warn "peer spawn: $theme のディレクトリが分かりません（tmux-sessionizer add で登録してください）"
+        return 1
+    fi
+
+    [ -z "$name" ] && name="$theme-cc"
+    # そのままコマンド文字列に埋めるので、クォートの要らない字だけに限る。
+    case "$name" in
+        *[!A-Za-z0-9._-]*)
+            peer_warn "peer spawn: 名前に使えるのは英数字と . _ - だけです: $name"
+            return 1
+            ;;
+    esac
+
+    # 同名が 2 つ生きていると SendMessage の宛先が曖昧になる。取り違えるくらいなら
+    # 止まったほうがよいので、ここは黙って相乗りせずエラーにする。
+    if registry_tsv | awk -F'\t' -v n="$name" '$2 == n { found = 1 } END { exit !found }'; then
+        peer_warn "peer spawn: $name は既に起動しています（別名を指定するか --reuse を検討してください）"
+        return 1
+    fi
+
+    if ! tmux has-session -t "=$theme" 2> /dev/null; then
+        tmux new-session -d -s "$theme" -c "$dir" 2> /dev/null \
+            || { peer_warn "peer spawn: tmux セッション $theme を作れませんでした"; return 1; }
+    fi
+
+    # 名前は必ず -n で明示する。既定の派生名は再起動のたびに変わるため
+    # （実観測: dotfiles-fc → dotfiles-9a）、宛先として当てにできない。
+    #
+    # -w はセッション専用の worktree を作る（.claude/worktrees/<name>）。同じ
+    # チェックアウトを共有していると、片方がブランチを切り替えたときにもう片方が
+    # 巻き添えになる。worktree を分ければ git が同一ブランチの二重チェックアウトを
+    # 拒むので、1 セッション 1 ブランチが自然に強制される。
+    # git 管理下でないテーマ（~/accenture など）では -w が使えないので付けない。
+    # --tmux は付けない。worktree 用の tmux セッションを別に作る指定で、
+    # ウィンドウはこちらで用意しているため二重になる。
+    local cmd="claude -n '$name'"
+    if git -C "$dir" rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        cmd="$cmd -w '$name'"
+    else
+        peer_warn "peer spawn: $dir は git 管理下ではないので worktree なしで起動します"
+    fi
+
+    tmux new-window -t "=$theme:" -c "$dir" "$cmd" 2> /dev/null \
+        || { peer_warn "peer spawn: ウィンドウを作れませんでした"; return 1; }
+
+    if ! wait_named "$name" "$PEER_TIMEOUT"; then
+        peer_warn "peer spawn: $name が ${PEER_TIMEOUT}s 以内にレジストリに現れませんでした"
+        peer_warn "  $dir が未 trust で、信頼ダイアログ（Yes, I trust this folder）の"
+        peer_warn "  選択待ちで止まっている可能性があります（通過するまで登録されません）"
+        peer_warn "  確認できるようウィンドウは残してあります（tmux セッション: $theme）"
+        return 1
+    fi
+    printf '%s\n' "$name"
+}
+
+# 既定を spawn にしているのは、受け入れ可否を機械的に判定する手段が無いから。
+# registry の status も tmux の @cc_state も「新しい仕事を受けられる文脈か」は
+# 表さない（status: idle でも作業継続中でありうるし、@cc_state は visit で done が
+# 消えるので人が見た瞬間に空きに見える）。判定できない以上、既定は専用セッションを
+# 立てて可否判定が要る場面自体を減らす。相乗りは --reuse の明示オプトインだけ。
+cmd_peer_ensure() {
+    local reuse=0 theme="" name="" a
+    for a in "$@"; do
+        case "$a" in
+            --reuse) reuse=1 ;;
+            *)
+                if [ -z "$theme" ]; then theme="$a"
+                elif [ -z "$name" ]; then name="$a"
+                fi
+                ;;
+        esac
+    done
+    [ -z "$theme" ] && { peer_warn "peer ensure: テーマ名を指定してください"; return 1; }
+
+    if [ "$reuse" -eq 1 ]; then
+        local row c_name c_pane c_status st
+        row=$(peer_candidates "$theme" | head -1)
+        if [ -n "$row" ]; then
+            c_name=$(printf '%s' "$row" | cut -f2)
+            c_pane=$(printf '%s' "$row" | cut -f5)
+            c_status=$(printf '%s' "$row" | cut -f7)
+            st=$(lookup_state "$c_pane" "$(pane_states)")
+            if [ "$c_status" != busy ] && [ "$st" != waiting ]; then
+                printf '%s\n' "$c_name"
+                return 0
+            fi
+            peer_warn "peer ensure: $c_name は受け入れ不可 (status=${c_status:--} @cc_state=${st:--}) なので新規起動します"
+        fi
+    fi
+    cmd_peer_spawn "$theme" "$name"
+}
+
+cmd_peer() {
+    local sub="${1:-list}"
+    shift 2> /dev/null
+    case "$sub" in
+        list) cmd_peer_list ;;
+        resolve) cmd_peer_resolve "${1:-}" ;;
+        spawn) cmd_peer_spawn "${1:-}" "${2:-}" ;;
+        ensure) cmd_peer_ensure "$@" ;;
+        *)
+            peer_warn "unknown peer subcommand: $sub（list|resolve|spawn|ensure）"
+            return 1
+            ;;
+    esac
+}
+
 case "${1:-open}" in
     open) shift 2> /dev/null; cmd_open "${1:-}" ;;
     handoff) shift; cmd_handoff "${1:-}" ;;
+    peer) shift; cmd_peer "$@" ;;
     -h | --help | help)
         awk '
             NR == 1 { next }
