@@ -14,7 +14,9 @@ Linux (Ubuntu / WSL2) 環境向けの個人 dotfiles。`make` でシンボリッ
 │   ├── wezterm/     # 環境別 (wsl2 / nucbox / windows) 設定あり
 │   ├── polybar/, stylua/
 │   └── systemd/     # ユーザユニット (obsidian.service など)
-├── .claude/         # Claude Code の CLAUDE.md / hooks / skills / commands
+├── .claude/         # Claude Code の CLAUDE.md / hooks / commands / skills
+│   ├── skills/          # 全マシン共通のスキル
+│   └── skills_nucbox/   # そのマシンにだけ配るスキル (skills_<machine>/)
 ├── claude/          # ~/.claude/settings.json へ jq でマージする共有設定
 ├── bin/             # 補助スクリプト (.zshrc が PATH に追加する)
 ├── zsh/             # alias.zsh など .zshrc から読み込まれる断片
@@ -100,6 +102,27 @@ fzf の中では `ctrl-a` で入力中の名前（空なら選択行）をプリ
 現在のセッション名はステータスラインの左端（マシン名の隣）に表示される。
 
 WezTerm の launch menu の「(tmux)」系エントリも固定セッションではなくこのピッカーを開く。`zsh -lc` は `.zshrc` を読まないため zsh 関数 `t` は使えず、PATH も通らないので `~/dotfiles/bin/tmux-sessionizer` をフルパスで起動している。
+
+## Claude Code のスキル
+
+スキルは 3 つに置き分ける。
+
+| 置き場所 | git | 配布先 |
+| --- | --- | --- |
+| `.claude/skills/` | 追跡する | 全マシン |
+| `.claude/skills_<machine>/` | 追跡する | そのマシンのみ |
+| `~/.claude/skills/` へ直接置く | 管理外 | そのマシンのみ |
+
+`<machine>` は `hostname` から決まる (`tomoki-NucBox-G10` なら `nucbox`、それ以外は
+`wsl2`)。`make deploy MACHINE=wsl2` で上書きできる。
+
+真ん中は「そのマシンでしか使わないが、手順の記録は残したい」もの。スキルの説明文は
+全セッションのコンテキストに載るため、使わないマシンに配ると無駄になるうえ、前提の
+揃っていないマシンで誤って呼ばれる余地も残る。`moshi-update` (moshi-hook の更新手順)
+が該当し、moshi を入れている NucBox にだけ配っている。
+
+配布先を移したとき (全マシン共通 → マシン専用 など) に他マシンへ残る古いリンクは、
+`make deploy` が `~/.claude/skills/` のリンク切れを掃除するので放置してよい。
 
 ## Makefile ターゲット
 

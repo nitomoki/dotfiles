@@ -20,8 +20,22 @@ SYSTEMD_USER_FILES := \
 # ~/.claude/commands のように Claude Code 側が実ディレクトリを作っている場合、
 # ディレクトリを ln -sfn すると ~/.claude/commands/commands という入れ子 symlink に
 # なり、同じコマンド/スキルが2パスから見えて二重に列挙されるため。
-CLAUDE_DIRS  := $(patsubst %/,%,$(wildcard .claude/*/))
-CLAUDE_FILES := $(filter-out $(CLAUDE_DIRS), $(wildcard .claude/*))
+# ただし skills だけは 1スキル = 1ディレクトリ（SKILL.md 以外に references/ や
+# scripts/ を持ちうる）なので、例外的にディレクトリ単位でリンクする。ファイル単位
+# にするとスキルにファイルを足すたび deploy が要る。入れ子は link_dir で防ぐ。
+#
+# .claude/skills_<machine>/ はそのマシンでだけ使うスキル。全マシン共通の
+# .claude/skills/ とは分け、deploy 時に MACHINE 一致分だけ ~/.claude/skills/ へ配る。
+# 「git で残したいが他マシンには配りたくない」ものをここに置く（スキルの説明文は
+# 全セッションのコンテキストに載るため、使わないマシンに配ると無駄になる）。
+CLAUDE_SKILL_ENV_DIRS := $(patsubst %/,%,$(wildcard .claude/skills_*/))
+CLAUDE_DIRS  := $(filter-out $(CLAUDE_SKILL_ENV_DIRS), $(patsubst %/,%,$(wildcard .claude/*/)))
+CLAUDE_FILES := $(filter-out $(CLAUDE_DIRS) $(CLAUDE_SKILL_ENV_DIRS), $(wildcard .claude/*))
+CLAUDE_SKILLS_DIR := $(HOME)/.claude/skills
+
+# マシン判定。~/.claude/CLAUDE.md の規約に合わせ hostname で見分ける。
+# 自動判定を外したいときは make deploy MACHINE=wsl2 のように上書きする。
+MACHINE ?= $(if $(filter tomoki-NucBox-G10,$(shell hostname)),nucbox,wsl2)
 
 # settings.json は .claude/ 直下に置くと dotfiles リポジトリ内で作業した際に
 # Claude Code の「プロジェクト設定」として user 設定と二重ロードされ、hook
@@ -50,6 +64,14 @@ PACKAGES_IGNORE_FILE := packages-ignore.txt
 LINK := ln -sfnv
 MKDIR := mkdir -pv
 
+# ディレクトリを symlink するときの入れ子防止。リンク先に実ディレクトリが在ると
+# ln -sfn はその中にリンクを作ってしまい（~/.claude/skills/x/x）、同じスキルが
+# 2パスから見えて二重に列挙される。実体がある場合は上書きせず警告に留める。
+# 使い方: $(call link_dir,<配布元>,<リンク先>)
+define link_dir
+if [ -e "$(2)" ] && [ ! -L "$(2)" ]; then echo "  [warn] $(2) に実体があるためスキップ（退避してから再実行）"; else $(LINK) "$(1)" "$(2)"; fi;
+endef
+
 .PHONY: deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows help
 
 help: ## ヘルプを表示
@@ -74,8 +96,15 @@ deploy: ## dotfiles のシンボリックリンクを作成
 		if [ -L $(HOME)/$(d) ]; then rm -f $(HOME)/$(d); fi; \
 		if [ -L $(HOME)/$(d)/$(notdir $(d)) ]; then rm -f $(HOME)/$(d)/$(notdir $(d)); fi; \
 		$(MKDIR) $(HOME)/$(d); \
-		$(foreach f, $(wildcard $(d)/*), \
-			$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);))
+		$(foreach f, $(filter-out %/.gitkeep, $(wildcard $(d)/*)), \
+			$(if $(wildcard $(f)/.), \
+				$(call link_dir,$(DOTFILES_DIR)/$(f),$(HOME)/$(f)), \
+				$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)))
+	@echo "  skills MACHINE=$(MACHINE) (.claude/skills_$(MACHINE)/) -> $(CLAUDE_SKILLS_DIR)"
+	@$(MKDIR) $(CLAUDE_SKILLS_DIR)
+	@find $(CLAUDE_SKILLS_DIR) -maxdepth 1 -xtype l -printf '  unlink %p (リンク切れ)\n' -delete
+	@$(foreach f, $(wildcard .claude/skills_$(MACHINE)/*), \
+		$(call link_dir,$(DOTFILES_DIR)/$(f),$(CLAUDE_SKILLS_DIR)/$(notdir $(f))))
 	@echo "  merge  $(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json ($(CLAUDE_LOCAL_KEYS) は保全)"
 	@if [ -L $(HOME)/.claude/settings.json ]; then rm -f $(HOME)/.claude/settings.json; fi
 	@if [ ! -f $(HOME)/.claude/settings.json ]; then \
@@ -120,8 +149,10 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 	@$(foreach f, $(CLAUDE_FILES), \
 		echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";)
 	@$(foreach d, $(CLAUDE_DIRS), \
-		$(foreach f, $(wildcard $(d)/*), \
+		$(foreach f, $(filter-out %/.gitkeep, $(wildcard $(d)/*)), \
 			echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";))
+	@$(foreach f, $(wildcard .claude/skills_$(MACHINE)/*), \
+		echo "  $(DOTFILES_DIR)/$(f) -> $(CLAUDE_SKILLS_DIR)/$(notdir $(f))  [MACHINE=$(MACHINE)]";)
 	@echo "  merge $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json (jq)"
 
 init: ## 初期セットアップスクリプトを実行
