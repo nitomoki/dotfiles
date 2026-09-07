@@ -64,9 +64,27 @@ moshi-hook status
 
 - ログ最終行の `version=` が **入れたバージョンと一致**していること（ここが古いままなら再起動できていない）
 - `systemctl` が `active (running)`
-- `moshi-hook status` が `status: paired` で、`hooks:` の `claude` / `codex` が `current`
+- `moshi-hook status` が `status: paired` で、`hooks:` の `codex` が `current`
 
 `hooks:` に `stale` や `missing` が出たら次へ進む。出ていなければ完了。
+
+#### `claude   stale` は誤検出（v0.3.19 で確認・2026-09-07）
+
+v0.3.19 の status は hook コマンドを**完全一致**で照合するようになった。
+dotfiles で使っている guarded 形式（手順 5 参照）は install が書く絶対パス形式と
+文字列が違うため、**中身が最新でも必ず `stale` と判定される**。
+
+```
+claude   stale    missing: Notification entries outdated, PermissionRequest entries outdated,
+                           PostToolUse entries outdated, PreToolUse entries outdated, ...
+```
+
+このように **全イベントが一斉に `outdated` で並ぶのが誤検出のサイン**。通知そのものは正常に動くので無視してよい。
+（本当に定義が増えたときは一部のイベントだけが挙がる、とは限らないので、この見た目だけでは断定しないこと。）
+
+hook 定義が実際に増減したかは status では判定できない。確かめるなら手順 5 の
+`moshi-hook install` → 構造化 diff で実差分を見る。**差分が「絶対パス化」だけなら実質変更なし**で、
+dotfiles を触る必要は無い。
 
 ### 5. hook 設定が更新された場合の dotfiles 同期（重要）
 
@@ -80,18 +98,72 @@ jq -s '.[1] + (.[0] | {model, effortLevel})' ~/.claude/settings.json settings.do
 でマージする。つまり **ローカルに保全されるのは `model` と `effortLevel` だけ**で、`hooks` は dotfiles 側の内容で上書きされる。
 
 → `moshi-hook install` を実行したら、必ず差分を dotfiles に取り込むこと。
-
-```sh
-# 差分確認
-diff <(jq -S '.hooks' ~/dotfiles/claude/settings.dotfiles.json) \
-     <(jq -S '.hooks' ~/.claude/settings.json)
-```
-
-差分があれば `~/dotfiles/claude/settings.dotfiles.json` の `hooks` を新しい内容に更新し、dotfiles をコミットする。
 これを怠ると、次の `make deploy` で hook が古い定義に巻き戻り、通知が壊れる。
 
-なお moshi の hook は「バイナリが存在すれば exec する」形（`if [ -x "$HOME/.local/bin/moshi-hook" ]; then exec ... claude-hook; fi`）なので、
-moshi を入れていないマシンに配っても無害。
+取り込みは **guarded 形式へ書き戻す → 構造化 diff で実差分を見る → dotfiles の `hooks` を差し替える**
+の順で行う（以下）。素の `diff <(jq -S '.hooks' ...)` は並び順ノイズで実差分が埋もれるので使わない。
+
+#### guarded 形式に書き戻してから取り込む（必須）
+
+dotfiles の moshi hook は「バイナリが存在すれば exec する」guarded 形式で収録する。
+
+```json
+"command": "if [ -x \"$HOME/.local/bin/moshi-hook\" ]; then exec \"$HOME/.local/bin/moshi-hook\" claude-hook; fi"
+```
+
+この形なら moshi を入れていないマシンに配っても無害だし、`$HOME` 依存なのでユーザー名が違っても壊れない。
+
+ところが **`moshi-hook install` は絶対パス直書きで書き出す**（v0.3.19 で確認）。
+
+```json
+"command": "'/home/tomoki/.local/bin/moshi-hook' claude-hook"
+```
+
+このまま dotfiles に入れると、moshi 未導入マシンでは hook が毎回 exit 127 で失敗し、
+ユーザー名が `tomoki` でないマシンでは確実に壊れる。**取り込む前に必ず guarded 形式へ戻すこと。**
+
+```sh
+S="${TMPDIR:-/tmp}"   # Claude Code はスクラッチパッドを使うこと
+GUARD='if [ -x "$HOME/.local/bin/moshi-hook" ]; then exec "$HOME/.local/bin/moshi-hook" claude-hook; fi'
+
+jq --arg g "$GUARD" '
+  (.hooks[][].hooks[]
+   | select(.command | (contains("moshi-hook") and (startswith("if [") | not)))
+   | .command) |= $g
+' ~/.claude/settings.json > "$S/settings.guarded.json"
+```
+
+冪等なので、既に guarded 形式なら何も変わらない。書き戻したら live にも反映する
+（`cp` は `cp -i` エイリアスで対話待ちになり無言で中断されるため **`command cp -f`** を使う）。
+
+```sh
+command cp -f "$S/settings.guarded.json" ~/.claude/settings.json
+```
+
+#### 差分は構造化して見る
+
+`moshi-hook install` は各イベント配列内のエントリ順を入れ替えるので、素の `diff` は
+並び順ノイズだらけになり実差分が埋もれる。`(イベント, matcher, async, command)` に潰してソートすること。
+
+```sh
+flat() { jq -r '.hooks | to_entries[] | .key as $ev | .value[]
+  | (.matcher // "*") as $m | .hooks[]
+  | "\($ev)\t\($m)\tasync=\(.async)\t\(.command)"' "$1" | sort; }
+
+diff <(flat ~/dotfiles/claude/settings.dotfiles.json) <(flat ~/.claude/settings.json)
+```
+
+実差分があれば dotfiles の `hooks` を差し替えてコミットする。
+
+```sh
+jq --slurpfile live ~/.claude/settings.json '.hooks = $live[0].hooks' \
+   ~/dotfiles/claude/settings.dotfiles.json > "$S/settings.dotfiles.new.json"
+python3 -c "import json;json.load(open('$S/settings.dotfiles.new.json'))"   # 壊れていないか確認
+command cp -f "$S/settings.dotfiles.new.json" ~/dotfiles/claude/settings.dotfiles.json
+```
+
+deny-grep（PreToolUse / Bash）や cc-status.sh の hook が消えていないことを
+`git diff` で必ず確認してからコミットすること。
 
 ## 落とし穴
 
