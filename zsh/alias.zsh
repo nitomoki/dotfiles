@@ -1,7 +1,4 @@
 alias h='cd $HOME'
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
 alias grep='grep --color=auto'
 alias gcm='git commit -m'
 alias gs='git status'
