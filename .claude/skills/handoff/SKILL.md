@@ -126,6 +126,22 @@ git 側で強制される。
   lock を見て掃除を諦めなくてよい
 - **移管先の cwd は worktree であって本体ではない。** 引き継ぎ文書に絶対パスを書くときは
   リポジトリ相対で書くか、本体を指したいのか worktree を指したいのかを明示する
+- **worktree 隔離ガードは「git を名指しするコマンド」を広く止める。** worktree の外の
+  git を触らせないための仕組みだが、判定は**コマンド文字列**に対して行われるので、
+  実際には git を実行しないコマンドまで巻き込まれる。実測:
+
+  | コマンド | 結果 |
+  | --- | --- |
+  | `cat <<'EOF'`（本文に `git`） | 通る |
+  | `python3 - <<'EOF'`（本文に `git`） | 拒否 |
+  | `python3 -c 'print("git")'` | 拒否 |
+  | `python3 -c 'print("legitimate")'` | 通る（部分一致では発火しない） |
+
+  つまりヒアドキュメント一般ではなく、**インタプリタに食わせるテキストが `git` を
+  語として含むか**が条件（`names git in a form too complex to verify that it stays
+  inside the worktree`）。スクリプトが git を呼ぶかどうかは見ていない。
+  **この skill のように git コマンドを書いた文書を sed / python で書き換えようとすると
+  刺さる**ので、ファイル編集は Edit / Write ツールで行う
 
 ### dotfiles で `make deploy` する場合
 
