@@ -118,10 +118,30 @@ git 側で強制される。
 - **ブランチ名は `worktree-<name>`**（`<name>` そのものではない）
 - 分岐元は設定 `worktree.baseRef`。既定 `fresh`（`origin/<default>` から）/ `head`（現 HEAD から）
 - worktree 側の `.git` はディレクトリではなく**ファイル**
-- **Claude Code は worktree を lock する**（理由文字列に pid が入る）。
+- **Claude Code は worktree を lock する**（理由文字列に発行元セッション名と pid が入る。
+  実例: `claude session dotfiles-ccpeer (pid 3667986 start 170936604)`）。
   この lock は**セッションが終わっても残る**ので、掃除には `git worktree unlock` が要る
+- **自分の worktree の lock は自分で外せる。** `git worktree unlock` に発行元セッションの
+  制限は無く、理由文字列に他人の pid が見えていても自分の中から実行できる。
+  lock を見て掃除を諦めなくてよい
 - **移管先の cwd は worktree であって本体ではない。** 引き継ぎ文書に絶対パスを書くときは
   リポジトリ相対で書くか、本体を指したいのか worktree を指したいのかを明示する
+- **worktree 隔離ガードは「git を名指しするコマンド」を広く止める。** worktree の外の
+  git を触らせないための仕組みだが、判定は**コマンド文字列**に対して行われるので、
+  実際には git を実行しないコマンドまで巻き込まれる。実測:
+
+  | コマンド | 結果 |
+  | --- | --- |
+  | `cat <<'EOF'`（本文に `git`） | 通る |
+  | `python3 - <<'EOF'`（本文に `git`） | 拒否 |
+  | `python3 -c 'print("git")'` | 拒否 |
+  | `python3 -c 'print("legitimate")'` | 通る（部分一致では発火しない） |
+
+  つまりヒアドキュメント一般ではなく、**インタプリタに食わせるテキストが `git` を
+  語として含むか**が条件（`names git in a form too complex to verify that it stays
+  inside the worktree`）。スクリプトが git を呼ぶかどうかは見ていない。
+  **この skill のように git コマンドを書いた文書を sed / python で書き換えようとすると
+  刺さる**ので、ファイル編集は Edit / Write ツールで行う
 
 ### dotfiles で `make deploy` する場合
 
@@ -141,24 +161,41 @@ worktree の掃除は移管先の責務。ただし**ユーザーが後から作
 2. 完了だが worktree は残す（後で自分で見る）
 3. まだ完了ではない
 
-削除する場合の手順（**unlock を忘れない**）:
+削除する場合の手順（**unlock を忘れない**。**順序も守る**）:
 
 ```sh
-cd <本体>                                        # cwd が消えるので先に出る
-git worktree unlock .claude/worktrees/<name>     # 無いと "cannot remove a locked working tree"
-git worktree remove .claude/worktrees/<name>
-git branch -D worktree-<name>                    # マージ済みのときだけ
+# すべて worktree の中から実行する（本体へ cd して出ない。理由は後述）
+git worktree unlock <worktree の絶対パス>   # 無いと "cannot remove a locked working tree"
+git checkout --detach                       # ブランチを解放する。無いと次が拒否される
+git branch -d worktree-<name>               # マージ済みのときだけ。拒否されたら強制しない
+git worktree remove .                       # 最後。これで cwd が消える
 ```
 
 ブランチの扱い:
 
-- PR がマージ済み → worktree 削除 + `git branch -D worktree-<name>`
+- PR がマージ済み → ブランチも削除する（`git branch -d worktree-<name>`）
 - 未マージ → worktree だけ削除し、**ブランチは残す**
+  （`checkout --detach` と `branch -d` を飛ばし、`unlock` → `worktree remove .` だけ）
 
 補足:
 
-- `git worktree remove .` は**自分自身の中からでも実行できる**が、cwd が消えるので
-  本体（`git rev-parse --path-format=absolute --git-common-dir` の親）へ `cd` してから実行する
+- **順序が逆だと Claude Code からは完走しない。** `worktree remove` を先に撃つと
+  そこで cwd が消え、後続のブランチ削除が走らない。また `checkout --detach` を飛ばすと、
+  ブランチが worktree にチェックアウトされたままなので git 自身が `branch -d` を拒否する
+- **Claude Code から掃除するなら `git worktree remove .`（worktree の中から `.` 指定）を
+  推奨する。** 本体へ出てから消す形は harness の worktree 隔離に阻まれる。実測:
+  - `cd <本体>` 自体は成功するが、harness が**コマンドごとに** cwd を worktree へ戻すため、
+    次のコマンドは worktree 内で走る（`Shell cwd was reset to ...`）
+  - `git -C <本体> worktree remove <path>` は隔離ガードが拒否する
+    （`this command redirects git to the shared checkout via -C. Refusing to run it`）
+  - `cd <本体> && git ...` と 1 コマンドに繋げても、同じく隔離ガードが拒否する
+  素の shell から人間が叩く分には、本体へ `cd` して絶対パスで消す形で問題ない
+- **`git branch -D` を既定にしない。** マージ済みなら `-d` で通る。`-d` が拒否されたら
+  **強制せず、その旨を報告する**。`-d` は「HEAD にマージ済み」**または**
+  「upstream にマージ済み」のどちらかで通るので、ローカルの `master` が origin より
+  遅れていても、upstream の追跡 ref が同一コミットで残っていれば通る。逆に
+  **squash merge のときや、`git fetch --prune` で追跡 ref が消えた後にローカルが
+  遅れているときは拒否される。これは `-D` に切り替える合図ではなく、先に pull する合図**
 - **`remove -f -f` で lock を無視しない。** `--force` は未コミットの作業ごと捨てる
 - `git worktree remove` は**ブランチを消さない**。手で `rm -rf` した場合は `git worktree prune`
 - この確認は fire-and-forget と両立する。**聞く相手は呼び出し元セッションではなく人間**
