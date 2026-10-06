@@ -18,6 +18,7 @@ command -v moshi moshi-hook
 - `~/.local/bin/moshi` は `moshi-hook` への symlink。どちらを叩いても同じバイナリ。
 - 単一の静的リンク Go バイナリ。`~/.local/bin/` 配下なので **sudo は不要**。
 - ペアリング情報は `~/.local/state/moshi/secrets.json`、設定は `~/.config/moshi/config.toml` に永続化される。更新で消えないので **再ペアリングは不要**。
+- v0.4 系では `moshi-hook doctor` がホスト全体の健全性チェック（デーモン・gateway・tmux/herdr・agent hook・ペアリング）を担う。hook の状態は `status` ではなく `doctor` で見る（手順 4）。
 
 ## 手順
 
@@ -42,11 +43,15 @@ moshi update
 ### 3. デーモンを再起動する（Linux では必須）
 
 更新はバイナリを置き換えるだけで、**常駐中のデーモンは古いプロセスのまま動き続ける**。
-このバージョンの `moshi-hook service` には `restart` サブコマンドが無い（`install` / `status` / `uninstall` のみ）ので、systemd で再起動する。
+v0.4 系では `moshi update` の出力末尾にも `The moshi-hook daemon is running. Restart it to use the updated binary.` と出る。
 
 ```sh
-systemctl --user restart moshi-hook.service
+moshi-hook service restart
 ```
+
+- `restart` は v0.4 系で追加された（`install` / `restart` / `status` / `uninstall`）。出力は `Restarted moshi-hook.service`。
+- **ユニットファイルは再生成されない**（v0.4.18 で実行前後を比較し、内容も mtime も不変だった・2026-10-07）。
+- 0.3.x には `restart` が無い（切り戻した場合など）。そのときは systemd を直接叩く: `systemctl --user restart moshi-hook.service`。v0.4 系でもこちらで同じように再起動できる。
 
 ユニットは `~/.config/systemd/user/moshi-hook.service`（`moshi-hook service install` が生成したもの。dotfiles 管理外）。
 サービス化していないマシンで手動起動している場合は、`pkill -TERM -f 'moshi(-hook)? serve'` してから `moshi serve &` で起こし直す。
@@ -58,37 +63,73 @@ moshi-hook version
 systemctl --user status moshi-hook.service --no-pager
 rg -N 'starting moshi-hook daemon' ~/.local/state/moshi/hook.log | tail -1
 moshi-hook status
+moshi-hook doctor --json </dev/null \
+  | jq -r '.checks[] | "\(.group)\t\(.subject)\t\(.status)\t\(.detail)"'
 ```
 
 チェックポイント:
 
 - ログ最終行の `version=` が **入れたバージョンと一致**していること（ここが古いままなら再起動できていない）
 - `systemctl` が `active (running)`
-- `moshi-hook status` が `status: paired` で、`hooks:` の `codex` が `current`
+- `moshi-hook status` が `status: paired`（v0.4 系の `status` には `hooks:` 欄が無い。hook は `doctor` で見る）
+- `doctor` の `Host` グループで `daemon` と `gateway` が `ok`（`gateway` の detail に `daemon 0.4.18` のようにデーモンの版も出る）
+- `doctor` の `Agents` グループで `codex` が `ok` / `hooks current`
 
-`hooks:` に `stale` や `missing` が出たら次へ進む。出ていなければ完了。
+`Agents` の `claude` が `fail` / `hooks out of date` になるのは誤検出（下記）。
+`codex` など他の agent が `fail` / `warn` なら、その hook は本当に古い。`moshi-hook install --target <agent>` で入れ直す
+（codex の設定は dotfiles 管理外なので同期は不要）。
+`claude` の hook 定義が本当に変わったかを確かめたいときは手順 5 へ。それ以外は完了。
 
-#### `claude   stale` は誤検出（v0.3.19 で確認・2026-09-07）
+`Multiplexers` の `herdr` の warn（例: `herdr 0.7.1 predates 0.9; workspaces load through slower fallback calls`）のように、
+`doctor` は moshi-hook 更新とは別件の問題も並べる。それらはこのスキルの範囲外。
 
-v0.3.19 の status は hook コマンドを**完全一致**で照合するようになった。
-dotfiles で使っている guarded 形式（手順 5 参照）は install が書く絶対パス形式と
-文字列が違うため、**中身が最新でも必ず `stale` と判定される**。
+#### `doctor` は `--json </dev/null` で叩く（`-y` 禁止）
+
+- フラグなしの `moshi-hook doctor` は、見つけた問題の修正（fix）を対話で確認してくる。
+- **`--json` は確認だけで何も書き換えない。** `</dev/null` で stdin を塞ぎ、対話待ちにならないようにする。
+- **`-y`（`--yes`）は使わないこと。** 下記の誤検出が常に出るため、fix に `moshi-hook install --target claude` が必ず含まれる。
+  これが自動で走ると、`~/.claude/settings.json` の moshi hook が絶対パス形式で上書きされる（手順 5 参照）。
+
+#### `claude` の hook 不一致は誤検出（v0.3.19 以降。v0.4.18 でも同じ）
+
+v0.3.19 以降の moshi-hook は、hook コマンドを install が書く絶対パス形式と**完全一致**で照合する。
+dotfiles で使っている guarded 形式（手順 5 参照）は文字列が違うため、**中身が最新でも必ず不一致と判定される**。
+通知そのものは正常に動くので無視してよい。
+
+v0.4 系（`doctor --json`）での見え方（v0.4.18 で確認・2026-10-07）:
+
+```json
+{"group":"Agents","subject":"claude","status":"fail","detail":"hooks out of date","fix":2}
+```
+
+- 連動して `features` の `inbox`（Agent inbox & alerts）と `chat_view`（Chat View）も
+  `warn` / `ready for codex; not for claude: hooks out of date` になる。
+- `fixes` に `moshi-hook install --target claude` が出るが、実行しない。
+
+0.3.x（`status` の `hooks:` 欄）での見え方（v0.3.19 で確認・2026-09-07）:
 
 ```
 claude   stale    missing: Notification entries outdated, PermissionRequest entries outdated,
                            PostToolUse entries outdated, PreToolUse entries outdated, ...
 ```
 
-このように **全イベントが一斉に `outdated` で並ぶのが誤検出のサイン**。通知そのものは正常に動くので無視してよい。
-（本当に定義が増えたときは一部のイベントだけが挙がる、とは限らないので、この見た目だけでは断定しないこと。）
+このように全イベントが一斉に `outdated` で並ぶのが誤検出のサイン。
+ただし本当に定義が増えたときに一部のイベントだけが挙がるとは限らないので、見た目だけで断定しないこと。
 
-hook 定義が実際に増減したかは status では判定できない。確かめるなら手順 5 の
-`moshi-hook install` → 構造化 diff で実差分を見る。**差分が「絶対パス化」だけなら実質変更なし**で、
-dotfiles を触る必要は無い。
+hook 定義が実際に増減したかは、`status` / `doctor` では判定できない。確かめるなら手順 5 の
+`moshi-hook install --target claude` → guarded 形式へ書き戻し → 構造化 diff で実差分を見る。
+**書き戻した後に差分ゼロなら実質変更なし**で、dotfiles を触る必要は無い。
+
+v0.4.18 での実測（2026-10-07）: live の `settings.json` を退避 → `moshi-hook install --target claude`
+（出力は `claude -> installed`。相変わらず絶対パス直書き）→ guarded 形式へ書き戻し → 比較した結果、
+退避した元の設定とも `settings.dotfiles.json` とも**差分ゼロ**だった。0.3.24 → v0.4.18 で hook 定義は増減していない。
+確認後は退避ファイルで live を元に戻した。
 
 ### 5. hook 設定が更新された場合の dotfiles 同期（重要）
 
 `moshi-hook install` は Claude 用の hook を `~/.claude/settings.json` に直接書き込む。
+`--target` を省くと対応する全 agent（codex なども）に書き込むので、Claude の hook だけを確かめるときは
+`moshi-hook install --target claude` に絞る。
 しかし `~/.claude/settings.json` の**正本は `~/dotfiles/claude/settings.dotfiles.json`** で、`make deploy` が
 
 ```
@@ -143,15 +184,27 @@ command cp -f "$S/settings.guarded.json" ~/.claude/settings.json
 #### 差分は構造化して見る
 
 `moshi-hook install` は各イベント配列内のエントリ順を入れ替えるので、素の `diff` は
-並び順ノイズだらけになり実差分が埋もれる。`(イベント, matcher, async, command)` に潰してソートすること。
+並び順ノイズだらけになり実差分が埋もれる。`(イベント, matcher, async, timeout, command)` に潰してソートすること。
 
 ```sh
 flat() { jq -r '.hooks | to_entries[] | .key as $ev | .value[]
   | (.matcher // "*") as $m | .hooks[]
-  | "\($ev)\t\($m)\tasync=\(.async)\t\(.command)"' "$1" | sort; }
+  | "\($ev)\t\($m)\tasync=\(.async)\ttimeout=\(.timeout)\t\(.command)"' "$1" | sort; }
 
 diff <(flat ~/dotfiles/claude/settings.dotfiles.json) <(flat ~/.claude/settings.json)
 ```
+
+`flat` は上の5項目しか見ない。他のフィールドも含めて厳密に比べるなら、正規化した `hooks` 全体を diff する。
+
+```sh
+norm() { jq -S . "$1" | jq -S '.hooks | map_values(map(.hooks |= sort_by(tojson)) | sort_by(tojson))'; }
+
+diff <(norm ~/dotfiles/claude/settings.dotfiles.json) <(norm ~/.claude/settings.json)
+```
+
+**`jq -S .` を一度通してから `sort_by(tojson)` すること。** jq の `tojson` / `tostring` はキーの挿入順で
+文字列化するので、キー順が違うだけの同じエントリが別物としてソートされ、偽の差分が大量に出る
+（`-S` は出力時にしか効かないため、同じ jq の中ではなくパイプの前段で通す）。
 
 実差分があれば dotfiles の `hooks` を差し替えてコミットする。
 
@@ -169,5 +222,6 @@ deny-grep（PreToolUse / Bash）や cc-status.sh の hook が消えていない�
 
 - **バイナリだけ更新してデーモンを再起動し忘れる**。一番多い。ログの `version=` で必ず確認する。
 - **`moshi-hook install` 後に dotfiles へ同期し忘れる**（上記 5）。
+- **`moshi-hook doctor -y` で誤検出の「修正」を走らせてしまう**。`install --target claude` が走り、hook が絶対パス形式になる（上記 4）。
 - `moshi-hook set` でブール設定を変えたときも再起動が必要（`scan-ports` は次回の discovery で反映）。
 - 更新で挙動が壊れたときは `moshi update --version <直前の版>` で切り戻せる。直前の版はログの `starting moshi-hook daemon` 履歴から辿れる。
