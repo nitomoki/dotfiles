@@ -17,7 +17,7 @@ pkg-config
 unzip
 
 # --- Language runtimes ---
-cargo
+# Rust は rustup で入れる。apt の cargo は古いうえ、PATH で ~/.cargo/bin より先に見つかって rustup 版を隠す。
 nodejs
 npm
 perl
