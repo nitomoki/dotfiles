@@ -1,0 +1,24 @@
+#!/bin/sh
+# mosh-prefer-custom — カスタム版の mosh（~/src/mosh のフォーク）が入っていればそれを、
+# 無ければ本家を使って mosh を起動する。手元とリモートは別々に判定する。
+#
+# 使い方: mosh-prefer-custom [mosh のオプション] HOST [-- COMMAND...]
+#
+# カスタム版は ~/.local/bin に、本家はパッケージで /usr/bin に入れる前提で、
+# ~/.local/bin にあるかどうかで見分ける。
+#
+# 手元とリモートでカスタム版と本家が混ざっても接続できる。カスタム版の OSC ポリシーは
+# 環境変数で mosh-server に渡り、本家の mosh-server は知らない環境変数を無視する。
+#
+# リモートの mosh-server を名前で呼ぶと本家になる。非対話の ssh のシェルは
+# ~/.profile や ~/.zshrc を読まないので、~/.local/bin が PATH に入らないため。
+# mosh は --server の値をクォートせずにリモートのシェルへ渡し、その後ろに
+# mosh-server の引数を並べる。そのため値は「1 語のコマンド名に展開される式」にして、
+# どちらを使うかはリモートのシェルにその場で決めさせる。
+remote_server='"$(if [ -x ~/.local/bin/mosh-server ]; then echo ~/.local/bin/mosh-server; else echo mosh-server; fi)"'
+
+custom_mosh=$HOME/.local/bin/mosh
+if [ -x "$custom_mosh" ]; then
+    exec "$custom_mosh" --server="$remote_server" "$@"
+fi
+exec mosh --server="$remote_server" "$@"
