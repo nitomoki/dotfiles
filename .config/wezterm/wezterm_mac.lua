@@ -6,7 +6,7 @@
 local wezterm = require "wezterm"
 local act = wezterm.action
 
-return {
+local config = {
     -- brew の zsh ではなく macOS 標準の /bin/zsh を使う (他環境と揃える)。
     default_prog = { "/bin/zsh", "-l" },
     font = wezterm.font_with_fallback { "HackGen Console NF", "HackGen35 Console NF" },
@@ -36,5 +36,18 @@ return {
         { key = "=", mods = "SUPER", action = act.IncreaseFontSize },
         { key = "-", mods = "SUPER", action = act.DecreaseFontSize },
         { key = "0", mods = "SUPER", action = act.ResetFontSize },
+
+        -- タブ移動。共通の Ctrl+PageUp/PageDown は Mac のキーボードに PageUp が無く
+        -- 押せないので、macOS 標準 (Safari / Terminal) と同じ Cmd+Shift+[ / ] を足す。
+        -- SHIFT 併用時は WezTerm 既定バインドと同じくシフト後の文字 ("{" / "}") で書く。
+        { key = "{", mods = "SUPER|SHIFT", action = act.ActivateTabRelative(-1) },
+        { key = "}", mods = "SUPER|SHIFT", action = act.ActivateTabRelative(1) },
     },
 }
+
+-- Cmd+1〜9 で n 番目のタブへ（macOS 標準と同じ）。
+for i = 1, 9 do
+    table.insert(config.extra_keys, { key = tostring(i), mods = "SUPER", action = act.ActivateTab(i - 1) })
+end
+
+return config
