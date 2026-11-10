@@ -125,7 +125,7 @@ define link_dir
 if [ -e "$(2)" ] && [ ! -L "$(2)" ]; then echo "  [warn] $(2) に実体があるためスキップ（退避してから再実行）"; else $(LINK) "$(1)" "$(2)"; fi;
 endef
 
-.PHONY: deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows setup-wezterm-mac help
+.PHONY: deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows setup-wezterm-mac setup-macos-defaults help
 
 help: ## ヘルプを表示
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -265,6 +265,16 @@ setup-wezterm-mac: ## macOS 用の wezterm 環境設定をリンクし、wezterm
 	@# etc/terminfo/wezterm.terminfo は公式リポジトリの termwiz/data/ から取得したもの。
 	@tic -x -o $(HOME)/.terminfo $(DOTFILES_DIR)/etc/terminfo/wezterm.terminfo
 	@echo "terminfo: $(HOME)/.terminfo に wezterm を登録しました"
+
+setup-macos-defaults: ## macOS のシステム設定を dotfiles の前提に合わせる（Ctrl+Space を tmux へ渡す）
+	@# tmux の prefix (C-Space) は、macOS 既定の「前の入力ソースを選択」(ID 60) と
+	@# 衝突し、WezTerm に届く前に OS に奪われる。60 を無効にする。入力ソースの
+	@# 切り替えは 英数 / かな キーか Ctrl+Option+Space (ID 61) で行う。
+	@# activateSettings -u で再ログインせずに反映する。
+	@/usr/libexec/PlistBuddy -c "Set :AppleSymbolicHotKeys:60:enabled false" \
+		$(HOME)/Library/Preferences/com.apple.symbolichotkeys.plist
+	@/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+	@echo "macOS: Ctrl+Space (前の入力ソースを選択) を無効にしました"
 
 setup-wezterm-windows: ## Windows 用の wezterm 設定をコピー（WSL2 から実行: make setup-wezterm-windows WEZTERM_DIR=...)
 	@if [ -z "$(WEZTERM_DIR)" ]; then \

@@ -50,6 +50,7 @@ cd ~/dotfiles
 make packages-install   # Brewfile を brew bundle でインストール
 make deploy             # シンボリックリンクを配置
 make setup-wezterm-mac  # WezTerm の macOS 用設定
+make setup-macos-defaults  # Ctrl+Space を tmux の prefix に使えるよう macOS のショートカットを外す
 make init               # git の user 設定 / ログインシェル確認 (任意)
 ```
 
