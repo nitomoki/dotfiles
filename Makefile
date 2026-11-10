@@ -256,10 +256,15 @@ setup-wezterm-nucbox: ## Nucbox 用の wezterm 環境設定をリンク
 	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_nucbox.lua \
 		$(HOME)/.config/wezterm/wezterm_env.lua
 
-setup-wezterm-mac: ## macOS 用の wezterm 環境設定をリンク
+setup-wezterm-mac: ## macOS 用の wezterm 環境設定をリンクし、wezterm の terminfo を登録
 	@$(MKDIR) $(HOME)/.config/wezterm
 	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_mac.lua \
 		$(HOME)/.config/wezterm/wezterm_env.lua
+	@# wezterm.lua は term = "wezterm" だが、macOS 版 WezTerm.app は terminfo を
+	@# 同梱せず OS にも無い。未登録だと zsh の行編集（BS・カーソル移動）が壊れる。
+	@# etc/terminfo/wezterm.terminfo は公式リポジトリの termwiz/data/ から取得したもの。
+	@tic -x -o $(HOME)/.terminfo $(DOTFILES_DIR)/etc/terminfo/wezterm.terminfo
+	@echo "terminfo: $(HOME)/.terminfo に wezterm を登録しました"
 
 setup-wezterm-windows: ## Windows 用の wezterm 設定をコピー（WSL2 から実行: make setup-wezterm-windows WEZTERM_DIR=...)
 	@if [ -z "$(WEZTERM_DIR)" ]; then \
