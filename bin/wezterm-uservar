@@ -7,7 +7,8 @@
 #     Win → WSL2 → mosh → Nucbox → tmux → ここ (tmux 1 層: Nucbox 側のみ)
 #   どちらも tmux 層は 1 つだけなので単一ラップで足りる。
 # - 本家の mosh は OSC 1337 を落とすので、mosh 越しに届くのはカスタム版 mosh
-#   （bin/mosh-prefer-custom を参照）で OSC 1337 を転送するポリシーがあるときだけ。
+#   （bin/mosh-prefer-custom を参照）を使い、.config/mosh/osc.conf に規則があるときだけ。
+#   規則は名前ごとに書いてあるので、IME 以外の名前を使うときは osc.conf に足す。
 # - 多重 tmux ネスト (tmux 内 tmux 等) は想定外。
 #
 # 出力先 tty の決定:
