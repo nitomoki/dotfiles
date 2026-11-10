@@ -5,7 +5,7 @@ export PATH=$PATH:$HOME/.local/bin/:$HOME/dotfiles/bin/:$HOME/.cargo/bin/:/usr/l
 export XDG_CONFIG_HOME=$HOME/.config/
 
 # Deno config
-export DENO_INSTALL="/home/tomoki/.deno"
+export DENO_INSTALL="$HOME/.deno"
 export PATH="$DENO_INSTALL/bin:$PATH"
 
 if ! type sheldon > /dev/null 2>&1; then
@@ -16,7 +16,7 @@ fi
 eval "$(sheldon source)"
 
 # pnpm
-export PNPM_HOME="/home/tomoki/.local/share/pnpm"
+export PNPM_HOME="$HOME/.local/share/pnpm"
 case ":$PATH:" in
   *":$PNPM_HOME:"*) ;;
   *) export PATH="$PNPM_HOME:$PATH" ;;

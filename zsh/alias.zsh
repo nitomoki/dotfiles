@@ -8,8 +8,9 @@ alias dof='cd ~/dotfiles'
 
 case "${OSTYPE}" in
 darwin*)
-    if type exa > /dev/null 2>&1; then
-        alias ls="exa -h"
+    # exa は開発終了したので後継の eza を使う (Brewfile で導入)
+    if type eza > /dev/null 2>&1; then
+        alias ls="eza -h"
         alias lsa="ls -aF"
         alias ll="ls -lF"
         alias lla="ls -laF"

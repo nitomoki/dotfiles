@@ -1,6 +1,6 @@
 # dotfiles
 
-Linux (Ubuntu / WSL2) 環境向けの個人 dotfiles。`make` でシンボリックリンクを張り、`packages.txt` をもとに apt パッケージを管理する。
+Linux (Ubuntu / WSL2) と macOS 向けの個人 dotfiles。`make` でシンボリックリンクを張り、Linux では `packages.txt` (apt)、macOS では `Brewfile` (Homebrew) でパッケージを管理する。
 
 ## 構成
 
@@ -24,6 +24,7 @@ Linux (Ubuntu / WSL2) 環境向けの個人 dotfiles。`make` でシンボリッ
 ├── doc/             # 設定の参考資料
 ├── packages.txt     # apt で永続的にインストールするパッケージ一覧
 ├── packages-ignore.txt  # packages-diff で無視するパッケージ
+├── Brewfile         # macOS: brew bundle でインストールするパッケージ一覧
 └── Makefile
 ```
 
@@ -39,11 +40,34 @@ make deploy             # シンボリックリンクを配置
 make init               # etc/init/*.sh を順次実行 (任意)
 ```
 
+### macOS
+
+[Homebrew](https://brew.sh) を入れてから:
+
+```sh
+git clone https://github.com/nitomoki/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+make packages-install   # Brewfile を brew bundle でインストール
+make deploy             # シンボリックリンクを配置
+make setup-wezterm-mac  # WezTerm の macOS 用設定
+make init               # git の user 設定 / ログインシェル確認 (任意)
+```
+
+Makefile は `uname -s` で OS を判定する。macOS では次のように振る舞いが変わる。
+
+- `.config/polybar` と systemd ユニットは配らない。
+- `MACHINE` は hostname に関係なく `mac` になる (`.claude/skills_mac/` が配布対象)。
+- `make init` は OS に依存しない `etc/init/4_config.sh` だけを実行する。gnome、apt、ufw、Linux 版のバイナリを入れるスクリプトは対象外。neovim、tree-sitter、HackGen は Brewfile 側で入る。
+- `make packages-diff` は `brew bundle check` と `brew bundle cleanup` の dry-run を表示する。
+
+### WezTerm
+
 WezTerm を使う環境では、続けて環境別の設定を 1 つ選択する:
 
 ```sh
 make setup-wezterm-wsl2        # WSL2 (Linux 側)
 make setup-wezterm-nucbox      # Nucbox (Linux)
+make setup-wezterm-mac         # macOS
 make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm
 ```
 
@@ -113,8 +137,8 @@ WezTerm の launch menu の「(tmux)」系エントリも固定セッション�
 | `.claude/skills_<machine>/` | 追跡する | そのマシンのみ |
 | `~/.claude/skills/` へ直接置く | 管理外 | そのマシンのみ |
 
-`<machine>` は `hostname` から決まる (`tomoki-NucBox-G10` なら `nucbox`、それ以外は
-`wsl2`)。`make deploy MACHINE=wsl2` で上書きできる。
+`<machine>` は `hostname` から決まる (`tomoki-NucBox-G10` なら `nucbox`、macOS なら
+`mac`、それ以外は `wsl2`)。`make deploy MACHINE=wsl2` で上書きできる。
 
 真ん中は「そのマシンでしか使わないが、手順の記録は残したい」もの。スキルの説明文は
 全セッションのコンテキストに載るため、使わないマシンに配ると無駄になるうえ、前提の
@@ -131,8 +155,8 @@ make help                # ヘルプを表示
 make deploy              # シンボリックリンクを作成
 make test                # deploy で作成されるリンクを dry-run 表示
 make init                # etc/init/*.sh を順次実行
-make packages-install    # packages.txt のパッケージを apt でインストール
-make packages-diff       # apt-mark showmanual と packages.txt の差分を表示
+make packages-install    # packages.txt を apt / Brewfile を brew bundle でインストール
+make packages-diff       # インストール済みとパッケージ一覧の差分を表示
 make setup-wezterm-*     # 環境別の wezterm 設定をリンク／コピー
 ```
 

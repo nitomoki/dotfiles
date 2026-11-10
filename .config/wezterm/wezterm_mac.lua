@@ -1,0 +1,40 @@
+-- macOS 用の環境別設定
+-- ~/.config/wezterm/wezterm_env.lua へシンボリックリンクして使用 (make setup-wezterm-mac)
+
+-- 共通設定は disable_default_key_bindings = true なので、macOS 標準の
+-- Cmd 系ショートカットはここで足し直す (extra_keys は wezterm.lua 側で結合される)。
+local wezterm = require "wezterm"
+local act = wezterm.action
+
+return {
+    -- brew の zsh ではなく macOS 標準の /bin/zsh を使う (他環境と揃える)。
+    default_prog = { "/bin/zsh", "-l" },
+    font = wezterm.font_with_fallback { "HackGen Console NF", "HackGen35 Console NF" },
+    font_size = 14.0,
+
+    -- Option キーを Meta (Alt) として送る。共通設定の Alt+z / Alt+s などを効かせるため。
+    send_composed_key_when_left_alt_is_pressed = false,
+    send_composed_key_when_right_alt_is_pressed = false,
+
+    -- 各サーバごとに「素のシェル」と「tmux 接続」の 2 種だけを並べる方針 (wsl2 と同じ)。
+    -- mosh-server はコマンドをシェルを通さずに起動し ~ が展開されないので sh -c を挟む。
+    launch_menu = {
+        { label = "Mac", args = { "/bin/zsh", "-l" } },
+        { label = "Mac (tmux)", args = { "/bin/zsh", "-lc", "~/dotfiles/bin/tmux-sessionizer" } },
+        { label = "Nucbox", args = { "/bin/zsh", "-lc", "~/dotfiles/bin/mosh-prefer-custom nucbox" } },
+        { label = "Nucbox (tmux)", args = { "/bin/zsh", "-lc", "~/dotfiles/bin/mosh-prefer-custom nucbox -- sh -c 'exec ~/dotfiles/bin/tmux-sessionizer'" } },
+    },
+
+    extra_keys = {
+        { key = "c", mods = "SUPER", action = act.CopyTo "Clipboard" },
+        { key = "v", mods = "SUPER", action = act.PasteFrom "Clipboard" },
+        { key = "t", mods = "SUPER", action = act.SpawnTab "CurrentPaneDomain" },
+        { key = "w", mods = "SUPER", action = act.CloseCurrentTab { confirm = true } },
+        { key = "n", mods = "SUPER", action = act.SpawnWindow },
+        { key = "q", mods = "SUPER", action = act.QuitApplication },
+        { key = "h", mods = "SUPER", action = act.HideApplication },
+        { key = "=", mods = "SUPER", action = act.IncreaseFontSize },
+        { key = "-", mods = "SUPER", action = act.DecreaseFontSize },
+        { key = "0", mods = "SUPER", action = act.ResetFontSize },
+    },
+}
