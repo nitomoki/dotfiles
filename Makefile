@@ -91,9 +91,9 @@ MACHINE ?= $(if $(IS_MAC),mac,$(if $(filter tomoki-NucBox-G10,$(shell hostname))
 CLAUDE_SETTINGS_SRC := claude/settings.dotfiles.json
 
 # マージ時にローカル側の値を保全するキー。model / effortLevel は各 PC 固有、
-# agentPushNotifEnabled は /config でセッション内から切り替えるもので、いずれも
+# agentPushNotifEnabled / theme は /config でセッション内から切り替えるもので、いずれも
 # 配布物では持たない。ここに挙げ忘れたキーは deploy のたびに黙って消えるので注意。
-CLAUDE_LOCAL_KEYS := model, effortLevel, agentPushNotifEnabled
+CLAUDE_LOCAL_KEYS := model, effortLevel, agentPushNotifEnabled, theme
 
 # deploy から除外するファイル（環境別設定は setup-wezterm-* で配置する）
 WEZTERM_ENV_FILES := %wezterm_wsl2.lua %wezterm_nucbox.lua %wezterm_windows.lua %wezterm_mac.lua
