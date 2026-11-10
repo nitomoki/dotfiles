@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# Windows のクリップボードにある画像を保存し、保存先の絶対パスを stdout へ
-# 1 行だけ出す。診断メッセージはすべて stderr に出す（stdout はそのまま端末に
-# タイプされるため）。
+# 手元 (Windows / macOS) のクリップボードにある画像を保存し、保存先の絶対パスを
+# stdout へ 1 行だけ出す。診断メッセージはすべて stderr に出す（stdout はそのまま
+# 端末にタイプされるため）。
 #
-# 想定呼び出し元:
-#   Windows 側 WezTerm のキーバインド (Alt+i / Alt+Shift+i) から
-#     wsl.exe -d Ubuntu -e bash -c '"$HOME"/dotfiles/bin/wezterm-imgpaste ...'
-#   として呼ばれ、stdout のパスを SendString で端末に打ち込む。
-#   したがって WSL2 上でしか動かない（powershell.exe と wslpath が要る）。
+# 想定呼び出し元 (stdout のパスを SendString で端末に打ち込む):
+#   - Windows 側 WezTerm のキーバインド (Alt+i / Alt+Shift+i) から
+#       wsl.exe -d Ubuntu -e bash -c '"$HOME"/dotfiles/bin/wezterm-imgpaste ...'
+#     として WSL2 上で呼ばれる（powershell.exe と wslpath が要る）。
+#   - macOS 側 WezTerm のキーバインド (同じキー) から直接呼ばれる（osascript を使う）。
+#     WezTerm.app から起動されると PATH に Homebrew が無く /bin/bash (3.2) で
+#     動くので、bash 4 以降の機能は使わない。
 #
 # なぜこの経路か:
 #   Claude Code のようにリモート (Nucbox) で動くプログラムは、Ctrl+V を押しても
@@ -18,12 +20,12 @@
 #   これで「貼り付け」を「ファイル + パス入力」に読み替える。
 #
 # クリップボードの扱い:
-#   - 画像 (Win+Shift+S のスクリーンショット等) → PNG に保存して転送
-#   - Explorer でコピーしたファイル → その 1 つ目をそのまま転送
+#   - 画像 (Win+Shift+S / Cmd+Ctrl+Shift+4 のスクリーンショット等) → PNG に保存して転送
+#   - Explorer / Finder でコピーしたファイル → その 1 つ目をそのまま転送
 #
 # Usage:
 #   wezterm-imgpaste            # 既定のリモート ($WEZTERM_IMGPASTE_HOST, 既定 nucbox) へ送る
-#   wezterm-imgpaste --local    # WSL2 ローカルに置く
+#   wezterm-imgpaste --local    # 手元 (WSL2 / macOS) に置く
 #   wezterm-imgpaste --to HOST  # 任意の ssh ホストへ送る
 
 set -euo pipefail
@@ -40,7 +42,7 @@ usage() {
     cat <<'USAGE'
 usage: wezterm-imgpaste [--local | --to HOST]
 
-  --local     WSL2 ローカル ($XDG_CACHE_HOME/wezterm-imgpaste) に置く
+  --local     手元 ($XDG_CACHE_HOME/wezterm-imgpaste) に置く
   --to HOST   指定した ssh ホストへ送る
   (既定)      $WEZTERM_IMGPASTE_HOST (既定 nucbox) へ送る
 USAGE
@@ -74,35 +76,33 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-command -v wslpath >/dev/null 2>&1 || die "WSL2 上で実行してください (wslpath が無い)"
-command -v iconv >/dev/null 2>&1 || die "iconv が必要です"
+# クリップボードを読み、転送元ファイルを kind (image|file) と src に入れる。
+# kind=image の src は一時ファイルなので、転送後に消す。
+read_clipboard_wsl() {
+    command -v wslpath >/dev/null 2>&1 || die "WSL2 上で実行してください (wslpath が無い)"
+    command -v iconv >/dev/null 2>&1 || die "iconv が必要です"
 
-# powershell.exe は通常 WSL の interop PATH で引けるが、appendWindowsPath を
-# 切っている環境も想定して既定の絶対パスへフォールバックする。
-find_powershell() {
+    # powershell.exe は通常 WSL の interop PATH で引けるが、appendWindowsPath を
+    # 切っている環境も想定して既定の絶対パスへフォールバックする。
+    local pwsh
     if command -v powershell.exe >/dev/null 2>&1; then
-        command -v powershell.exe
-        return 0
+        pwsh=$(command -v powershell.exe)
+    elif [ -x /mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe ]; then
+        pwsh=/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
+    else
+        die "powershell.exe が見つかりません"
     fi
-    local fallback=/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe
-    if [ -x "$fallback" ]; then
-        printf '%s\n' "$fallback"
-        return 0
-    fi
-    return 1
-}
 
-pwsh=$(find_powershell) || die "powershell.exe が見つかりません"
-
-# クリップボードを読む PowerShell 側。1 行目に種別 (image|file)、2 行目に
-# Windows パスを出す。
-#
-# 注意:
-#   - Get-Clipboard -Format Image は STA スレッドでないと常に $null を返すため
-#     -Sta を明示する (Windows PowerShell 5.1 は既定 STA だが pwsh は MTA)。
-#   - bash からの引用符地獄を避けるため、UTF-16LE + base64 にして
-#     -EncodedCommand で渡す。
-read -r -d '' ps_script <<'PS' || true
+    # クリップボードを読む PowerShell 側。1 行目に種別 (image|file)、2 行目に
+    # Windows パスを出す。
+    #
+    # 注意:
+    #   - Get-Clipboard -Format Image は STA スレッドでないと常に $null を返すため
+    #     -Sta を明示する (Windows PowerShell 5.1 は既定 STA だが pwsh は MTA)。
+    #   - bash からの引用符地獄を避けるため、UTF-16LE + base64 にして
+    #     -EncodedCommand で渡す。
+    local ps_script
+    read -r -d '' ps_script <<'PS' || true
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 $img = Get-Clipboard -Format Image
@@ -123,46 +123,105 @@ if ($files -and @($files).Count -gt 0) {
 exit 1
 PS
 
-encoded=$(printf '%s' "$ps_script" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n')
+    local encoded
+    encoded=$(printf '%s' "$ps_script" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\n')
 
-# WSL のパスを cwd にしたまま Windows の exe を起動すると UNC 警告が stderr に
-# 出るので、Windows から見えるディレクトリへ移ってから呼ぶ。
-cd /mnt/c 2>/dev/null || cd /
+    # WSL のパスを cwd にしたまま Windows の exe を起動すると UNC 警告が stderr に
+    # 出るので、Windows から見えるディレクトリへ移ってから呼ぶ。
+    cd /mnt/c 2>/dev/null || cd /
 
-ps_err=$(mktemp)
-trap 'rm -f "$ps_err"' EXIT
+    local ps_out
+    if ! ps_out=$("$pwsh" -NoProfile -NonInteractive -Sta -EncodedCommand "$encoded" 2>"$errfile"); then
+        local detail
+        detail=$(tr -d '\r' <"$errfile" | tr '\n' ' ')
+        die "クリップボードに画像がありません${detail:+ ($detail)}"
+    fi
 
-if ! ps_out=$("$pwsh" -NoProfile -NonInteractive -Sta -EncodedCommand "$encoded" 2>"$ps_err"); then
-    detail=$(tr -d '\r' <"$ps_err" | tr '\n' ' ')
-    die "クリップボードに画像がありません${detail:+ ($detail)}"
-fi
+    local winpath=""
+    ps_out=${ps_out//$'\r'/}
+    {
+        IFS= read -r kind || true
+        IFS= read -r winpath || true
+    } <<<"$ps_out"
+    [ -n "$winpath" ] || die "クリップボードの読み取りに失敗しました"
 
-ps_out=${ps_out//$'\r'/}
+    src=$(wslpath -u "$winpath") || die "パスの変換に失敗しました: $winpath"
+}
+
+read_clipboard_mac() {
+    # pngpaste 等を入れずに済むよう、AppleScript でクリップボードを読む。
+    # furl (Finder でコピーしたファイル) を先に見る。Finder のコピーには
+    # ファイルのアイコン画像も載っていて、PNGf を先に試すとアイコンを送ってしまう。
+    # PNGf への変換は TIFF しか載せないアプリ (プレビュー等) の画像にも効く。
+    local tmp out
+    tmp=$(mktemp "${TMPDIR:-/tmp}/wezterm-imgpaste.XXXXXX")
+    if ! out=$(osascript - "$tmp" 2>"$errfile" <<'AS'
+on run argv
+    set outPath to item 1 of argv
+    -- as «class furl» はテキストもパスとして変換してしまう ("hello" → /hello) ため、
+    -- 実際に furl が載っているときだけ取り出す。
+    if (clipboard info for «class furl») is not {} then
+        set f to the clipboard as «class furl»
+        return "file" & linefeed & POSIX path of f
+    end if
+    try
+        set png to the clipboard as «class PNGf»
+    on error
+        error "clipboard has no image or file"
+    end try
+    set fh to open for access (POSIX file outPath) with write permission
+    set eof fh to 0
+    write png to fh
+    close access fh
+    return "image" & linefeed & outPath
+end run
+AS
+    ); then
+        rm -f "$tmp"
+        die "クリップボードに画像がありません"
+    fi
+
+    {
+        IFS= read -r kind || true
+        IFS= read -r src || true
+    } <<<"$out"
+    if [ "$kind" != image ]; then
+        rm -f "$tmp"
+    else
+        # mktemp の名前には拡張子が無く、下の保存名の拡張子判定で png にならないため
+        # 正しい名前へ付け替える。
+        mv "$tmp" "$tmp.png"
+        src=$tmp.png
+    fi
+    [ -n "$src" ] || die "クリップボードの読み取りに失敗しました"
+}
+
+errfile=$(mktemp)
+trap 'rm -f "$errfile"' EXIT
+
 kind=""
-winpath=""
-{
-    IFS= read -r kind || true
-    IFS= read -r winpath || true
-} <<<"$ps_out"
+src=""
+case $(uname -s) in
+    Darwin) read_clipboard_mac ;;
+    *) read_clipboard_wsl ;;
+esac
 
-[ -n "$winpath" ] || die "クリップボードの読み取りに失敗しました"
-
-src=$(wslpath -u "$winpath") || die "パスの変換に失敗しました: $winpath"
 [ -f "$src" ] || die "ファイルが見つかりません: $src"
 
-# 一時 PNG は転送後に消す。Explorer からコピーした実ファイルは消さない。
+# 一時 PNG は転送後に消す。コピーした実ファイルは消さない。
 if [ "$kind" = "image" ]; then
-    trap 'rm -f "$ps_err" "$src"' EXIT
+    trap 'rm -f "$errfile" "$src"' EXIT
 fi
 
-bytes=$(stat -c %s "$src")
+# stat の書式指定は GNU と BSD で異なるので wc で数える。
+bytes=$(wc -c <"$src" | tr -d ' ')
 if [ "$bytes" -gt "$MAX_BYTES" ]; then
     die "ファイルが大きすぎます ($((bytes / 1024 / 1024)) MiB > $((MAX_BYTES / 1024 / 1024)) MiB)"
 fi
 
 # 保存名。時刻 + ランダムで衝突しないようにし、拡張子だけ元から引き継ぐ。
 # 拡張子はリモートのシェルへ埋め込む都合上、英数字だけに落とす。
-ext=$(printf '%s' "${winpath##*.}" | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9')
+ext=$(printf '%s' "${src##*.}" | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9')
 [ -n "$ext" ] && [ ${#ext} -le 8 ] || ext=png
 name="$(date +%Y%m%d-%H%M%S)-$(od -An -tx1 -N4 /dev/urandom | tr -d ' \n').$ext"
 

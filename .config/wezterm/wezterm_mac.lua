@@ -6,6 +6,31 @@
 local wezterm = require "wezterm"
 local act = wezterm.action
 
+-- 画像貼り付け (Alt+i: Nucbox へ / Alt+Shift+i: Mac ローカルへ)。Windows 版と同じキー。
+-- 経路の考え方は bin/wezterm-imgpaste の冒頭を参照。WezTerm.app の PATH には
+-- Homebrew が無いので、bash はフルパスで呼ぶ。
+local function imgpaste(args)
+    return wezterm.action_callback(function(window, pane)
+        local argv = { "/bin/bash", wezterm.home_dir .. "/dotfiles/bin/wezterm-imgpaste" }
+        for _, a in ipairs(args) do
+            table.insert(argv, a)
+        end
+        local ok, stdout, stderr = wezterm.run_child_process(argv)
+        local path = (stdout or ""):gsub("%s+$", "")
+        if not ok or path == "" then
+            local detail = (stderr or ""):gsub("%s+$", "")
+            window:toast_notification(
+                "wezterm-imgpaste",
+                detail ~= "" and detail or "クリップボードに画像がありません",
+                nil,
+                4000
+            )
+            return
+        end
+        window:perform_action(act.SendString(path), pane)
+    end)
+end
+
 local config = {
     -- brew の zsh ではなく macOS 標準の /bin/zsh を使う (他環境と揃える)。
     default_prog = { "/bin/zsh", "-l" },
@@ -42,6 +67,9 @@ local config = {
         -- SHIFT 併用時は WezTerm 既定バインドと同じくシフト後の文字 ("{" / "}") で書く。
         { key = "{", mods = "SUPER|SHIFT", action = act.ActivateTabRelative(-1) },
         { key = "}", mods = "SUPER|SHIFT", action = act.ActivateTabRelative(1) },
+
+        { key = "i", mods = "ALT", action = imgpaste {} },
+        { key = "I", mods = "ALT|SHIFT", action = imgpaste { "--local" } },
     },
 }
 
