@@ -32,6 +32,9 @@ zsh
 # --- CLI tools ---
 cpanminus
 gh
+# mosh は etc/init/mosh.sh が ~/.local にカスタム版を入れるが、apt 版も残す。
+# ufw の `allow mosh` が apt 版の /etc/ufw/applications.d/mosh を使い、
+# 非対話の ssh（~/.local/bin が PATH に無い）からは /usr/bin/mosh-server が使われるため。
 mosh
 nkf
 pipx
