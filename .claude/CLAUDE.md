@@ -1,25 +1,29 @@
 # 実行環境
 
-この `~/.claude/CLAUDE.md` は dotfiles 経由で **全マシン共通**に配布される。Claude Code は下記3台のいずれでも動くため、**今どのマシンで動いているかを必ず `hostname` で判定する**こと。取り違えないこと。
+この `~/.claude/CLAUDE.md` は dotfiles 経由で **全マシン共通**に配布される。Claude Code は下記のどのマシンでも動くため、**今どのマシンで動いているかを必ず `uname -s` と `hostname` で判定する**こと。取り違えないこと。
 
 ## 全体構成
 
 ```
 [Windows]  →  [WSL2 (Ubuntu)]  →  [Nucbox (Ubuntu, mini PC)]
  WezTerm GUI     mosh/ssh で接続       mosh/ssh で接続
+
+[Mac (MacBook Air)]  →  [Nucbox]
+ WezTerm GUI             Tailscale 経由で mosh/ssh で接続
 ```
 
-`hostname` による判定：
+判定：
 
-- `tomoki-NucBox-G10` → Nucbox（mini PC）
+- `uname -s` が `Darwin` → Mac（hostname は `tomoki-mac.local` だが、変わりうるので OS で見る）
+- `hostname` が `tomoki-NucBox-G10` → Nucbox（mini PC）
 - それ以外 → WSL2 か Windows ネイティブ
 
-3 台すべてで dotfiles と Claude Code が動く。
+すべてのマシンで dotfiles と Claude Code が動く。
 
 ## 含意（取り違えやすいポイント）
 
 - 実行するシェルコマンドは**今いるマシンのローカル**で走る。Nucbox には `/mnt/c/...` のような Windows パスは無い（WSL2 には存在する）。
-- WezTerm GUI 本体は Windows 上で動いている。Nucbox / WSL2 側で `~/dotfiles/.config/wezterm/` を編集しても**手元の表示には即反映されない**（dotfiles を Windows 側にデプロイして初めて効く）。
+- Windows 経由で使うとき、WezTerm GUI 本体は Windows 上で動いている。Nucbox / WSL2 側で `~/dotfiles/.config/wezterm/` を編集しても**手元の表示には即反映されない**（dotfiles を Windows 側にデプロイして初めて効く）。
 - IME（Windows IME / Mozc）も Windows 側にある。Nucbox など遠隔の Linux マシンから IME を制御したい場合は OSC エスケープシーケンス経由でローカル WezTerm に通知する構成になる（`im-select.exe` 等は Linux マシンには無い）。
 
 # grep 禁止（ripgrep / ag を使う）
