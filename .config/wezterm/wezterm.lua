@@ -75,7 +75,7 @@ local res = {
     disable_default_mouse_bindings = false,
 }
 
--- 環境別設定 (wezterm_wsl2.lua, wezterm_nucbox.lua, wezterm_windows.lua)
+-- 環境別設定 (wezterm_wsl2.lua, wezterm_nucbox.lua, wezterm_windows.lua, wezterm_mac.lua)
 -- → シンボリックリンクで wezterm_env.lua として配置
 --
 -- keys は上書きではなく追加したいことがある (例: Windows だけの画像貼り付け)。

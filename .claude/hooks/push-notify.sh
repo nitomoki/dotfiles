@@ -45,7 +45,12 @@ codex_summarize() {
   command -v codex >/dev/null 2>&1 || return 0
   [ -n "${MOSHI_CODEX_MODEL:-}" ] && model_args=(-m "$MOSHI_CODEX_MODEL")
   out="$(mktemp 2>/dev/null)" || return 0
-  printf '%s' "$src" | timeout "${MOSHI_CODEX_TIMEOUT:-45}" codex exec \
+  # timeout は GNU coreutils。macOS は brew の coreutils が gtimeout として入れる。
+  local to_cmd=()
+  if command -v timeout >/dev/null 2>&1; then to_cmd=(timeout "${MOSHI_CODEX_TIMEOUT:-45}")
+  elif command -v gtimeout >/dev/null 2>&1; then to_cmd=(gtimeout "${MOSHI_CODEX_TIMEOUT:-45}")
+  fi
+  printf '%s' "$src" | "${to_cmd[@]}" codex exec \
     "${model_args[@]}" -s read-only --ephemeral --skip-git-repo-check --color never \
     -o "$out" \
     "次はコーディングエージェントの応答本文の冒頭 (<stdin>) です。Moshi 通知用に日本語で100字以内・1文で要約してください。要約文だけを返し、前置き・引用符・箇条書き・改行は入れないこと。" \
@@ -53,6 +58,14 @@ codex_summarize() {
   sum="$(tr '\n\r\t' '   ' < "$out" 2>/dev/null | sed 's/  */ /g; s/^ *//; s/ *$//')"
   rm -f "$out"
   printf '%s' "$sum"
+}
+
+# --- ISO8601 (UTC, 例 2026-01-02T03:04:05.678Z) → epoch 秒 ---
+# date -d は GNU 拡張。macOS の BSD date では -j -f で読む。
+to_epoch() {
+  date -d "$1" +%s 2>/dev/null && return
+  local t="${1%Z}"; t="${t%%.*}"
+  TZ=UTC date -j -f '%Y-%m-%dT%H:%M:%S' "$t" +%s 2>/dev/null
 }
 
 # --- transcript から「その回の応答本文」(制御文字を空白化・未トリム) と所要時間を取り出す ---
@@ -68,8 +81,8 @@ if [ -n "$TRANS" ] && [ -f "$TRANS" ]; then
   U_TS="$(jq -rs '[.[] | select(.type=="user") | .timestamp] | last // empty' "$TRANS" 2>/dev/null)"
   A_TS="$(jq -rs '[.[] | select(.type=="assistant") | .timestamp] | last // empty' "$TRANS" 2>/dev/null)"
   if [ -n "$U_TS" ] && [ -n "$A_TS" ]; then
-    US="$(date -d "$U_TS" +%s 2>/dev/null)"
-    AS="$(date -d "$A_TS" +%s 2>/dev/null)"
+    US="$(to_epoch "$U_TS")"
+    AS="$(to_epoch "$A_TS")"
     if [ -n "$US" ] && [ -n "$AS" ] && [ "$AS" -ge "$US" ]; then
       D=$((AS - US))
       if [ "$D" -ge 60 ]; then DUR="$((D/60))m$((D%60))s"; else DUR="${D}s"; fi

@@ -28,6 +28,13 @@ SKIP_SHELDON := yes
 endif
 endif
 
+# --- OS 判定 ---
+# Linux (Ubuntu / WSL2) と macOS で配るもの・パッケージ管理を切り替える。
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+IS_MAC := yes
+endif
+
 # --- シンボリックリンク対象 ---
 # ホームディレクトリ直下に配置するドットファイル
 HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zshrc
@@ -36,11 +43,19 @@ HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zshrc
 # .config/systemd は user/ 配下に他アプリの管理ファイルが混ざるため、
 # 個別ファイル単位でリンクする SYSTEMD_USER_FILES で扱う。
 CONFIG_DIRS := $(filter-out .config/systemd, $(wildcard .config/??*))
+# macOS では X11 / systemd 前提のものは配らない。
+MAC_SKIP_CONFIG_DIRS := .config/polybar
+ifdef IS_MAC
+CONFIG_DIRS := $(filter-out $(MAC_SKIP_CONFIG_DIRS), $(CONFIG_DIRS))
+endif
 
 # 個別管理する systemd --user ユニット／enable リンク
 SYSTEMD_USER_FILES := \
 	.config/systemd/user/obsidian.service \
 	.config/systemd/user/graphical-session.target.wants/obsidian.service
+ifdef IS_MAC
+SYSTEMD_USER_FILES :=
+endif
 
 # .claude 配下（Claude Code 設定）
 # ディレクトリは symlink せず、.config と同じく中身を1ファイルずつリンクする。
@@ -62,7 +77,8 @@ CLAUDE_SKILLS_DIR := $(HOME)/.claude/skills
 
 # マシン判定。~/.claude/CLAUDE.md の規約に合わせ hostname で見分ける。
 # 自動判定を外したいときは make deploy MACHINE=wsl2 のように上書きする。
-MACHINE ?= $(if $(filter tomoki-NucBox-G10,$(shell hostname)),nucbox,wsl2)
+# macOS は hostname に依らず mac とする。
+MACHINE ?= $(if $(IS_MAC),mac,$(if $(filter tomoki-NucBox-G10,$(shell hostname)),nucbox,wsl2))
 
 # settings.json は .claude/ 直下に置くと dotfiles リポジトリ内で作業した際に
 # Claude Code の「プロジェクト設定」として user 設定と二重ロードされ、hook
@@ -75,17 +91,27 @@ MACHINE ?= $(if $(filter tomoki-NucBox-G10,$(shell hostname)),nucbox,wsl2)
 CLAUDE_SETTINGS_SRC := claude/settings.dotfiles.json
 
 # マージ時にローカル側の値を保全するキー。model / effortLevel は各 PC 固有、
-# agentPushNotifEnabled は /config でセッション内から切り替えるもので、いずれも
+# agentPushNotifEnabled / theme は /config でセッション内から切り替えるもので、いずれも
 # 配布物では持たない。ここに挙げ忘れたキーは deploy のたびに黙って消えるので注意。
-CLAUDE_LOCAL_KEYS := model, effortLevel, agentPushNotifEnabled
+CLAUDE_LOCAL_KEYS := model, effortLevel, agentPushNotifEnabled, theme
 
 # deploy から除外するファイル（環境別設定は setup-wezterm-* で配置する）
-WEZTERM_ENV_FILES := %wezterm_wsl2.lua %wezterm_nucbox.lua %wezterm_windows.lua
+WEZTERM_ENV_FILES := %wezterm_wsl2.lua %wezterm_nucbox.lua %wezterm_windows.lua %wezterm_mac.lua
 
-# パッケージ一覧
+# パッケージ一覧（macOS は Brewfile を使う）
 PACKAGES_FILE := packages.txt
+BREWFILE := $(DOTFILES_DIR)/Brewfile
 # packages-diff から除外する Ubuntu base / kernel 系
 PACKAGES_IGNORE_FILE := packages-ignore.txt
+
+# make init で実行するスクリプト。etc/init/*.sh は Ubuntu 前提（gnome / apt /
+# ufw / Linux 版バイナリ）なので、macOS では OS 非依存のものだけを流す。
+# neovim / tree-sitter / HackGen は macOS では Brewfile で入る。
+ifdef IS_MAC
+INIT_SCRIPTS := etc/init/4_config.sh
+else
+INIT_SCRIPTS := $(sort $(wildcard etc/init/*.sh))
+endif
 
 # --- コマンド ---
 LINK := ln -sfnv
@@ -99,7 +125,7 @@ define link_dir
 if [ -e "$(2)" ] && [ ! -L "$(2)" ]; then echo "  [warn] $(2) に実体があるためスキップ（退避してから再実行）"; else $(LINK) "$(1)" "$(2)"; fi;
 endef
 
-.PHONY: deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows help
+.PHONY: deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows setup-wezterm-mac setup-macos-defaults help
 
 help: ## ヘルプを表示
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -130,7 +156,10 @@ deploy: ## dotfiles のシンボリックリンクを作成
 				$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)))
 	@echo "  skills MACHINE=$(MACHINE) (.claude/skills_$(MACHINE)/) -> $(CLAUDE_SKILLS_DIR)"
 	@$(MKDIR) $(CLAUDE_SKILLS_DIR)
-	@find $(CLAUDE_SKILLS_DIR) -maxdepth 1 -xtype l -printf '  unlink %p (リンク切れ)\n' -delete
+# find -xtype / -printf は GNU 拡張で macOS の BSD find に無いため、シェルで判定する。
+	@for l in $(CLAUDE_SKILLS_DIR)/* $(CLAUDE_SKILLS_DIR)/.[!.]*; do \
+		if [ -L "$$l" ] && [ ! -e "$$l" ]; then echo "  unlink $$l (リンク切れ)"; rm -f "$$l"; fi; \
+	done
 	@$(foreach f, $(wildcard .claude/skills_$(MACHINE)/*), \
 		$(call link_dir,$(DOTFILES_DIR)/$(f),$(CLAUDE_SKILLS_DIR)/$(notdir $(f))))
 	@echo "  merge  $(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json ($(CLAUDE_LOCAL_KEYS) は保全)"
@@ -186,14 +215,26 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 		echo "  $(DOTFILES_DIR)/$(f) -> $(CLAUDE_SKILLS_DIR)/$(notdir $(f))  [MACHINE=$(MACHINE)]";)
 	@echo "  merge $(DOTFILES_DIR)/$(CLAUDE_SETTINGS_SRC) -> $(HOME)/.claude/settings.json (jq)"
 
-init: ## 初期セットアップスクリプトを実行
-	@$(foreach val, $(sort $(wildcard etc/init/*.sh)), \
+init: ## 初期セットアップスクリプトを実行（macOS は OS 非依存のものだけ）
+	@$(foreach val, $(INIT_SCRIPTS), \
 		echo "--- $(val) ---"; bash $(val);)
 
-packages-install: ## packages.txt のパッケージを apt でインストール
+packages-install: ## パッケージをインストール（Linux: packages.txt を apt / macOS: Brewfile を brew bundle）
+ifdef IS_MAC
+	@command -v brew >/dev/null 2>&1 || { echo "Homebrew が必要です: https://brew.sh"; exit 1; }
+	brew bundle install --file=$(BREWFILE)
+else
 	@bash etc/init/1_install.sh
+endif
 
-packages-diff: ## apt-mark showmanual と packages.txt の差分を表示（packages-ignore.txt は除外）
+packages-diff: ## インストール済みと一覧の差分を表示（Linux: apt-mark vs packages.txt / macOS: brew vs Brewfile）
+ifdef IS_MAC
+	@echo "[ Brewfile にあるが未インストール ]"
+	@brew bundle check --verbose --no-upgrade --file=$(BREWFILE) || true
+	@echo ""
+	@echo "[ Brewfile にないインストール済（brew bundle cleanup の dry-run） ]"
+	@brew bundle cleanup --file=$(BREWFILE) || true
+else
 	@comm -23 <(apt-mark showmanual | sort) \
 		<(cat $(PACKAGES_FILE) $(PACKAGES_IGNORE_FILE) | grep -vE '^\s*(#|$$)' | sort -u) \
 		| sed 's/^/  + /' \
@@ -203,6 +244,7 @@ packages-diff: ## apt-mark showmanual と packages.txt の差分を表示（pack
 		<(grep -vE '^\s*(#|$$)' $(PACKAGES_FILE) | sort) \
 		| sed 's/^/  - /' \
 		| awk 'BEGIN{print "[ packages.txt にあるが未インストール ]"} {print}'
+endif
 
 setup-wezterm-wsl2: ## WSL2 用の wezterm 環境設定をリンク
 	@$(MKDIR) $(HOME)/.config/wezterm
@@ -213,6 +255,26 @@ setup-wezterm-nucbox: ## Nucbox 用の wezterm 環境設定をリンク
 	@$(MKDIR) $(HOME)/.config/wezterm
 	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_nucbox.lua \
 		$(HOME)/.config/wezterm/wezterm_env.lua
+
+setup-wezterm-mac: ## macOS 用の wezterm 環境設定をリンクし、wezterm の terminfo を登録
+	@$(MKDIR) $(HOME)/.config/wezterm
+	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_mac.lua \
+		$(HOME)/.config/wezterm/wezterm_env.lua
+	@# wezterm.lua は term = "wezterm" だが、macOS 版 WezTerm.app は terminfo を
+	@# 同梱せず OS にも無い。未登録だと zsh の行編集（BS・カーソル移動）が壊れる。
+	@# etc/terminfo/wezterm.terminfo は公式リポジトリの termwiz/data/ から取得したもの。
+	@tic -x -o $(HOME)/.terminfo $(DOTFILES_DIR)/etc/terminfo/wezterm.terminfo
+	@echo "terminfo: $(HOME)/.terminfo に wezterm を登録しました"
+
+setup-macos-defaults: ## macOS のシステム設定を dotfiles の前提に合わせる（Ctrl+Space を tmux へ渡す）
+	@# tmux の prefix (C-Space) は、macOS 既定の「前の入力ソースを選択」(ID 60) と
+	@# 衝突し、WezTerm に届く前に OS に奪われる。60 を無効にする。入力ソースの
+	@# 切り替えは 英数 / かな キーか Ctrl+Option+Space (ID 61) で行う。
+	@# activateSettings -u で再ログインせずに反映する。
+	@/usr/libexec/PlistBuddy -c "Set :AppleSymbolicHotKeys:60:enabled false" \
+		$(HOME)/Library/Preferences/com.apple.symbolichotkeys.plist
+	@/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+	@echo "macOS: Ctrl+Space (前の入力ソースを選択) を無効にしました"
 
 setup-wezterm-windows: ## Windows 用の wezterm 設定をコピー（WSL2 から実行: make setup-wezterm-windows WEZTERM_DIR=...)
 	@if [ -z "$(WEZTERM_DIR)" ]; then \
