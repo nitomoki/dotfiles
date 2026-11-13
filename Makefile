@@ -111,10 +111,11 @@ BREWFILE := $(DOTFILES_DIR)/Brewfile
 PACKAGES_IGNORE_FILE := packages-ignore.txt
 
 # make init で実行するスクリプト。etc/init/*.sh は Ubuntu 前提（gnome / apt /
-# ufw / Linux 版バイナリ）なので、macOS では OS 非依存のものだけを流す。
+# ufw / Linux 版バイナリ）なので、macOS では OS 非依存のものと、macOS 版を
+# 入れられるものだけを流す。
 # neovim / tree-sitter / HackGen は macOS では Brewfile で入る。
 ifdef IS_MAC
-INIT_SCRIPTS := etc/init/4_config.sh
+INIT_SCRIPTS := etc/init/4_config.sh etc/init/markdown-reader.sh
 else
 INIT_SCRIPTS := $(sort $(wildcard etc/init/*.sh))
 endif
