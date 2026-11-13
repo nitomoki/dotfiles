@@ -7,14 +7,9 @@
 #   MOSH_VERSION  リリースタグ (default: 最新リリースを解決)
 #   PREFIX        インストール先 (default: $HOME/.local)。bin/ と share/man/man1/ に置く
 #
-# PREFIX の既定が ~/.local なのは bin/mosh-prefer-custom の前提に合わせるため。
-# ~/.local/bin にあるかどうかでカスタム版と本家を見分けている。
-#
-# Linux では、カスタム版が入っても apt の mosh は消さない（packages.txt に残してある）。
-#   - etc/init/5_firewall.sh の `ufw allow mosh` は、apt の mosh が入れる
-#     /etc/ufw/applications.d/mosh を使う。リリースにはこのファイルが無い
-#   - 非対話の ssh では ~/.local/bin が PATH に入らないので、Moshi などから
-#     繋ぐと /usr/bin/mosh-server が使われる
+# PREFIX の既定が ~/.local なのは、~/.zshenv が ~/.local/bin を /usr/bin より先に
+# PATH へ入れているため。手元の mosh もリモートの mosh-server も名前で引くだけで
+# カスタム版になる（mosh-server は ssh 先の zsh -c が読む ~/.zshenv の PATH で引かれる）。
 #
 # アンインストール:
 #   rm -f ~/.local/bin/mosh{,-client,-server} ~/.local/share/man/man1/mosh{,-client,-server}.1
@@ -180,10 +175,6 @@ install_custom() {
 }
 
 if install_custom; then
-    # カスタム版が入っても apt の mosh は要る（冒頭のコメント）。Mac は brew 版を要らない。
-    if [ "$os" = Linux ]; then
-        install_default || true
-    fi
     exit 0
 fi
 

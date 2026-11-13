@@ -2,8 +2,6 @@ DOTFILES_DIR=$HOME/dotfiles
 
 # PATH と環境変数は .zshenv で組む。pnpm setup や uv のインストーラは PATH の
 # 設定をこのファイルに追記してくるので、追記されたら消す。
-# macOS のログインシェルは path_helper が並べ替えた後なので組み直す（.zshenv 参照）。
-[[ $OSTYPE == darwin* ]] && dotfiles_path
 
 if ! type sheldon > /dev/null 2>&1; then
     echo "install sheldon!"
