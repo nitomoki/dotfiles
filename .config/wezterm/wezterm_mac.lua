@@ -42,12 +42,11 @@ local config = {
     send_composed_key_when_right_alt_is_pressed = false,
 
     -- 各サーバごとに「素のシェル」と「tmux 接続」の 2 種だけを並べる方針 (wsl2 と同じ)。
-    -- mosh-server はコマンドをシェルを通さずに起動し ~ が展開されないので sh -c を挟む。
     launch_menu = {
         { label = "Mac", args = { "/bin/zsh", "-l" } },
-        { label = "Mac (tmux)", args = { "/bin/zsh", "-lc", "~/dotfiles/bin/tmux-sessionizer" } },
-        { label = "Nucbox", args = { "/bin/zsh", "-lc", "~/dotfiles/bin/mosh-prefer-custom nucbox" } },
-        { label = "Nucbox (tmux)", args = { "/bin/zsh", "-lc", "~/dotfiles/bin/mosh-prefer-custom nucbox -- sh -c 'exec ~/dotfiles/bin/tmux-sessionizer'" } },
+        { label = "Mac (tmux)", args = { "/bin/zsh", "-lc", "tmux-sessionizer" } },
+        { label = "Nucbox", args = { "/bin/zsh", "-lc", "mosh nucbox" } },
+        { label = "Nucbox (tmux)", args = { "/bin/zsh", "-lc", "mosh nucbox -- tmux-sessionizer" } },
     },
 
     extra_keys = {
