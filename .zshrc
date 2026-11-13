@@ -1,12 +1,9 @@
 DOTFILES_DIR=$HOME/dotfiles
 
-export LANG=ja_JP.UTF-8
-export PATH=$PATH:$HOME/.local/bin/:$HOME/dotfiles/bin/:$HOME/.cargo/bin/:/usr/local/bin/
-export XDG_CONFIG_HOME=$HOME/.config/
-
-# Deno config
-export DENO_INSTALL="$HOME/.deno"
-export PATH="$DENO_INSTALL/bin:$PATH"
+# PATH と環境変数は .zshenv で組む。pnpm setup や uv のインストーラは PATH の
+# 設定をこのファイルに追記してくるので、追記されたら消す。
+# macOS のログインシェルは path_helper が並べ替えた後なので組み直す（.zshenv 参照）。
+[[ $OSTYPE == darwin* ]] && dotfiles_path
 
 if ! type sheldon > /dev/null 2>&1; then
     echo "install sheldon!"
@@ -15,16 +12,10 @@ if ! type sheldon > /dev/null 2>&1; then
 fi
 eval "$(sheldon source)"
 
-# pnpm
-export PNPM_HOME="$HOME/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-# pnpm end
-
 export NVM_DIR="$HOME/.config/nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-[ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"  # uv (無いマシンでは黙ってスキップ)
+# path の -U は配列 path への代入でしか効かず、プラグインや nvm が使う PATH=… の
+# 形では重複が残る。最後に配列として代入し直して除く。
+path=($path)
