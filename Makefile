@@ -76,8 +76,15 @@ endif
 # .claude/skills/ とは分け、deploy 時に MACHINE 一致分だけ ~/.claude/skills/ へ配る。
 # 「git で残したいが他マシンには配りたくない」ものをここに置く（スキルの説明文は
 # 全セッションのコンテキストに載るため、使わないマシンに配ると無駄になる）。
-CLAUDE_SKILL_ENV_DIRS := $(patsubst %/,%,$(wildcard .claude/skills_*/))
-CLAUDE_DIRS  := $(filter-out $(CLAUDE_SKILL_ENV_DIRS), $(patsubst %/,%,$(wildcard .claude/*/)))
+#
+# ディレクトリ判定に $(wildcard pat/) （末尾スラッシュ）を使ってはいけない。
+# macOS 標準の GNU Make 3.81 ではこれがファイルにもマッチし、.claude/CLAUDE.md が
+# ディレクトリ扱いされて ~/.claude/CLAUDE.md が空ディレクトリとして mkdir される
+# （グローバル CLAUDE.md が読まれなくなる）。$(wildcard f/.) は 3.81 / 4.x の
+# どちらでもディレクトリにしかマッチしないので、それで振り分ける。
+only_dirs = $(foreach f,$(1),$(if $(wildcard $(f)/.),$(f)))
+CLAUDE_SKILL_ENV_DIRS := $(call only_dirs,$(wildcard .claude/skills_*))
+CLAUDE_DIRS  := $(filter-out $(CLAUDE_SKILL_ENV_DIRS), $(call only_dirs,$(wildcard .claude/*)))
 CLAUDE_FILES := $(filter-out $(CLAUDE_DIRS) $(CLAUDE_SKILL_ENV_DIRS), $(wildcard .claude/*))
 CLAUDE_SKILLS_DIR := $(HOME)/.claude/skills
 
@@ -155,8 +162,16 @@ ifdef MARKDOWN_READER_MAC_DIR
 	@$(LINK) $(DOTFILES_DIR)/.config/markdown-reader/config.toml "$(MARKDOWN_READER_MAC_DIR)/config.toml"
 endif
 	@$(MKDIR) $(HOME)/.claude
+# リンク先に実ディレクトリがあると ln -sfn はその中にリンクを作ってしまう。
+# Make 3.81 の wildcard 誤判定で mkdir された空ディレクトリが残っている
+# マシンがあるため、空のときだけ rmdir してからリンクする。中身があれば
+# rmdir が失敗するだけで消さない。
 	@$(foreach f, $(CLAUDE_FILES), \
-		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
+		if [ -d $(HOME)/$(f) ] && [ ! -L $(HOME)/$(f) ]; then \
+			rmdir $(HOME)/$(f) 2>/dev/null && echo "  rmdir  $(HOME)/$(f) (旧 deploy が残した空ディレクトリ)" \
+				|| echo "  [warn] $(HOME)/$(f) が実ディレクトリのためスキップ（退避してから再実行）"; \
+		fi; \
+		[ -d $(HOME)/$(f) ] && [ ! -L $(HOME)/$(f) ] || $(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
 	@$(foreach d, $(CLAUDE_DIRS), \
 		if [ -L $(HOME)/$(d) ]; then rm -f $(HOME)/$(d); fi; \
 		if [ -L $(HOME)/$(d)/$(notdir $(d)) ]; then rm -f $(HOME)/$(d)/$(notdir $(d)); fi; \
