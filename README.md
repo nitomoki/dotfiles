@@ -174,4 +174,5 @@ make setup-wezterm-*     # 環境別の wezterm 設定をリンク／コピー
 - apt source / `.deb` / snap が必要なもの (gh, tailscale, wezterm, obsidian, steam-launcher など) は `packages.txt` に載せていてもインストール経路が別なことがある。
 - Neovim をソースからビルドする際の依存と手順は `etc/init/neovim.sh` 側で扱う。
 - mosh は `make init` の `etc/init/mosh.sh` が、カスタム版 (nitomoki/mosh の Release のビルド済みバイナリ) を `~/.local` に入れる。入れられない環境では apt (Linux) / brew (Mac) の mosh にする。Linux では apt の `mosh` も `packages.txt` に残す (ufw の規則と、非対話の ssh から使う `/usr/bin/mosh-server` のため)。
+- markdown-reader (私用フォーク nitomoki/markdown-reader) は `make init` の `etc/init/markdown-reader.sh` が、Release のビルド済みバイナリ (Linux x86_64 / macOS arm64) を `~/.local/bin` に入れる。再実行すると最新リリースに更新する。入れられない環境ではフォークを `cargo install` でビルドする。
 
