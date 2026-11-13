@@ -37,7 +37,7 @@ endif
 
 # --- シンボリックリンク対象 ---
 # ホームディレクトリ直下に配置するドットファイル
-HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zshrc
+HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zshenv .zshrc
 
 # .config 以下のディレクトリ（中身を直下までリンク）
 # .config/systemd は user/ 配下に他アプリの管理ファイルが混ざるため、

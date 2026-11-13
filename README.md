@@ -6,7 +6,7 @@ Linux (Ubuntu / WSL2) と macOS 向けの個人 dotfiles。`make` でシンボ�
 
 ```
 .
-├── .zshrc, .gitignore, .latexmkrc, .nethackrc   # $HOME 直下に配置
+├── .zshenv, .zshrc, .gitignore, .latexmkrc, .nethackrc   # $HOME 直下に配置
 ├── .config/                                     # ~/.config 以下にリンク
 │   ├── nvim/        # Neovim 設定 (init.lua + lua/)
 │   ├── sheldon/     # zsh プラグインマネージャ
@@ -18,7 +18,7 @@ Linux (Ubuntu / WSL2) と macOS 向けの個人 dotfiles。`make` でシンボ�
 │   ├── skills/          # 全マシン共通のスキル
 │   └── skills_nucbox/   # そのマシンにだけ配るスキル (skills_<machine>/)
 ├── claude/          # ~/.claude/settings.json へ jq でマージする共有設定
-├── bin/             # 補助スクリプト (.zshrc が PATH に追加する)
+├── bin/             # 補助スクリプト (.zshenv が PATH に追加する)
 ├── zsh/             # alias.zsh など .zshrc から読み込まれる断片
 ├── etc/init/        # 新マシン初期セットアップスクリプト群
 ├── doc/             # 設定の参考資料
