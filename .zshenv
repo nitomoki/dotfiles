@@ -25,7 +25,7 @@ dotfiles_path() {
     path=(
         $HOME/.local/bin      # 自前スクリプトで入れたもの（mosh フォーク等）。apt / brew 版より先に引く
         $HOME/dotfiles/bin
-        $HOME/.cargo/bin      # rustup。apt / brew の cargo より先に引く
+        $HOME/.cargo/bin(N-/) # rustup。apt / brew の cargo より先に引く
         $PNPM_HOME(N-/)
         $DENO_INSTALL/bin(N-/)
         /opt/homebrew/bin(N-/)
