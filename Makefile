@@ -49,6 +49,12 @@ ifdef IS_MAC
 CONFIG_DIRS := $(filter-out $(MAC_SKIP_CONFIG_DIRS), $(CONFIG_DIRS))
 endif
 
+# markdown-reader は設定の場所を Rust の dirs::config_dir() で決めるため、macOS では
+# ~/.config ではなく ~/Library/Application Support を読む。そちらにもリンクを張る。
+ifdef IS_MAC
+MARKDOWN_READER_MAC_DIR := $(HOME)/Library/Application Support/markdown-reader
+endif
+
 # 個別管理する systemd --user ユニット／enable リンク
 SYSTEMD_USER_FILES := \
 	.config/systemd/user/obsidian.service \
@@ -143,6 +149,10 @@ deploy: ## dotfiles のシンボリックリンクを作成
 	@$(foreach f, $(SYSTEMD_USER_FILES), \
 		$(MKDIR) $(HOME)/$(dir $(f)); \
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
+ifdef MARKDOWN_READER_MAC_DIR
+	@$(MKDIR) "$(MARKDOWN_READER_MAC_DIR)"
+	@$(LINK) $(DOTFILES_DIR)/.config/markdown-reader/config.toml "$(MARKDOWN_READER_MAC_DIR)/config.toml"
+endif
 	@$(MKDIR) $(HOME)/.claude
 	@$(foreach f, $(CLAUDE_FILES), \
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
@@ -200,6 +210,9 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 	@$(foreach d, $(CONFIG_DIRS), \
 		$(foreach f, $(filter-out $(WEZTERM_ENV_FILES), $(wildcard $(d)/*)), \
 			echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";))
+ifdef MARKDOWN_READER_MAC_DIR
+	@echo "  $(DOTFILES_DIR)/.config/markdown-reader/config.toml -> $(MARKDOWN_READER_MAC_DIR)/config.toml"
+endif
 	@echo ""
 	@echo "=== systemd --user ==="
 	@$(foreach f, $(SYSTEMD_USER_FILES), \
