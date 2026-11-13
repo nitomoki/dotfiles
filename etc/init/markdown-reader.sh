@@ -26,6 +26,37 @@ os="$(uname -s)"
 info() { echo "$*"; }
 warn() { echo "$*" >&2; }
 
+# nitomoki/markdown-reader は private なので、認証の無い curl では API もアセットも 404 に
+# なる。ログイン済みの gh があればそれを使う。curl の経路は、リポジトリを public に
+# したときと、gh が無いマシンのために残す。
+use_gh() {
+    command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1
+}
+
+latest_tag() {
+    if use_gh; then
+        gh release view -R "$REPO" --json tagName -q .tagName 2>/dev/null
+    else
+        curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null \
+            | sed -nE 's/.*"tag_name": *"([^"]+)".*/\1/p' | head -n1
+    fi
+}
+
+# download <tag> <dir> <file>...
+download() {
+    local tag="$1" dir="$2" f
+    shift 2
+    if use_gh; then
+        local patterns=()
+        for f in "$@"; do patterns+=(-p "$f"); done
+        gh release download "$tag" -R "$REPO" -D "$dir" "${patterns[@]}" >/dev/null
+    else
+        for f in "$@"; do
+            curl -fsSL -o "$dir/$f" "https://github.com/$REPO/releases/download/$tag/$f" || return 1
+        done
+    fi
+}
+
 # --version が `markdown-reader 1.35.3 [build fork-1]` の形になる（フォークの build.rs）。
 # 起動できるかの確認も兼ねる。
 built_from() {
@@ -46,8 +77,11 @@ install_fallback() {
         warn "cargo が無いので markdown-reader をビルドできない。Rust を入れてから再実行すること。"
         return 1
     fi
+    # private リポジトリなので https では取れない。ssh の鍵で取れるよう、cargo 内蔵の
+    # git ではなく git コマンドに取得させる。
     info "cargo install で $REPO をビルドする（数分かかる） ..."
-    cargo install --locked --git "https://github.com/$REPO" markdown-tui-explorer
+    CARGO_NET_GIT_FETCH_WITH_CLI=true \
+        cargo install --locked --git "ssh://git@github.com/$REPO.git" markdown-tui-explorer
 }
 
 # 失敗したら理由を 1 行 stderr に出して非 0 を返す。PREFIX は元のままにする。
@@ -61,11 +95,10 @@ install_release() {
 
     local tag="${MARKDOWN_READER_VERSION:-}"
     if [ -z "$tag" ]; then
-        tag="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null \
-            | sed -nE 's/.*"tag_name": *"([^"]+)".*/\1/p' | head -n1)" || true
+        tag="$(latest_tag)" || true
     fi
     if [ -z "$tag" ]; then
-        warn "最新リリースのタグを解決できない (リリースが無いか、GitHub API に届かないか、レート制限)"
+        warn "最新リリースのタグを解決できない (リリースが無い、GitHub に届かない、gh が未ログインで private リポジトリを読めない、のいずれか)"
         return 1
     fi
 
@@ -84,10 +117,8 @@ install_release() {
     trap 'rm -rf "$WORKDIR"' EXIT
 
     local asset="markdown-reader-$tag-$platform.tar.gz"
-    local base="https://github.com/$REPO/releases/download/$tag"
     info "Downloading $asset ($tag) ..."
-    if ! curl -fsSL -o "$WORKDIR/$asset" "$base/$asset" \
-        || ! curl -fsSL -o "$WORKDIR/SHA256SUMS" "$base/SHA256SUMS"; then
+    if ! download "$tag" "$WORKDIR" "$asset" SHA256SUMS; then
         warn "$tag の $asset か SHA256SUMS をダウンロードできない"
         return 1
     fi
