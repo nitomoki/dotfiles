@@ -97,7 +97,7 @@ make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm
 
 | キー | 動作 |
 | --- | --- |
-| `prefix + Space` | fzf の popup でセッションを選択。一覧に無い名前を入力して Enter すると、その名前でセッションを新規作成して切り替える |
+| `prefix + Space` / `prefix + C-Space` | fzf の popup でセッションを選択。一覧に無い名前を入力して Enter すると、その名前でセッションを新規作成して切り替える |
 | `prefix + Tab` | 直前のセッションへトグル |
 | `prefix + S` | 組み込みの `choose-tree`（fzf / スクリプトが無い環境でも動く保険） |
 
@@ -127,6 +127,13 @@ fzf の中では `ctrl-a` で入力中の名前（空なら選択行）をプリ
 現在のセッション名はステータスラインの左端（マシン名の隣）に表示される。
 
 WezTerm の launch menu の「(tmux)」系エントリも固定セッションではなくこのピッカーを開く。`zsh -lc` は `.zshrc` を読まないため zsh 関数 `t` は使えず、`tmux-sessionizer` を直接起動している（PATH は `.zshenv` が通す）。
+
+## tmux ウィンドウの切り替え（横スワイプ）
+
+トラックパッドを 2 本指で横にスワイプすると、tmux のウィンドウを 1 つずつ左右に移る（Moshi のスワイプと同じ操作）。macOS のナチュラルスクロールでは、指を左へ動かすと次、右へ動かすと前のウィンドウへ移る。
+
+- 1 回のスワイプで 1 枚だけ動くよう、`bin/tmux-swipe-window` が横ホイールのイベントを間引く。直前のイベントから 300ms 以上空いたものだけを新しいスワイプとみなす（`TMUX_SWIPE_GAP_MS` で変更できる）。
+- tmux の中のアプリ（Neovim など）には横スクロールが届かなくなる。
 
 ## Claude Code のスキル
 
