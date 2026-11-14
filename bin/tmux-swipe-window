@@ -1,0 +1,28 @@
+#!/bin/sh
+# tmux-swipe-window — トラックパッドの横スワイプで tmux のウィンドウを 1 つずつ移る
+#
+# 使い方: tmux-swipe-window next|previous SESSION
+#   tmux.conf の MouseDown6Pane / MouseDown7Pane（横ホイール）から run-shell で呼ぶ。
+#
+# WezTerm は横スワイプ 1 回で、指の移動 15px ごと（指を離した後の慣性分も含む）に
+# 横ホイールのイベントを送ってくる。そのまま next-window に割り当てると 1 回の
+# スワイプで何枚も飛ぶ。そこで「直前のイベントから TMUX_SWIPE_GAP_MS 以上
+# 空いたイベント」だけをスワイプの始まりとみなして切り替え、それ以外は時刻を
+# 更新するだけにする。最初のイベントからの経過時間で間引く方法は、慣性が
+# 長く続くと 2 枚目に進んでしまう。
+#
+# tmux の書式には秒単位の時刻しか無いので、この判定は tmux.conf だけでは書けない。
+# macOS の /bin/sh と date はミリ秒を出せないため、時刻は perl から取る。
+set -eu
+
+direction=$1
+session=$2
+gap_ms=${TMUX_SWIPE_GAP_MS:-300}
+stamp=${TMUX_SWIPE_STAMP:-${TMPDIR:-/tmp}/tmux-swipe-window.$(id -u)}
+
+now=$(perl -MTime::HiRes=time -e 'printf "%d", time() * 1000')
+last=$(cat "$stamp" 2> /dev/null || echo 0)
+echo "$now" > "$stamp"
+
+[ $((now - last)) -ge "$gap_ms" ] || exit 0
+exec tmux "$direction-window" -t "$session"
