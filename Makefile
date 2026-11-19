@@ -139,13 +139,40 @@ define link_dir
 if [ -e "$(2)" ] && [ ! -L "$(2)" ]; then echo "  [warn] $(2) に実体があるためスキップ（退避してから再実行）"; else $(LINK) "$(1)" "$(2)"; fi;
 endef
 
-.PHONY: deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows setup-wezterm-mac setup-macos-defaults help
+# --- Nix / home-manager ---
+# 初回は nix.conf がまだ無い（home-manager が作る）ので、flakes をここで有効にする。
+# --extra-experimental-features では足りない。home-manager が中で呼ぶ nix に届かないため。
+NIX := NIX_CONFIG='experimental-features = nix-command flakes' nix
+# 初回の switch で、make deploy が張った既存のリンクを <名前>.<HM_BACKUP> に退避させるときに
+# 指定する（例: make switch HM_BACKUP=pre-nix）。退避先が既にあると home-manager は止まる。
+HM_BACKUP ?=
+HM_FLAGS := $(if $(HM_BACKUP),-b $(HM_BACKUP))
+
+.PHONY: switch nix-build nix-check nix-update deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows setup-wezterm-mac setup-macos-defaults help
 
 help: ## ヘルプを表示
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2}'
 
-deploy: ## dotfiles のシンボリックリンクを作成
+switch: ## home-manager で配布とパッケージを反映（Nix 環境の deploy）
+# home-manager のリンクは worktree ではなく常に ~/dotfiles を指すが、配るファイルの一覧は
+# 実行した場所から取る。worktree で switch すると、まだ ~/dotfiles に無いファイルへの
+# リンク切れが配られるので断る。worktree では nix-build で確認する。
+	@if [ "$(IN_WORKTREE)" = yes ]; then echo "worktree では switch しない（make nix-build で確認する）"; exit 1; fi
+	$(NIX) run .#home-manager -- switch --flake .#$(MACHINE) $(HM_FLAGS)
+
+nix-build: ## home-manager の設定をビルドだけする（~ は触らない。結果は ./result）
+	$(NIX) build .#homeConfigurations.$(MACHINE).activationPackage
+
+nix-check: ## 全マシンの設定を評価し、このマシンの分をビルドする
+	$(NIX) flake check --all-systems
+
+nix-update: ## flake.lock の nixpkgs / home-manager を更新
+	$(NIX) flake update
+
+deploy: ## dotfiles のシンボリックリンクを作成（Nix の無いマシン用。Nix があれば make switch）
+	@case "$$(readlink $(HOME)/.zshenv 2>/dev/null)" in /nix/store/*) \
+		echo "home-manager が配布を管理しているので deploy しない（make switch を使う）"; exit 1;; esac
 	@[ -z "$(SKIP_SHELDON)" ] || echo "  [worktree] HOME=$(HOME) へ配ります（本物の ~ は触りません / 解除は ALLOW_WORKTREE_DEPLOY=1）"
 	@$(MKDIR) $(HOME)/.config
 	@$(foreach f, $(HOME_DOTFILES), \
