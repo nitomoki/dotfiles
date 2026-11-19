@@ -26,19 +26,31 @@ git branch --no-merged master
 
 master ブランチにいることを確認してから実行する。
 
+Nix が入っているマシン（`command -v nix` が成功する）では:
+
+```
+make switch
+```
+
+Nix が無いマシンでは:
+
 ```
 make deploy
 ```
 
-## 4. ホスト環境に応じた wezterm 設定のデプロイ
+`make deploy` が「home-manager が配布を管理している」と言って止まったら、`make switch` を使う。
+
+## 4. ホスト環境に応じた追加の設定
 
 `~/.claude/CLAUDE.md` を参照し、このマシンの環境（WSL2 / Nucbox / Windows ネイティブ / macOS）を判定する。判定結果に応じて以下のいずれかを実行する。
 
-- WSL2: `make setup-wezterm-wsl2` を実行したあと、**続けて Windows 側にも配布する**。
+`make switch` を使ったマシンでは、環境別の wezterm 設定（`wezterm_env.lua`）と macOS の terminfo も配られているので、`make setup-wezterm-*` は要らない（Windows 側への配布は別）。
+
+- WSL2: Nix が無ければ `make setup-wezterm-wsl2` を実行する。どちらの場合も、**続けて Windows 側にも配布する**。
   - WezTerm GUI 本体は Windows 側で動作しているため、WSL2 側だけでは GUI に反映されない。
   - `ls /mnt/c/Users/` で Windows ユーザー名を確認し、`make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm` を実行する。
-- Nucbox: `make setup-wezterm-nucbox`
-- macOS: `make setup-wezterm-mac` と `make setup-macos-defaults`
+- Nucbox: Nix が無ければ `make setup-wezterm-nucbox`
+- macOS: `make setup-macos-defaults`。Nix が無ければ先に `make setup-wezterm-mac` も実行する。
   - setup-wezterm-mac は wezterm の terminfo も登録する。setup-macos-defaults は tmux の prefix (Ctrl+Space) を奪う macOS のショートカットを外す。どちらも何度実行してもよい。
 - Windows ネイティブ: `make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm`
 
@@ -46,4 +58,4 @@ make deploy
 
 ## 5. 完了報告
 
-各ステップの結果（pull の差分、削除したブランチ名、deploy の出力）をまとめて報告する。
+各ステップの結果（pull の差分、削除したブランチ名、switch / deploy の出力）をまとめて報告する。

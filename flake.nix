@@ -57,8 +57,9 @@
         default = home-manager.packages.${system}.default;
       });
 
-      # `nix flake check` は全 system の checks を評価し、手元の system の分だけビルドする。
-      # Mac で走らせても Linux 側の設定の評価エラーは拾える。
+      # `nix flake check --all-systems` は全 system の checks を評価し、手元の system の分だけ
+      # ビルドする。Mac で走らせても Linux 側の設定の評価エラーは拾える（make nix-check）。
+      # --all-systems を付けないと、他の system の分は評価もされない。
       checks = forAllSystems (
         system:
         nixpkgs.lib.mapAttrs (name: hm: hm.activationPackage) (

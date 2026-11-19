@@ -50,9 +50,9 @@ let
 
   # .config/systemd は他アプリのユニットが混ざるので、下の systemdUserFiles で個別に扱う。
   # polybar は X11 前提なので macOS には配らない。
-  configDirs = lib.subtractLists (
-    [ "systemd" ] ++ lib.optionals isDarwin [ "polybar" ]
-  ) (children ".config");
+  configDirs = lib.subtractLists ([ "systemd" ] ++ lib.optionals isDarwin [ "polybar" ]) (
+    children ".config"
+  );
 
   # 環境別の wezterm 設定は wezterm_env.lua という名前でマシンごとに 1 つだけ配る。
   weztermEnvFiles = [
@@ -143,7 +143,11 @@ in
     // lib.optionalAttrs (builtins.pathExists (src + "/.config/wezterm/wezterm_${machine}.lua")) {
       ".config/wezterm/wezterm_env.lua".source = link ".config/wezterm/wezterm_${machine}.lua";
     }
-    // lib.optionalAttrs isLinux (lib.genAttrs systemdUserFiles (f: { source = link f; }))
+    // lib.optionalAttrs isLinux (
+      lib.genAttrs systemdUserFiles (f: {
+        source = link f;
+      })
+    )
     # markdown-reader は設定の場所を Rust の dirs::config_dir() で決めるため、macOS では
     # ~/Library/Application Support を読む。
     // lib.optionalAttrs isDarwin {
