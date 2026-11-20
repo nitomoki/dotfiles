@@ -30,9 +30,13 @@
       "cpanminus" # Nix の perl だと cpanm が store に書けない
     ];
 
+    # Claude Code は cask ではなくネイティブインストーラ（Linux と同じ）で入れる。cask は
+    # 自動更新されず、更新を反映する /restart もネイティブ版にしか無い。
+    # claude-code / claude-code@latest の cask を入れたまま一覧から外すと、上の "zap" が
+    # ~/.local/bin/claude・~/.local/share/claude（ネイティブ版の置き場所）と ~/.claude.json
+    # をゴミ箱へ移す。外すときは先に brew uninstall --cask（zap なし）で消しておく。
     casks = [
       "claude"
-      "claude-code@latest"
       "obsidian"
       "wezterm"
       "tailscale-app"

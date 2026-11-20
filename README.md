@@ -49,6 +49,7 @@ cd ~/dotfiles
 make setup              # OS 側の設定（Linux: apt・ufw・ログインシェル / macOS: ショートカット・ログインシェル）
 make switch             # 配布とパッケージを反映（macOS は sudo のパスワードを聞かれる）
 make markdown-reader    # 私用フォークの markdown-reader を入れる（gh のログインが要る）
+curl -fsSL https://claude.ai/install.sh | bash   # Claude Code（ネイティブ版。自動更新され /restart が使える）
 ```
 
 `make setup` は Nix で扱えない OS の設定だけを `etc/setup-linux.sh` / `etc/setup-macos.sh` にまとめたもの。何度実行してもよい。
