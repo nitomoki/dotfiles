@@ -111,16 +111,15 @@ CLAUDE_LOCAL_KEYS := model, effortLevel, agentPushNotifEnabled, theme
 # deploy から除外するファイル（環境別設定は setup-wezterm-* で配置する）
 WEZTERM_ENV_FILES := %wezterm_wsl2.lua %wezterm_nucbox.lua %wezterm_windows.lua %wezterm_mac.lua
 
-# パッケージ一覧（macOS は Brewfile を使う）
+# パッケージ一覧（macOS の Homebrew は nix/darwin.nix の homebrew で管理する）
 PACKAGES_FILE := packages.txt
-BREWFILE := $(DOTFILES_DIR)/Brewfile
 # packages-diff から除外する Ubuntu base / kernel 系
 PACKAGES_IGNORE_FILE := packages-ignore.txt
 
 # make init で実行するスクリプト。etc/init/*.sh は Ubuntu 前提（gnome / apt /
 # ufw / Linux 版バイナリ）なので、macOS では OS 非依存のものと、macOS 版を
 # 入れられるものだけを流す。
-# neovim / tree-sitter は両 OS とも nix/home.nix で、HackGen は macOS では Brewfile で入る。
+# neovim / tree-sitter は両 OS とも nix/home.nix で、HackGen は macOS では nix/darwin.nix で入る。
 ifdef IS_MAC
 INIT_SCRIPTS := etc/init/4_config.sh etc/init/markdown-reader.sh
 else
@@ -147,6 +146,18 @@ NIX := NIX_CONFIG='experimental-features = nix-command flakes' nix
 # 指定する（例: make switch HM_BACKUP=pre-nix）。退避先が既にあると home-manager は止まる。
 HM_BACKUP ?=
 HM_FLAGS := $(if $(HM_BACKUP),-b $(HM_BACKUP))
+# Mac は nix-darwin（home-manager はその中で動く）。システムを書き換えるので root で動かす。
+# sudo は環境変数と PATH を引き継がないので、nix は絶対パスで呼び NIX_CONFIG は env で渡す。
+# -H は HOME を root にするため（他人の HOME だと nix が警告し、root のキャッシュを ~ に作る）。
+DARWIN_REBUILD := sudo -H env NIX_CONFIG='experimental-features = nix-command flakes' \
+	$(shell command -v nix) run .\#darwin-rebuild --
+# Homebrew の一覧は nix/darwin.nix から生成する（brew bundle の --file=- は標準入力から読む）。
+DARWIN_BREWFILE := $(NIX) eval --raw .\#darwinConfigurations.mac.config.homebrew.brewfile
+ifdef IS_MAC
+NIX_BUILD_TARGET := .\#darwinConfigurations.mac.system
+else
+NIX_BUILD_TARGET := .\#homeConfigurations.$(MACHINE).activationPackage
+endif
 
 .PHONY: switch nix-build nix-check nix-update deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows setup-wezterm-mac setup-macos-defaults help
 
@@ -154,15 +165,19 @@ help: ## ヘルプを表示
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2}'
 
-switch: ## home-manager で配布とパッケージを反映（Nix 環境の deploy）
+switch: ## 配布とパッケージを反映（Mac: nix-darwin + Homebrew / Linux: home-manager）
 # home-manager のリンクは worktree ではなく常に ~/dotfiles を指すが、配るファイルの一覧は
 # 実行した場所から取る。worktree で switch すると、まだ ~/dotfiles に無いファイルへの
 # リンク切れが配られるので断る。worktree では nix-build で確認する。
 	@if [ "$(IN_WORKTREE)" = yes ]; then echo "worktree では switch しない（make nix-build で確認する）"; exit 1; fi
+ifdef IS_MAC
+	$(DARWIN_REBUILD) switch --flake .#mac
+else
 	$(NIX) run .#home-manager -- switch --flake .#$(MACHINE) $(HM_FLAGS)
+endif
 
-nix-build: ## home-manager の設定をビルドだけする（~ は触らない。結果は ./result）
-	$(NIX) build .#homeConfigurations.$(MACHINE).activationPackage
+nix-build: ## 設定をビルドだけする（~ も /etc も触らない。結果は ./result）
+	$(NIX) build $(NIX_BUILD_TARGET)
 
 nix-check: ## 全マシンの設定を評価し、このマシンの分をビルドする
 	$(NIX) flake check --all-systems
@@ -275,21 +290,20 @@ init: ## 初期セットアップスクリプトを実行（macOS は OS 非依�
 	@$(foreach val, $(INIT_SCRIPTS), \
 		echo "--- $(val) ---"; bash $(val);)
 
-packages-install: ## パッケージをインストール（Linux: packages.txt を apt / macOS: Brewfile を brew bundle）
+packages-install: ## パッケージをインストール（Linux: packages.txt を apt / macOS: make switch が Homebrew も入れる）
 ifdef IS_MAC
-	@command -v brew >/dev/null 2>&1 || { echo "Homebrew が必要です: https://brew.sh"; exit 1; }
-	brew bundle install --file=$(BREWFILE)
+	@echo "macOS の Homebrew パッケージは make switch（nix/darwin.nix の homebrew）で入る"
 else
 	@bash etc/init/1_install.sh
 endif
 
-packages-diff: ## インストール済みと一覧の差分を表示（Linux: apt-mark vs packages.txt / macOS: brew vs Brewfile）
+packages-diff: ## インストール済みと一覧の差分を表示（Linux: apt-mark vs packages.txt / macOS: brew vs nix/darwin.nix）
 ifdef IS_MAC
-	@echo "[ Brewfile にあるが未インストール ]"
-	@brew bundle check --verbose --no-upgrade --file=$(BREWFILE) || true
+	@echo "[ nix/darwin.nix にあるが未インストール ]"
+	@$(DARWIN_BREWFILE) | brew bundle check --verbose --no-upgrade --file=- || true
 	@echo ""
-	@echo "[ Brewfile にないインストール済（brew bundle cleanup の dry-run） ]"
-	@brew bundle cleanup --file=$(BREWFILE) || true
+	@echo "[ nix/darwin.nix にないインストール済（brew bundle cleanup の dry-run） ]"
+	@$(DARWIN_BREWFILE) | brew bundle cleanup --file=- || true
 else
 	@comm -23 <(apt-mark showmanual | sort) \
 		<(cat $(PACKAGES_FILE) $(PACKAGES_IGNORE_FILE) | grep -vE '^\s*(#|$$)' | sort -u) \

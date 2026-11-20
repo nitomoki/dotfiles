@@ -97,7 +97,7 @@ in
   ];
 
   # 共通の CLI ツール。GUI アプリ、フォント、OS に密着したもの（mozc、tailscale、
-  # Linux のコンパイラ一式など）は Brewfile / packages.txt に残す。
+  # Linux のコンパイラ一式など）は nix/darwin.nix の homebrew / packages.txt に残す。
   # node / perl（cpanm）は残す。Nix の store は読み取り専用で、npm -g や cpanm が
   # 自分の prefix に書き込めないため。
   # mosh と markdown-reader は私用フォークを etc/init/ のスクリプトで ~/.local/bin に入れる。

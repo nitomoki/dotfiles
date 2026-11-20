@@ -8,7 +8,7 @@ alias dof='cd ~/dotfiles'
 
 case "${OSTYPE}" in
 darwin*)
-    # exa は開発終了したので後継の eza を使う (Brewfile で導入)
+    # exa は開発終了したので後継の eza を使う (nix/home.nix で導入)
     if type eza > /dev/null 2>&1; then
         alias ls="eza -h"
         alias lsa="ls -aF"

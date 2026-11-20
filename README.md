@@ -1,13 +1,14 @@
 # dotfiles
 
-Linux (Ubuntu / WSL2) と macOS 向けの個人 dotfiles。[Nix](https://nixos.org) の flake と [home-manager](https://github.com/nix-community/home-manager) で、設定ファイルの配布と共通の CLI ツールを Mac と Linux の両方に同じ定義から入れる。GUI アプリや OS に密着したものは、Linux では `packages.txt` (apt)、macOS では `Brewfile` (Homebrew) で管理する。
+Linux (Ubuntu / WSL2) と macOS 向けの個人 dotfiles。[Nix](https://nixos.org) の flake と [home-manager](https://github.com/nix-community/home-manager) で、設定ファイルの配布と共通の CLI ツールを Mac と Linux の両方に同じ定義から入れる。Mac はさらに [nix-darwin](https://github.com/nix-community/nix-darwin) を使い、home-manager はその中で動かす。GUI アプリや OS に密着したものは、Linux では `packages.txt` (apt) で、macOS では `nix/darwin.nix` に書いて nix-darwin 経由の Homebrew で管理する。
 
 ## 構成
 
 ```
 .
-├── flake.nix, flake.lock   # マシンごとの home-manager 設定 (mac / nucbox / wsl2)
+├── flake.nix, flake.lock   # マシンごとの設定 (mac は nix-darwin、nucbox / wsl2 は home-manager)
 ├── nix/home.nix     # 配布するファイルと Nix で入れるパッケージ
+├── nix/darwin.nix   # macOS: nix-darwin の設定と Homebrew で入れるパッケージ
 ├── .zshenv, .zshrc, .zlogin, .gitignore, .latexmkrc, .nethackrc   # $HOME 直下に配置
 ├── .config/                                     # ~/.config 以下にリンク
 │   ├── nvim/        # Neovim 設定 (init.lua + lua/)
@@ -26,13 +27,12 @@ Linux (Ubuntu / WSL2) と macOS 向けの個人 dotfiles。[Nix](https://nixos.o
 ├── doc/             # 設定の参考資料
 ├── packages.txt     # apt で永続的にインストールするパッケージ一覧
 ├── packages-ignore.txt  # packages-diff で無視するパッケージ
-├── Brewfile         # macOS: brew bundle でインストールするパッケージ一覧
 └── Makefile
 ```
 
 ## セットアップ
 
-新マシンでの初回。先に Nix を入れる（sudo のパスワードを聞かれる。手順は [nixos.org/download](https://nixos.org/download/)）:
+新マシンでの初回。macOS では先に [Homebrew](https://brew.sh) を入れる。続けて Nix を入れる（sudo のパスワードを聞かれる。手順は [nixos.org/download](https://nixos.org/download/)）:
 
 ```sh
 # macOS
@@ -46,13 +46,20 @@ curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --da
 ```sh
 git clone https://github.com/nitomoki/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-make packages-install   # Linux: packages.txt を apt / macOS: Brewfile を brew bundle（Homebrew が要る）
-make switch             # home-manager で配布とパッケージを反映
+make packages-install   # Linux のみ。packages.txt を apt で入れる
+make switch             # 配布とパッケージを反映（macOS は sudo のパスワードを聞かれる）
 make init               # etc/init/*.sh を順次実行 (任意)
 make setup-macos-defaults  # macOS のみ。Ctrl+Space を tmux の prefix に使えるよう macOS のショートカットを外す
 ```
 
 `make deploy` で配っていたマシンを移すときは、初回だけ `make switch HM_BACKUP=pre-nix` とする。既存のリンクのうち中身が違うものが `<名前>.pre-nix` に退避される（退避先が既にあると home-manager は止まる）。
+
+### nix-darwin（macOS）
+
+- `make switch` は `sudo darwin-rebuild switch --flake .#mac` を呼ぶ。home-manager の配布、`nix/darwin.nix` の `homebrew` に書いた formula / cask のインストール（中で `brew bundle` を呼ぶ）が 1 回で済む。
+- Homebrew 本体と Nix 本体は nix-darwin で管理しない（`nix.enable = false`）。`/etc/zshrc` と `/etc/bashrc` も触らせない（`programs.zsh.enable = false` など）。PATH は `~/.zshenv` で組んでいるため。
+- `homebrew.onActivation.cleanup` は `"none"` にしてあり、一覧に無いものは消さない。`"zap"` にすると、一覧に無い formula / cask を switch のたびにアンインストールする。消えるものは `make packages-diff` で確かめられる。
+- home-manager 単体に戻すときは `nix run .#home-manager -- switch --flake .#mac` を実行する（`homeConfigurations.mac` は残してある）。nix-darwin 自体を外すには `sudo darwin-uninstaller` を実行する。
 
 ### home-manager での配布
 
@@ -72,7 +79,7 @@ Makefile は `uname -s` で OS を判定する。macOS では次のように振�
 - `.config/polybar` と systemd ユニットは配らない。
 - `MACHINE` は hostname に関係なく `mac` になる (`.claude/skills_mac/` が配布対象)。
 - `make init` は OS に依存しない `etc/init/4_config.sh` と `etc/init/markdown-reader.sh` だけを実行する。gnome、apt、ufw、Linux 版のバイナリを入れるスクリプトは対象外。
-- `make packages-diff` は `brew bundle check` と `brew bundle cleanup` の dry-run を表示する。
+- `make packages-diff` は `nix/darwin.nix` から生成した Brewfile で `brew bundle check` と `brew bundle cleanup` の dry-run を表示する。
 
 ### WezTerm
 
@@ -166,14 +173,14 @@ WezTerm の launch menu の「(tmux)」系エントリも固定セッション�
 
 ```
 make help                # ヘルプを表示
-make switch              # home-manager で配布とパッケージを反映
-make nix-build           # home-manager の設定をビルドだけする（~ は触らない）
+make switch              # 配布とパッケージを反映（Mac: nix-darwin / Linux: home-manager）
+make nix-build           # 設定をビルドだけする（~ も /etc も触らない）
 make nix-check           # 全マシンの設定を評価し、このマシンの分をビルドする
 make nix-update          # flake.lock の nixpkgs / home-manager を更新
 make deploy              # シンボリックリンクを作成（Nix の無いマシン用）
 make test                # deploy で作成されるリンクを dry-run 表示
 make init                # etc/init/*.sh を順次実行
-make packages-install    # packages.txt を apt / Brewfile を brew bundle でインストール
+make packages-install    # packages.txt を apt でインストール（Linux のみ）
 make packages-diff       # インストール済みとパッケージ一覧の差分を表示
 make setup-wezterm-*     # 環境別の wezterm 設定をリンク／コピー
 ```
@@ -187,6 +194,7 @@ make setup-wezterm-*     # 環境別の wezterm 設定をリンク／コピー
 ## パッケージ管理
 
 - 共通の CLI ツール (neovim, tmux, ripgrep, gh, sheldon, tree-sitter など) は `nix/home.nix` の `home.packages` に書き、`make switch` で反映する。版は `flake.lock` で固定され、`make nix-update` で上げる。
+- macOS の GUI アプリ・フォントなどは `nix/darwin.nix` の `homebrew.brews` / `homebrew.casks` に書き、`make switch` で反映する。
 - node と cpanm は Nix に入れず、apt / brew に残す。Nix の store は読み取り専用で、`npm -g` や cpanm が書き込めないため。
 - `packages.txt` を編集 → `make packages-install` で反映。
 - 追加で手動インストールしたものを把握するには `make packages-diff`。
