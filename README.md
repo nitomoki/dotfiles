@@ -58,7 +58,7 @@ make setup-macos-defaults  # macOS のみ。Ctrl+Space を tmux の prefix に�
 
 - `make switch` は `sudo darwin-rebuild switch --flake .#mac` を呼ぶ。home-manager の配布、`nix/darwin.nix` の `homebrew` に書いた formula / cask のインストール（中で `brew bundle` を呼ぶ）が 1 回で済む。
 - Homebrew 本体と Nix 本体は nix-darwin で管理しない（`nix.enable = false`）。`/etc/zshrc` と `/etc/bashrc` も触らせない（`programs.zsh.enable = false` など）。PATH は `~/.zshenv` で組んでいるため。
-- `homebrew.onActivation.cleanup` は `"none"` にしてあり、一覧に無いものは消さない。`"zap"` にすると、一覧に無い formula / cask を switch のたびにアンインストールする。消えるものは `make packages-diff` で確かめられる。
+- `homebrew.onActivation.cleanup` は `"zap"` で、一覧に無い formula / cask / tap を switch のたびにアンインストールする。cask はアプリのデータ（`~/Library` 以下）も消える。`brew install` で手入れしたものは、switch の前に `nix/darwin.nix` に足す。消える対象は `make packages-diff` で確かめられる。
 - home-manager 単体に戻すときは `nix run .#home-manager -- switch --flake .#mac` を実行する（`homeConfigurations.mac` は残してある）。nix-darwin 自体を外すには `sudo darwin-uninstaller` を実行する。
 
 ### home-manager での配布

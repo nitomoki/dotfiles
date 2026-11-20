@@ -21,9 +21,10 @@
   # Homebrew 本体は https://brew.sh のインストーラで入れておく。
   homebrew = {
     enable = true;
-    # "zap" にすると一覧に無い formula / cask を消す。一覧に載せていない cask
-    # （discord、parallels）が入っているので、載せるか決めるまでは消さない。
-    onActivation.cleanup = "none";
+    # 一覧に無い formula / cask / tap を switch のたびにアンインストールする。cask は
+    # zap stanza に従い ~/Library のアプリのデータも消すので、手で brew install した
+    # ものを残したいときは先にここへ足す（make packages-diff で消える対象を確かめられる）。
+    onActivation.cleanup = "zap";
 
     brews = [
       # Rust は rustup で入れる（brew の rust は ~/.cargo/bin の rustup 版を隠すため）。
@@ -40,6 +41,8 @@
       "obsidian"
       "wezterm"
       "tailscale-app"
+      "discord"
+      "parallels"
     ];
   };
 }
