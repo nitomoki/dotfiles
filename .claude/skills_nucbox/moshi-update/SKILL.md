@@ -169,7 +169,7 @@ codex 側では、v0.4.38 の `install --target codex` が `~/.codex/skills/mosh
 `moshi-hook install` は Claude 用の hook を `~/.claude/settings.json` に直接書き込む。
 `--target` を省くと対応する全 agent（codex なども）に書き込むので、Claude の hook だけを確かめるときは
 `moshi-hook install --target claude` に絞る。
-しかし `~/.claude/settings.json` の**正本は `~/dotfiles/claude/settings.dotfiles.json`** で、`make deploy` が
+しかし `~/.claude/settings.json` の**正本は `~/dotfiles/claude/settings.dotfiles.json`** で、`make switch` が
 
 ```
 jq -s '.[1] + (.[0] | {model, effortLevel})' ~/.claude/settings.json settings.dotfiles.json
@@ -178,7 +178,7 @@ jq -s '.[1] + (.[0] | {model, effortLevel})' ~/.claude/settings.json settings.do
 でマージする。つまり **ローカルに保全されるのは `model` と `effortLevel` だけ**で、`hooks` は dotfiles 側の内容で上書きされる。
 
 → `moshi-hook install` を実行したら、必ず差分を dotfiles に取り込むこと。
-これを怠ると、次の `make deploy` で hook が古い定義に巻き戻り、通知が壊れる。
+これを怠ると、次の `make switch` で hook が古い定義に巻き戻り、通知が壊れる。
 
 取り込みは **guarded 形式へ書き戻す → 構造化 diff で実差分を見る → dotfiles の `hooks` を差し替える**
 の順で行う（以下）。素の `diff <(jq -S '.hooks' ...)` は並び順ノイズで実差分が埋もれるので使わない。
@@ -189,10 +189,10 @@ live で実行すると、hook が絶対パス形式になる（下記）だけ�
 （`moshi-plugin/`、`env.CLAUDE_CODE_PLUGIN_DIRS`、`skills/moshi-visuals/`）が live に入る。
 下記の jq で guarded 形式に戻しても、直るのは `hooks` だけで 3 つは残る。
 
-- `env.CLAUDE_CODE_PLUGIN_DIRS` は、次の `make deploy` で dotfiles 側の `env` に上書きされて消える。
+- `env.CLAUDE_CODE_PLUGIN_DIRS` は、次の `make switch` で dotfiles 側の `env` に上書きされて消える。
   プラグインは読み込まれなくなるが、`moshi-plugin/` ディレクトリは残る。
 - `skills/moshi-visuals/` は `~/.claude/skills/` 直下に実ディレクトリとして入る（dotfiles のスキルは個別の symlink）。
-  `make deploy` が `~/.claude/skills/` から消すのはリンク切れの symlink だけなので、手で消すまで全セッションに効き続ける。
+  `make switch` が `~/.claude/skills/` から消すのはリンク切れの symlink だけなので、手で消すまで全セッションに効き続ける。
 
 install が何を書くかは、次の偽 HOME で確かめる。
 
@@ -215,7 +215,7 @@ diff <(jq -S 'del(.hooks)' ~/.claude/settings.json) <(jq -S 'del(.hooks)' "$FH/.
   `skills/moshi-visuals/SKILL.md` が出る。`hooks` 以外の変化は `env.CLAUDE_CODE_PLUGIN_DIRS` の追加だけだった。
 - 以下の guarded 形式への書き戻し、`flat`、`norm`、dotfiles への差し替えは、`~/.claude/settings.json` をすべて
   `"$FH/.claude/settings.json"` に読み替えればそのまま使える（書き戻しの `cp` 先も偽 HOME にする）。
-- live には `cp` しない。実差分があれば dotfiles の `hooks` を差し替え、live へは `make deploy` で配る。
+- live には `cp` しない。実差分があれば dotfiles の `hooks` を差し替え、live へは `make switch` で配る。
 - install と同じ 3 つの環境変数を付けて `moshi-hook doctor --json </dev/null` を叩くと、偽 HOME の状態に対する
   doctor の判定も見られる（手順 4 の判定条件はこれで確かめた）。
 
