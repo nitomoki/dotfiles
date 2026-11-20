@@ -5,8 +5,11 @@
 
 export LANG=ja_JP.UTF-8
 export XDG_CONFIG_HOME=$HOME/.config/
-export DENO_INSTALL=$HOME/.deno
 export PNPM_HOME=$HOME/.local/share/pnpm
+# node は Nix で入れるので、npm の既定の prefix は読み取り専用の store になり npm -g が
+# 書けない。~/.npmrc ではなく環境変数で変えるのは、npm login などが ~/.npmrc に書き込む
+# ため（home-manager で配ると読み取り専用のリンクになる）。
+export NPM_CONFIG_PREFIX=$HOME/.local/share/npm-global
 
 # -U は重複を除き、先に出た方を残す。入れ子の zsh で組み直しても増えず、
 # ~/.profile（Ubuntu の GUI ログインで読まれる）が別の順で足していても
@@ -33,9 +36,9 @@ dotfiles_path() {
     path=(
         $HOME/.local/bin      # 自前スクリプトで入れたもの（markdown-reader 等）。apt / brew 版より先に引く
         $HOME/dotfiles/bin
-        $HOME/.cargo/bin(N-/) # rustup。apt / brew の cargo より先に引く
+        $HOME/.cargo/bin(N-/) # cargo install で入れたもの
         $PNPM_HOME(N-/)
-        $DENO_INSTALL/bin(N-/)
+        $NPM_CONFIG_PREFIX/bin(N-/)  # npm -g で入れたもの
         $HOME/.nix-profile/bin(N-/)              # home-manager。brew / apt 版より先に引く
         /nix/var/nix/profiles/default/bin(N-/)   # nix コマンド本体
         /opt/homebrew/bin(N-/)
