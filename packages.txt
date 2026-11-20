@@ -1,7 +1,7 @@
 # 永続的にインストールしたい apt パッケージのリスト。
 # 共通の CLI ツール（tmux / ripgrep / gh / neovim など）は nix/home.nix で入れる（make switch）。
 # ここに残すのは Nix より先に要るもの、OS に密着したもの、GUI アプリ。
-# 新マシンでセットアップ: make packages-install
+# 新マシンでセットアップ: make setup
 # 現在の差分を確認:       make packages-diff
 #
 # 注意: tailscale / wezterm / obsidian / steam-launcher などは
@@ -33,7 +33,7 @@ zsh
 
 # --- CLI tools ---
 cpanminus
-# mosh は etc/init/mosh.sh が入れる（カスタム版が入らなければ apt 版）。
+# mosh は私用フォークを nix/home.nix で入れる。
 xclip
 
 # --- LaTeX ---

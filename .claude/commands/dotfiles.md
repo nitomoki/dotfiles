@@ -42,7 +42,7 @@ macOS では sudo のパスワードを聞かれる。Nix が無い（`command -
   - WezTerm GUI 本体は Windows 側で動作しているため、WSL2 側だけでは GUI に反映されない。
   - `ls /mnt/c/Users/` で Windows ユーザー名を確認し、`make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm` を実行する。
 - Nucbox: 追加の設定は無い。
-- macOS: `make setup-macos-defaults`（tmux の prefix (Ctrl+Space) を奪う macOS のショートカットを外す。何度実行してもよい）。
+- macOS: 追加の設定は無い（OS 側の設定 `make setup` は新マシンの初回だけでよい）。
 - Windows ネイティブ: `make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm`
 
 `~/.claude/CLAUDE.md` が無い場合は `uname -s` と `hostname` で判定し、不明ならスキップして報告する。

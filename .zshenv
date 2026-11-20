@@ -31,7 +31,7 @@ fi
 # (N-/) は「存在するディレクトリなら残す」修飾子。無いマシンで PATH を汚さない。
 dotfiles_path() {
     path=(
-        $HOME/.local/bin      # 自前スクリプトで入れたもの（mosh フォーク等）。apt / brew 版より先に引く
+        $HOME/.local/bin      # 自前スクリプトで入れたもの（markdown-reader 等）。apt / brew 版より先に引く
         $HOME/dotfiles/bin
         $HOME/.cargo/bin(N-/) # rustup。apt / brew の cargo より先に引く
         $PNPM_HOME(N-/)

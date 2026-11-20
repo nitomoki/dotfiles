@@ -26,15 +26,8 @@ PACKAGES_FILE := packages.txt
 # packages-diff から除外する Ubuntu base / kernel 系
 PACKAGES_IGNORE_FILE := packages-ignore.txt
 
-# make init で実行するスクリプト。etc/init/*.sh は Ubuntu 前提（gnome / apt /
-# ufw / Linux 版バイナリ）なので、macOS では OS 非依存のものと、macOS 版を
-# 入れられるものだけを流す。
-# neovim / tree-sitter は両 OS とも nix/home.nix で、HackGen は macOS では nix/darwin.nix で入る。
-ifdef IS_MAC
-INIT_SCRIPTS := etc/init/4_config.sh etc/init/markdown-reader.sh
-else
-INIT_SCRIPTS := $(sort $(wildcard etc/init/*.sh))
-endif
+# Nix で扱えない OS 側の設定（root 権限でシステムを書き換えるもの）。
+SETUP_SCRIPT := etc/setup-$(if $(IS_MAC),macos,linux).sh
 
 # --- Nix / home-manager ---
 # 初回は nix.conf がまだ無い（home-manager が作る）ので、flakes をここで有効にする。
@@ -58,7 +51,7 @@ else
 NIX_BUILD_TARGET := .\#homeConfigurations.$(MACHINE).activationPackage
 endif
 
-.PHONY: help switch nix-build nix-check nix-update init packages-install packages-diff setup-macos-defaults setup-wezterm-windows
+.PHONY: help switch nix-build nix-check nix-update setup markdown-reader packages-diff setup-wezterm-windows
 
 help: ## ヘルプを表示
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -84,16 +77,11 @@ nix-check: ## 全マシンの設定を評価し、このマシンの分をビル
 nix-update: ## flake.lock の nixpkgs / home-manager を更新
 	$(NIX) flake update
 
-init: ## 初期セットアップスクリプトを実行（macOS は OS 非依存のものだけ）
-	@$(foreach val, $(INIT_SCRIPTS), \
-		echo "--- $(val) ---"; bash $(val);)
+setup: ## OS 側の設定を反映（Nix で扱えないもの。Linux: apt・ufw・chsh / macOS: ショートカット・chsh）
+	@bash $(SETUP_SCRIPT)
 
-packages-install: ## パッケージをインストール（Linux: packages.txt を apt / macOS: make switch が Homebrew も入れる）
-ifdef IS_MAC
-	@echo "macOS の Homebrew パッケージは make switch（nix/darwin.nix の homebrew）で入る"
-else
-	@bash etc/init/1_install.sh
-endif
+markdown-reader: ## 私用フォークの markdown-reader を ~/.local/bin に入れる・更新する
+	@bash etc/markdown-reader.sh
 
 packages-diff: ## インストール済みと一覧の差分を表示（Linux: apt-mark vs packages.txt / macOS: brew vs nix/darwin.nix）
 ifdef IS_MAC
@@ -113,16 +101,6 @@ else
 		| sed 's/^/  - /' \
 		| awk 'BEGIN{print "[ packages.txt にあるが未インストール ]"} {print}'
 endif
-
-setup-macos-defaults: ## macOS のシステム設定を dotfiles の前提に合わせる（Ctrl+Space を tmux へ渡す）
-	@# tmux の prefix (C-Space) は、macOS 既定の「前の入力ソースを選択」(ID 60) と
-	@# 衝突し、WezTerm に届く前に OS に奪われる。60 を無効にする。入力ソースの
-	@# 切り替えは 英数 / かな キーか Ctrl+Option+Space (ID 61) で行う。
-	@# activateSettings -u で再ログインせずに反映する。
-	@/usr/libexec/PlistBuddy -c "Set :AppleSymbolicHotKeys:60:enabled false" \
-		$(HOME)/Library/Preferences/com.apple.symbolichotkeys.plist
-	@/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
-	@echo "macOS: Ctrl+Space (前の入力ソースを選択) を無効にしました"
 
 setup-wezterm-windows: ## Windows 用の wezterm 設定をコピー（WSL2 から実行: make setup-wezterm-windows WEZTERM_DIR=...)
 	@if [ -z "$(WEZTERM_DIR)" ]; then \
