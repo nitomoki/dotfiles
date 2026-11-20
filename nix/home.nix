@@ -9,9 +9,9 @@ let
   inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
 
   # 配るのは ~/dotfiles の実ファイルへのリンク（mkOutOfStoreSymlink）で、store へのコピーではない。
-  # nvim の lazy-lock.json のように配布先で書き換わるファイルがあり、編集が
-  # switch なしで効く今の運用（Makefile の ln -s）を変えないため。
-  # そのため switch はどこで実行しても ~/dotfiles を指す（Makefile の nix-switch が
+  # nvim の lazy-lock.json のように配布先で書き換わるファイルがあり、編集を
+  # switch なしで効かせたいため。
+  # そのため switch はどこで実行しても ~/dotfiles を指す（Makefile の switch が
   # worktree からの実行を断るのはこのため）。
   dotfilesDir = "${config.home.homeDirectory}/dotfiles";
   link = rel: config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/${rel}";
@@ -19,14 +19,14 @@ let
   # 一覧は flake の評価元（git に入っているファイル）から取る。未追跡のファイルは配られない。
   src = ./..;
 
-  # Makefile の $(wildcard dir/*) と同じく、隠しファイルは対象外。
+  # 隠しファイル（.gitkeep など）は配らない。
   children =
     rel:
     builtins.filter (n: !lib.hasPrefix "." n) (builtins.attrNames (builtins.readDir (src + "/${rel}")));
 
   # rel 直下の各エントリを 1 つずつリンクする。サブディレクトリはディレクトリごとリンクする
-  # （Makefile と同じ。ディレクトリそのものをリンクしないのは、~/.config/nvim などに
-  # アプリが作るファイルが同居するため）。
+  # （.claude/skills/<name> はスキルにファイルを足すたびに switch しなくて済む）。
+  # rel そのものをリンクしないのは、~/.config/nvim などにアプリが作るファイルが同居するため。
   linkChildren =
     {
       rel,
@@ -67,7 +67,9 @@ let
     ".config/systemd/user/graphical-session.target.wants/obsidian.service"
   ];
 
-  # .claude/skills_<machine> は .claude/skills へ合流させるので、ここでは除く。
+  # .claude/skills_<machine> はそのマシンにだけ配るスキルで、~/.claude/skills へ合流させる
+  # ので、ここでは除く。スキルの説明文は全セッションのコンテキストに載るため、使わない
+  # マシンには配らない。
   claudeEntries = children ".claude";
   claudeDirs = builtins.filter (
     n: !lib.hasPrefix "skills_" n && (builtins.readDir (src + "/.claude")).${n} == "directory"
@@ -78,7 +80,9 @@ let
   machineSkills = ".claude/skills_${machine}";
   hasMachineSkills = builtins.pathExists (src + "/${machineSkills}");
 
-  # Makefile の CLAUDE_LOCAL_KEYS と同じ。ここに挙げ忘れたキーは switch のたびに消える。
+  # settings.json のマージでローカル側の値を残すキー。model / effortLevel は PC ごと、
+  # agentPushNotifEnabled / theme は /config でセッションから切り替えるもので、どれも
+  # 配布物には持たない。ここに挙げ忘れたキーは switch のたびに消える。
   claudeLocalKeys = "model, effortLevel, agentPushNotifEnabled, theme";
 in
 {
@@ -171,7 +175,7 @@ in
 
   home.activation = {
     # 他マシン専用に移したスキルなど、配布元が消えた古いリンクを掃除する。
-    # home-manager が張ったリンクは自分で外すが、Makefile 時代のリンクは残るため。
+    # home-manager が張ったリンクは自分で外すが、以前 ln -s で張ったリンクは残るため。
     claudeSkillsCleanup = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
       for l in "$HOME/.claude/skills/"* "$HOME/.claude/skills/".[!.]*; do
         if [ -L "$l" ] && [ ! -e "$l" ]; then

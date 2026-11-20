@@ -26,27 +26,19 @@ git branch --no-merged master
 
 master ブランチにいることを確認してから実行する。
 
-Nix が入っているマシン（`command -v nix` が成功する）では:
-
 ```
 make switch
 ```
 
-Nix が無いマシンでは:
-
-```
-make deploy
-```
-
-`make deploy` が「home-manager が配布を管理している」と言って止まったら、`make switch` を使う。
+macOS では sudo のパスワードを聞かれる。Nix が無い（`command -v nix` が失敗する）マシンでは実行せず、README のセットアップ手順で Nix を入れるよう報告する。
 
 ## 4. ホスト環境に応じた追加の設定
 
 `~/.claude/CLAUDE.md` を参照し、このマシンの環境（WSL2 / Nucbox / Windows ネイティブ / macOS）を判定する。判定結果に応じて以下のいずれかを実行する。
 
-`make switch` を使ったマシンでは、環境別の wezterm 設定（`wezterm_env.lua`）と macOS の terminfo も配られているので、`make setup-wezterm-*` は要らない（Windows 側への配布は別）。
+環境別の wezterm 設定（`wezterm_env.lua`）と macOS の terminfo は `make switch` が配る。
 
-- WSL2: Nix が無ければ `make setup-wezterm-wsl2` を実行する。どちらの場合も、**続けて Windows 側にも配布する**。
+- WSL2: **Windows 側にも配布する**。
   - WezTerm GUI 本体は Windows 側で動作しているため、WSL2 側だけでは GUI に反映されない。
   - `ls /mnt/c/Users/` で Windows ユーザー名を確認し、`make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm` を実行する。
 - Nucbox: 追加の設定は無い。
@@ -57,4 +49,4 @@ make deploy
 
 ## 5. 完了報告
 
-各ステップの結果（pull の差分、削除したブランチ名、switch / deploy の出力）をまとめて報告する。
+各ステップの結果（pull の差分、削除したブランチ名、switch の出力）をまとめて報告する。

@@ -52,7 +52,7 @@ make init               # etc/init/*.sh を順次実行 (任意)
 make setup-macos-defaults  # macOS のみ。Ctrl+Space を tmux の prefix に使えるよう macOS のショートカットを外す
 ```
 
-`make deploy` で配っていたマシンを移すときは、初回だけ `make switch HM_BACKUP=pre-nix` とする。既存のリンクのうち中身が違うものが `<名前>.pre-nix` に退避される（退避先が既にあると home-manager は止まる）。
+以前 `ln -s` で配っていたマシン（旧 `make deploy`）を移すときは、初回だけ `make switch HM_BACKUP=pre-nix` とする。既存のリンクのうち中身が違うものが `<名前>.pre-nix` に退避される（退避先が既にあると home-manager は止まる）。
 
 ### nix-darwin（macOS）
 
@@ -65,14 +65,11 @@ make setup-macos-defaults  # macOS のみ。Ctrl+Space を tmux の prefix に�
 
 - 設定ファイルは `~/dotfiles` の実ファイルを指すリンクとして配る（`mkOutOfStoreSymlink`）。ファイルを編集すれば `switch` しなくても効く。switch が要るのはファイルを足した・消したとき、パッケージを変えたとき。
 - 配るファイルの一覧は git に入っているものから取る。新しいファイルは `git add` してから `make switch` する。
-- 配る範囲は `make deploy` と同じ。加えて、`.config/wezterm/wezterm_<machine>.lua` を `wezterm_env.lua` としてリンクし、macOS では wezterm の terminfo も登録する（以前の `make setup-wezterm-*` に相当）。
-- マシンの判定は `make deploy` と同じ `MACHINE`（`mac` / `nucbox` / `wsl2`）で、flake の `homeConfigurations.<MACHINE>` を使う。
+- `$HOME` 直下のドットファイル、`.config/*`、`.claude/*` を配る。`.config/wezterm/wezterm_<machine>.lua` は `wezterm_env.lua` としてリンクし、macOS では wezterm の terminfo も登録する。
+- `.config/systemd/user/` は他アプリの管理ファイルが混ざる場所なので、`nix/home.nix` に挙げたユニット (例: `obsidian.service`) だけをリンクする。
+- マシンは Makefile の `MACHINE`（`mac` / `nucbox` / `wsl2`）で判定する。hostname で見分け、`make switch MACHINE=wsl2` のように上書きもできる。Mac は flake の `darwinConfigurations.mac`、Linux は `homeConfigurations.<MACHINE>` を使う。
 - `make switch` は worktree からは実行できない。リンクは常に `~/dotfiles` を指すので、worktree にしか無いファイルへのリンクが切れるため。worktree では `make nix-build` でビルドだけ確かめる。
 - `.zshenv` が `nix-daemon.sh` を読み、`~/.nix-profile/bin` を brew / apt より先に PATH へ入れる。`~/.local/bin` はさらに先なので、そこにある私用フォークの mosh などが優先される。
-
-### Nix の無い Linux
-
-`make deploy` で従来どおりシンボリックリンクを張れる（現在は WSL2 だけ）。home-manager が配布を管理しているマシンと macOS では、張り合いにならないよう `make deploy` は何もせず止まる。
 
 ### macOS での違い
 
@@ -85,10 +82,9 @@ Makefile は `uname -s` で OS を判定する。macOS では次のように振�
 
 ### WezTerm
 
-`make switch` を使うマシン（Mac / Nucbox）では、環境別の設定（`wezterm_env.lua`）も配られる。Nix の無い WSL2 と Windows では手で配る:
+環境別の設定（`wezterm_env.lua`）は `make switch` が配る。WezTerm GUI が動く Windows 側へは WSL2 からコピーする:
 
 ```sh
-make setup-wezterm-wsl2        # WSL2 (Linux 側)
 make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm
 ```
 
@@ -167,7 +163,7 @@ WezTerm の launch menu の「(tmux)」系エントリも固定セッション�
 が該当し、moshi を入れている NucBox にだけ配っている。
 
 配布先を移したとき (全マシン共通 → マシン専用 など) に他マシンへ残る古いリンクは、
-`make switch` (または `make deploy`) が `~/.claude/skills/` のリンク切れを掃除するので放置してよい。
+`make switch` が `~/.claude/skills/` のリンク切れを掃除するので放置してよい。
 
 ## Makefile ターゲット
 
@@ -177,8 +173,6 @@ make switch              # 配布とパッケージを反映（Mac: nix-darwin /
 make nix-build           # 設定をビルドだけする（~ も /etc も触らない）
 make nix-check           # 全マシンの設定を評価し、このマシンの分をビルドする
 make nix-update          # flake.lock の nixpkgs / home-manager を更新
-make deploy              # シンボリックリンクを作成（Nix の無い Linux 用）
-make test                # deploy で作成されるリンクを dry-run 表示
 make init                # etc/init/*.sh を順次実行
 make packages-install    # packages.txt を apt でインストール（Linux のみ）
 make packages-diff       # インストール済みとパッケージ一覧の差分を表示
@@ -188,9 +182,7 @@ make setup-macos-defaults  # macOS のショートカット（Ctrl+Space）を�
 
 `make nix-check` は Mac で走らせても Linux 用の設定（逆も同じ）を評価するので、片方のマシンで両方の OS の設定ミスを拾える。ビルドまでするのは手元の OS の分だけ。
 
-`make deploy` は冪等で、既存リンクは `ln -sfnv` で張り直される。`.config/systemd/user/` だけは他アプリの管理ファイルが混ざる場所なので、Makefile の `SYSTEMD_USER_FILES` で個別管理しているユニット (例: `obsidian.service`) のみリンクされる。
-
-`make switch` と `make deploy` はリンク配置に加えて `sheldon lock` も実行する。sheldon の lock ファイルには `zsh/*.zsh` を展開した結果のファイル一覧が焼き込まれており、lock が作り直されるのは `plugins.toml` が変わったときだけ。`zsh/` にファイルを新規追加しても `plugins.toml` は無変更なので、lock を再生成しない限り新しいファイルは永久に読み込まれない (`zsh/tmux.zsh` 追加時にこれで `tc` が壊れた)。
+`make switch` はリンク配置に加えて `sheldon lock` も実行する。sheldon の lock ファイルには `zsh/*.zsh` を展開した結果のファイル一覧が焼き込まれており、lock が作り直されるのは `plugins.toml` が変わったときだけ。`zsh/` にファイルを新規追加しても `plugins.toml` は無変更なので、lock を再生成しない限り新しいファイルは永久に読み込まれない (`zsh/tmux.zsh` 追加時にこれで `tc` が壊れた)。
 
 ## パッケージ管理
 

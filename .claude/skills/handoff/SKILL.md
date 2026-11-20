@@ -143,14 +143,12 @@ git 側で強制される。
   **この skill のように git コマンドを書いた文書を sed / python で書き換えようとすると
   刺さる**ので、ファイル編集は Edit / Write ツールで行う
 
-### dotfiles で `make deploy` する場合
+### dotfiles で `make switch` する場合
 
-dotfiles は symlink を配るので、**worktree の中で素の `make deploy` を走らせると
-`~/.claude/CLAUDE.md` 等が worktree 内を指し、worktree を消した瞬間に全部リンク切れになる**。
-
-Makefile 側にガードが入っていて、worktree 内では `HOME` が `<worktree>/.deploy-test` に
-振り替わる（`sheldon lock` もスキップされる）。**本物の `~` へ配るのはマージ後に本体で行う。**
-どうしても worktree から本物へ配る必要があるときだけ `ALLOW_WORKTREE_DEPLOY=1` を付ける。
+home-manager のリンクは常に `~/dotfiles` を指すが、配るファイルの一覧は実行した場所から取る。
+worktree で switch すると、まだ `~/dotfiles` に無いファイルへのリンク切れが配られるので、
+Makefile は worktree での `make switch` を断る。**worktree では `make nix-build` でビルドだけ確かめ、
+本物の `~` へ配るのはマージ後に本体で行う。**
 
 ## 完了時の確認（移管先セッションがやること）
 
