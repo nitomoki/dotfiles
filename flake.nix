@@ -7,10 +7,19 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nix-darwin = {
+      url = "github:nix-darwin/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { nixpkgs, home-manager, ... }:
+    {
+      nixpkgs,
+      home-manager,
+      nix-darwin,
+      ...
+    }:
     let
       # 名前は Makefile の MACHINE と揃える（.claude/skills_<machine>/ と
       # .config/wezterm/wezterm_<machine>.lua の選択に使う）。
@@ -44,18 +53,40 @@
           ];
         };
 
+      # Mac は nix-darwin の中で home-manager を動かす（Homebrew も nix-darwin が管理する）。
+      # homeConfigurations.mac は nix-darwin へ切り替える前の状態に戻すために残している。
+      darwinConfigurations.mac = nix-darwin.lib.darwinSystem {
+        modules = [
+          ./nix/darwin.nix
+          home-manager.darwinModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.extraSpecialArgs.machine = "mac";
+            home-manager.users.tomoki = ./nix/home.nix;
+          }
+        ];
+      };
+
       systems = nixpkgs.lib.unique (nixpkgs.lib.mapAttrsToList (_: m: m.system) machines);
       forAllSystems = f: nixpkgs.lib.genAttrs systems f;
     in
     {
+      inherit darwinConfigurations;
       homeConfigurations = nixpkgs.lib.mapAttrs mkHome machines;
 
       # 初回は home-manager コマンドが無いので `nix run .#home-manager` で呼ぶ。
       # flake.lock で固定した版を使うため、nixpkgs の home-manager は使わない。
-      packages = forAllSystems (system: {
-        home-manager = home-manager.packages.${system}.default;
-        default = home-manager.packages.${system}.default;
-      });
+      packages = forAllSystems (
+        system:
+        {
+          home-manager = home-manager.packages.${system}.default;
+          default = home-manager.packages.${system}.default;
+        }
+        # 初回は darwin-rebuild も無いので `nix run .#darwin-rebuild` で呼ぶ。
+        // nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "-darwin" system) {
+          darwin-rebuild = nix-darwin.packages.${system}.darwin-rebuild;
+        }
+      );
 
       # `nix flake check --all-systems` は全 system の checks を評価し、手元の system の分だけ
       # ビルドする。Mac で走らせても Linux 側の設定の評価エラーは拾える（make nix-check）。
@@ -67,6 +98,9 @@
             nixpkgs.lib.mapAttrs mkHome machines
           )
         )
+        // nixpkgs.lib.optionalAttrs (system == "aarch64-darwin") {
+          darwin-mac = darwinConfigurations.mac.system;
+        }
       );
 
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
