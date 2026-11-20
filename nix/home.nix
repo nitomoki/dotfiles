@@ -100,11 +100,12 @@ in
     "flakes"
   ];
 
-  # 共通の CLI ツール。GUI アプリ、フォント、OS に密着したもの（mozc、tailscale、
+  # 共通の CLI ツールとフォント。GUI アプリ、OS に密着したもの（mozc、tailscale、
   # Linux のコンパイラ一式など）は nix/darwin.nix の homebrew / packages.txt に残す。
   # node / perl（cpanm）は残す。Nix の store は読み取り専用で、npm -g や cpanm が
   # 自分の prefix に書き込めないため。
-  # mosh と markdown-reader は私用フォークを etc/init/ のスクリプトで ~/.local/bin に入れる。
+  # markdown-reader は私用フォークが private リポジトリにあり、switch（Mac では root で動く）
+  # から取得できないので、etc/init/markdown-reader.sh で ~/.local/bin に入れる。
   home.packages =
     with pkgs;
     [
@@ -113,8 +114,9 @@ in
       eza
       fzf
       gh
-      git
+      hackgen-nf-font
       jq
+      (callPackage ./pkgs/mosh.nix { })
       neovim
       nkf
       pipx
@@ -130,6 +132,29 @@ in
       # GNU 版で上書きしてしまう。
       coreutils-prefixed
     ];
+
+  # Linux で ~/.local/share/fonts の HackGen を fontconfig に見せる。macOS は home-manager が
+  # ~/Library/Fonts/HomeManager にコピーする。
+  fonts.fontconfig.enable = true;
+
+  programs.git = {
+    enable = true;
+    settings = {
+      user = {
+        name = "nitomoki";
+        email = "nitomoki.2@gmail.com";
+      };
+      # `gh auth setup-git` と同じ設定。gh 自身が書くと gh の絶対パスが焼き込まれ、gh の
+      # 入れ方が変わると壊れる（brew 版を消したときに実際に壊れた）。空の値は、OS の
+      # git が既定で持つ osxkeychain などを外すため。
+      credential = lib.genAttrs [ "https://github.com" "https://gist.github.com" ] (_: {
+        helper = [
+          ""
+          "!${lib.getExe pkgs.gh} auth git-credential"
+        ];
+      });
+    };
+  };
 
   home.file =
     lib.genAttrs homeDotfiles (f: {
@@ -168,6 +193,34 @@ in
       rel = machineSkills;
       to = ".claude/skills";
     });
+
+  # GNOME のデスクトップがあるのは Nucbox だけ。WSL2 には GNOME も dconf も無い。
+  dconf.settings = lib.mkIf (machine == "nucbox") {
+    "org/gnome/shell/extensions/dash-to-dock" = {
+      autohide = false;
+      dock-fixed = false;
+      intellihide = false;
+    };
+    "org/gnome/libgnomekbd/keyboard".options = [ "ctrl\tctrl:nocaps" ]; # Caps Lock を Ctrl に
+    "org/gnome/desktop/interface".gtk-key-theme = "Emacs";
+  };
+
+  # ホームのフォルダ名は日本語にせず英語にする（ja_JP のままだと xdg-user-dirs が
+  # 「デスクトップ」などを作る）。音楽・画像などは専用のフォルダを作らずホームを指す。
+  xdg.userDirs = lib.mkIf (machine == "nucbox") {
+    enable = true;
+    package = null; # Ubuntu の xdg-user-dirs を使う
+    setSessionVariables = false;
+    desktop = "${config.home.homeDirectory}/Desktop";
+    download = "${config.home.homeDirectory}/Downloads";
+    documents = "${config.home.homeDirectory}/Documents";
+    templates = config.home.homeDirectory;
+    publicShare = config.home.homeDirectory;
+    music = config.home.homeDirectory;
+    pictures = config.home.homeDirectory;
+    videos = config.home.homeDirectory;
+    projects = null;
+  };
 
   # obsidian.service は GUI セッションで起動させるもの。home-manager にユニットの
   # 起動・再起動を任せると、ssh から switch しただけで Obsidian が立ち上がる。

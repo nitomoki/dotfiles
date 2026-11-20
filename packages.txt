@@ -33,7 +33,7 @@ zsh
 
 # --- CLI tools ---
 cpanminus
-# mosh は etc/init/mosh.sh が入れる（カスタム版が入らなければ apt 版）。
+# mosh は私用フォークを nix/home.nix で入れる。
 xclip
 
 # --- LaTeX ---

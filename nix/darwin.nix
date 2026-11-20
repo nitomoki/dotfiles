@@ -31,11 +31,9 @@
       # node は Nix にしない。store が読み取り専用で npm -g が書けないため。
       "node"
       "cpanminus" # Nix の perl だと cpanm が store に書けない
-      "mosh" # etc/init/mosh.sh の私用フォークが入らなかったときの予備
     ];
 
     casks = [
-      "font-hackgen-nerd"
       "claude"
       "claude-code@latest"
       "obsidian"

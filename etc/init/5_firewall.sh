@@ -2,7 +2,7 @@
 # 新マシンで mosh / ssh が外から到達できるようにする。
 # mosh はアプリケーションルール（`ufw allow mosh`）ではなくポートで開ける。
 # アプリケーションルールの定義は apt の mosh が入れるファイルにあり、
-# ~/.local のカスタム版だけのマシンには無いため。範囲は mosh-server の既定。
+# Nix で入れたカスタム版だけのマシンには無いため。範囲は mosh-server の既定。
 set -e
 
 if ! command -v ufw >/dev/null; then

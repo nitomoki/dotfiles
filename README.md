@@ -69,7 +69,7 @@ make setup-macos-defaults  # macOS のみ。Ctrl+Space を tmux の prefix に�
 - `.config/systemd/user/` は他アプリの管理ファイルが混ざる場所なので、`nix/home.nix` に挙げたユニット (例: `obsidian.service`) だけをリンクする。
 - マシンは Makefile の `MACHINE`（`mac` / `nucbox` / `wsl2`）で判定する。hostname で見分け、`make switch MACHINE=wsl2` のように上書きもできる。Mac は flake の `darwinConfigurations.mac`、Linux は `homeConfigurations.<MACHINE>` を使う。
 - `make switch` は worktree からは実行できない。リンクは常に `~/dotfiles` を指すので、worktree にしか無いファイルへのリンクが切れるため。worktree では `make nix-build` でビルドだけ確かめる。
-- `.zshenv` が `nix-daemon.sh` を読み、`~/.nix-profile/bin` を brew / apt より先に PATH へ入れる。`~/.local/bin` はさらに先なので、そこにある私用フォークの mosh などが優先される。
+- `.zshenv` が `nix-daemon.sh` を読み、`~/.nix-profile/bin` を brew / apt より先に PATH へ入れる。`~/.local/bin` はさらに先なので、そこにある私用フォークの markdown-reader などが優先される。
 
 ### macOS での違い
 
@@ -77,7 +77,7 @@ Makefile は `uname -s` で OS を判定する。macOS では次のように振�
 
 - `.config/polybar` と systemd ユニットは配らない（`nix/home.nix` で除外）。
 - `MACHINE` は hostname に関係なく `mac` になる (`.claude/skills_mac/` が配布対象)。
-- `make init` は OS に依存しない `etc/init/4_config.sh` と `etc/init/markdown-reader.sh` だけを実行する。gnome、apt、ufw、Linux 版のバイナリを入れるスクリプトは対象外。
+- `make init` は OS に依存しない `etc/init/4_config.sh` と `etc/init/markdown-reader.sh` だけを実行する。apt、ufw を使うスクリプトは対象外。
 - `make packages-diff` は `nix/darwin.nix` から生成した Brewfile で `brew bundle check` と `brew bundle cleanup` の dry-run を表示する。
 
 ### WezTerm
@@ -194,6 +194,7 @@ make setup-macos-defaults  # macOS のショートカット（Ctrl+Space）を�
   - `packages.txt にない手動インストール済` と `packages.txt にあるが未インストール` の差分を出す。
   - Ubuntu base / kernel など追跡したくないものは `packages-ignore.txt` に書く。
 - apt source / `.deb` / snap が必要なもの (gh, tailscale, wezterm, obsidian, steam-launcher など) は `packages.txt` に載せていてもインストール経路が別なことがある。
-- mosh は `make init` の `etc/init/mosh.sh` が、カスタム版 (nitomoki/mosh の Release のビルド済みバイナリ) を `~/.local` に入れる。入れられない環境では apt (Linux) / brew (Mac) の mosh にする。`.zshenv` が `~/.local/bin` を先に PATH へ入れるので、手元もリモートも `mosh` / `mosh-server` を名前で呼べばカスタム版になる。
+- mosh は私用フォーク (nitomoki/mosh) を `nix/pkgs/mosh.nix` でソースからビルドして入れる。nixpkgs の mosh のソースをフォークのタグに差し替えたもの。`.zshenv` が `~/.nix-profile/bin` を apt / brew より先に PATH へ入れるので、手元もリモートも `mosh` / `mosh-server` を名前で呼べばカスタム版になる。フォークを更新したら `nix/pkgs/mosh.nix` の `tag` と `hash` を上げる。
+- フォント (HackGen NF)、git のユーザー設定と gh の認証ヘルパー、Nucbox の GNOME 設定とホームのフォルダ名 (xdg-user-dirs) も `nix/home.nix` で管理する。
 - markdown-reader (私用フォーク nitomoki/markdown-reader) は `make init` の `etc/init/markdown-reader.sh` が、Release のビルド済みバイナリ (Linux x86_64 / macOS arm64) を `~/.local/bin` に入れる。再実行すると最新リリースに更新する。入れられない環境ではフォークを `cargo install` でビルドする。
 
