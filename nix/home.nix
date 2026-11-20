@@ -125,12 +125,29 @@ in
       silver-searcher-ng # ag。silver-searcher は nixpkgs から削除済み
       tmux
       tree-sitter
+      unzip
       uv
+      vim
     ]
     ++ lib.optionals isDarwin [
       # gdate / gtimeout（Claude の hook が使う）。接頭辞なしの coreutils は ls や cp を
       # GNU 版で上書きしてしまう。
       coreutils-prefixed
+    ]
+    ++ lib.optionals isLinux [
+      xclip # X11 のクリップボード（nvim の "+ レジスタなど）
+    ]
+    # Neovim の LSP サーバーとフォーマッタ。.config/nvim/lua/plugins/lsp/config.lua の
+    # vim.lsp.enable と plugins/conform.lua の formatters_by_ft に対応させる。
+    ++ [
+      bash-language-server
+      black
+      clang-tools # clang-format
+      isort
+      lua-language-server
+      prettier
+      stylua
+      typescript-language-server # TypeScript を同梱している
     ];
 
   # Linux で ~/.local/share/fonts の HackGen を fontconfig に見せる。macOS は home-manager が
