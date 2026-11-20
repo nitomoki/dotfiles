@@ -70,25 +70,25 @@ make setup-macos-defaults  # macOS のみ。Ctrl+Space を tmux の prefix に�
 - `make switch` は worktree からは実行できない。リンクは常に `~/dotfiles` を指すので、worktree にしか無いファイルへのリンクが切れるため。worktree では `make nix-build` でビルドだけ確かめる。
 - `.zshenv` が `nix-daemon.sh` を読み、`~/.nix-profile/bin` を brew / apt より先に PATH へ入れる。`~/.local/bin` はさらに先なので、そこにある私用フォークの mosh などが優先される。
 
-### Nix の無いマシン
+### Nix の無い Linux
 
-`make deploy` で従来どおりシンボリックリンクを張れる。home-manager が配布を管理しているマシンでは、張り合いにならないよう `make deploy` は何もせず止まる。
+`make deploy` で従来どおりシンボリックリンクを張れる（現在は WSL2 だけ）。home-manager が配布を管理しているマシンと macOS では、張り合いにならないよう `make deploy` は何もせず止まる。
 
-Makefile は `uname -s` で OS を判定する。macOS では次のように振る舞いが変わる（`make switch` も同じ）。
+### macOS での違い
 
-- `.config/polybar` と systemd ユニットは配らない。
+Makefile は `uname -s` で OS を判定する。macOS では次のように振る舞いが変わる。
+
+- `.config/polybar` と systemd ユニットは配らない（`nix/home.nix` で除外）。
 - `MACHINE` は hostname に関係なく `mac` になる (`.claude/skills_mac/` が配布対象)。
 - `make init` は OS に依存しない `etc/init/4_config.sh` と `etc/init/markdown-reader.sh` だけを実行する。gnome、apt、ufw、Linux 版のバイナリを入れるスクリプトは対象外。
 - `make packages-diff` は `nix/darwin.nix` から生成した Brewfile で `brew bundle check` と `brew bundle cleanup` の dry-run を表示する。
 
 ### WezTerm
 
-`make switch` を使うマシンでは、環境別の設定（`wezterm_env.lua`）も配られる。Nix の無いマシンと Windows では環境別の設定を 1 つ選択する:
+`make switch` を使うマシン（Mac / Nucbox）では、環境別の設定（`wezterm_env.lua`）も配られる。Nix の無い WSL2 と Windows では手で配る:
 
 ```sh
 make setup-wezterm-wsl2        # WSL2 (Linux 側)
-make setup-wezterm-nucbox      # Nucbox (Linux)
-make setup-wezterm-mac         # macOS
 make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm
 ```
 
@@ -177,12 +177,13 @@ make switch              # 配布とパッケージを反映（Mac: nix-darwin /
 make nix-build           # 設定をビルドだけする（~ も /etc も触らない）
 make nix-check           # 全マシンの設定を評価し、このマシンの分をビルドする
 make nix-update          # flake.lock の nixpkgs / home-manager を更新
-make deploy              # シンボリックリンクを作成（Nix の無いマシン用）
+make deploy              # シンボリックリンクを作成（Nix の無い Linux 用）
 make test                # deploy で作成されるリンクを dry-run 表示
 make init                # etc/init/*.sh を順次実行
 make packages-install    # packages.txt を apt でインストール（Linux のみ）
 make packages-diff       # インストール済みとパッケージ一覧の差分を表示
-make setup-wezterm-*     # 環境別の wezterm 設定をリンク／コピー
+make setup-wezterm-*     # wezterm 設定をリンク／コピー（WSL2 / Windows 用）
+make setup-macos-defaults  # macOS のショートカット（Ctrl+Space）を外す
 ```
 
 `make nix-check` は Mac で走らせても Linux 用の設定（逆も同じ）を評価するので、片方のマシンで両方の OS の設定ミスを拾える。ビルドまでするのは手元の OS の分だけ。

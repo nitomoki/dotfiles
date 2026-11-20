@@ -43,25 +43,11 @@ HOME_DOTFILES := .gitignore .latexmkrc .nethackrc .zlogin .zshenv .zshrc
 # .config/systemd は user/ 配下に他アプリの管理ファイルが混ざるため、
 # 個別ファイル単位でリンクする SYSTEMD_USER_FILES で扱う。
 CONFIG_DIRS := $(filter-out .config/systemd, $(wildcard .config/??*))
-# macOS では X11 / systemd 前提のものは配らない。
-MAC_SKIP_CONFIG_DIRS := .config/polybar
-ifdef IS_MAC
-CONFIG_DIRS := $(filter-out $(MAC_SKIP_CONFIG_DIRS), $(CONFIG_DIRS))
-endif
-
-# markdown-reader は設定の場所を Rust の dirs::config_dir() で決めるため、macOS では
-# ~/.config ではなく ~/Library/Application Support を読む。そちらにもリンクを張る。
-ifdef IS_MAC
-MARKDOWN_READER_MAC_DIR := $(HOME)/Library/Application Support/markdown-reader
-endif
 
 # 個別管理する systemd --user ユニット／enable リンク
 SYSTEMD_USER_FILES := \
 	.config/systemd/user/obsidian.service \
 	.config/systemd/user/graphical-session.target.wants/obsidian.service
-ifdef IS_MAC
-SYSTEMD_USER_FILES :=
-endif
 
 # .claude 配下（Claude Code 設定）
 # ディレクトリは symlink せず、.config と同じく中身を1ファイルずつリンクする。
@@ -159,7 +145,7 @@ else
 NIX_BUILD_TARGET := .\#homeConfigurations.$(MACHINE).activationPackage
 endif
 
-.PHONY: switch nix-build nix-check nix-update deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-nucbox setup-wezterm-windows setup-wezterm-mac setup-macos-defaults help
+.PHONY: switch nix-build nix-check nix-update deploy test init packages-install packages-diff setup-wezterm-wsl2 setup-wezterm-windows setup-macos-defaults help
 
 help: ## ヘルプを表示
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -185,7 +171,11 @@ nix-check: ## 全マシンの設定を評価し、このマシンの分をビル
 nix-update: ## flake.lock の nixpkgs / home-manager を更新
 	$(NIX) flake update
 
-deploy: ## dotfiles のシンボリックリンクを作成（Nix の無いマシン用。Nix があれば make switch）
+deploy: ## dotfiles のシンボリックリンクを作成（Nix の無い Linux 用。Nix があれば make switch）
+# macOS 用の分岐（polybar / systemd を配らない等）は nix/home.nix にだけある。
+ifdef IS_MAC
+	@echo "macOS では deploy しない（make switch を使う）"; exit 1
+endif
 	@case "$$(readlink $(HOME)/.zshenv 2>/dev/null)" in /nix/store/*) \
 		echo "home-manager が配布を管理しているので deploy しない（make switch を使う）"; exit 1;; esac
 	@[ -z "$(SKIP_SHELDON)" ] || echo "  [worktree] HOME=$(HOME) へ配ります（本物の ~ は触りません / 解除は ALLOW_WORKTREE_DEPLOY=1）"
@@ -199,10 +189,6 @@ deploy: ## dotfiles のシンボリックリンクを作成（Nix の無いマ�
 	@$(foreach f, $(SYSTEMD_USER_FILES), \
 		$(MKDIR) $(HOME)/$(dir $(f)); \
 		$(LINK) $(DOTFILES_DIR)/$(f) $(HOME)/$(f);)
-ifdef MARKDOWN_READER_MAC_DIR
-	@$(MKDIR) "$(MARKDOWN_READER_MAC_DIR)"
-	@$(LINK) $(DOTFILES_DIR)/.config/markdown-reader/config.toml "$(MARKDOWN_READER_MAC_DIR)/config.toml"
-endif
 	@$(MKDIR) $(HOME)/.claude
 # リンク先に実ディレクトリがあると ln -sfn はその中にリンクを作ってしまう。
 # Make 3.81 の wildcard 誤判定で mkdir された空ディレクトリが残っている
@@ -268,9 +254,6 @@ test: ## deploy で作成されるリンクを確認（実行はしない）
 	@$(foreach d, $(CONFIG_DIRS), \
 		$(foreach f, $(filter-out $(WEZTERM_ENV_FILES), $(wildcard $(d)/*)), \
 			echo "  $(DOTFILES_DIR)/$(f) -> $(HOME)/$(f)";))
-ifdef MARKDOWN_READER_MAC_DIR
-	@echo "  $(DOTFILES_DIR)/.config/markdown-reader/config.toml -> $(MARKDOWN_READER_MAC_DIR)/config.toml"
-endif
 	@echo ""
 	@echo "=== systemd --user ==="
 	@$(foreach f, $(SYSTEMD_USER_FILES), \
@@ -320,21 +303,6 @@ setup-wezterm-wsl2: ## WSL2 用の wezterm 環境設定をリンク
 	@$(MKDIR) $(HOME)/.config/wezterm
 	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_wsl2.lua \
 		$(HOME)/.config/wezterm/wezterm_env.lua
-
-setup-wezterm-nucbox: ## Nucbox 用の wezterm 環境設定をリンク
-	@$(MKDIR) $(HOME)/.config/wezterm
-	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_nucbox.lua \
-		$(HOME)/.config/wezterm/wezterm_env.lua
-
-setup-wezterm-mac: ## macOS 用の wezterm 環境設定をリンクし、wezterm の terminfo を登録
-	@$(MKDIR) $(HOME)/.config/wezterm
-	@$(LINK) $(DOTFILES_DIR)/.config/wezterm/wezterm_mac.lua \
-		$(HOME)/.config/wezterm/wezterm_env.lua
-	@# wezterm.lua は term = "wezterm" だが、macOS 版 WezTerm.app は terminfo を
-	@# 同梱せず OS にも無い。未登録だと zsh の行編集（BS・カーソル移動）が壊れる。
-	@# etc/terminfo/wezterm.terminfo は公式リポジトリの termwiz/data/ から取得したもの。
-	@tic -x -o $(HOME)/.terminfo $(DOTFILES_DIR)/etc/terminfo/wezterm.terminfo
-	@echo "terminfo: $(HOME)/.terminfo に wezterm を登録しました"
 
 setup-macos-defaults: ## macOS のシステム設定を dotfiles の前提に合わせる（Ctrl+Space を tmux へ渡す）
 	@# tmux の prefix (C-Space) は、macOS 既定の「前の入力ソースを選択」(ID 60) と

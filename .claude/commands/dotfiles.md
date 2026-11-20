@@ -49,9 +49,8 @@ make deploy
 - WSL2: Nix が無ければ `make setup-wezterm-wsl2` を実行する。どちらの場合も、**続けて Windows 側にも配布する**。
   - WezTerm GUI 本体は Windows 側で動作しているため、WSL2 側だけでは GUI に反映されない。
   - `ls /mnt/c/Users/` で Windows ユーザー名を確認し、`make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm` を実行する。
-- Nucbox: Nix が無ければ `make setup-wezterm-nucbox`
-- macOS: `make setup-macos-defaults`。Nix が無ければ先に `make setup-wezterm-mac` も実行する。
-  - setup-wezterm-mac は wezterm の terminfo も登録する。setup-macos-defaults は tmux の prefix (Ctrl+Space) を奪う macOS のショートカットを外す。どちらも何度実行してもよい。
+- Nucbox: 追加の設定は無い。
+- macOS: `make setup-macos-defaults`（tmux の prefix (Ctrl+Space) を奪う macOS のショートカットを外す。何度実行してもよい）。
 - Windows ネイティブ: `make setup-wezterm-windows WEZTERM_DIR=/mnt/c/Users/<user>/.config/wezterm`
 
 `~/.claude/CLAUDE.md` が無い場合は `uname -s` と `hostname` で判定し、不明ならスキップして報告する。
