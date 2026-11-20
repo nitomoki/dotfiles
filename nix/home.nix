@@ -105,7 +105,7 @@ in
   # node / perl（cpanm）は残す。Nix の store は読み取り専用で、npm -g や cpanm が
   # 自分の prefix に書き込めないため。
   # markdown-reader は私用フォークが private リポジトリにあり、switch（Mac では root で動く）
-  # から取得できないので、etc/init/markdown-reader.sh で ~/.local/bin に入れる。
+  # から取得できないので、make markdown-reader（etc/markdown-reader.sh）で ~/.local/bin に入れる。
   home.packages =
     with pkgs;
     [
