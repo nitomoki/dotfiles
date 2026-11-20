@@ -1,6 +1,6 @@
 -- フォーマット専用プラグイン。
 -- メンテが現状維持モードの none-ls.nvim から移行した（旧 null-ls 系）。
--- フォーマッタのバイナリは lsp/config.lua の mason-tool-installer で導入される。
+-- フォーマッタのバイナリは nix/home.nix で入れる。
 return {
     "stevearc/conform.nvim",
     lazy = true,

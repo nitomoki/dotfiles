@@ -62,17 +62,6 @@ local server_opts = {
     end,
 }
 
-local mason = require "mason"
-mason.setup {
-    ui = {
-        icons = {
-            package_installed = "✓",
-            package_pending = "➜",
-            package_uninstalled = "✗",
-        },
-    },
-}
-
 -- LSP keymaps (attach時に設定)
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(ev)
@@ -95,24 +84,6 @@ for name, configure in pairs(server_opts) do
     vim.lsp.config(name, opts)
 end
 
--- mason-lspconfig (automatic_enable がデフォルトで有効)
--- stylua は mason-lspconfig 側に LSP 設定 ({ "stylua", "--lsp" }) が存在し、
--- mason に入れた瞬間 LSP サーバとして自動起動されて失敗する（stylua は --lsp 非対応）。
--- フォーマッタとしてのみ使う（conform 経由）ので LSP 自動起動から除外する。
-require("mason-lspconfig").setup {
-    automatic_enable = {
-        exclude = { "stylua" },
-    },
-}
-
--- フォーマッタのバイナリを mason 経由で導入する。
--- 実際のフォーマット実行・保存時フォーマットは conform.nvim 側（plugins/conform.lua）が担う。
-require("mason-tool-installer").setup {
-    ensure_installed = {
-        "stylua",
-        "black",
-        "isort",
-        "clang-format",
-        "prettier",
-    },
-}
+-- サーバーとフォーマッタのバイナリは nix/home.nix で入れる（mason は使わない）。
+-- ここに足すときは nix/home.nix の home.packages にも足す。
+vim.lsp.enable { "lua_ls", "bashls", "ts_ls" }
