@@ -27,9 +27,6 @@
     onActivation.cleanup = "zap";
 
     brews = [
-      # Rust は rustup で入れる（brew の rust は ~/.cargo/bin の rustup 版を隠すため）。
-      # node は Nix にしない。store が読み取り専用で npm -g が書けないため。
-      "node"
       "cpanminus" # Nix の perl だと cpanm が store に書けない
     ];
 

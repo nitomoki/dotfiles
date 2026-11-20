@@ -188,7 +188,8 @@ make setup-wezterm-windows  # WSL2 から Windows 側へ wezterm 設定をコピ
 
 - 共通の CLI ツール (neovim, tmux, ripgrep, gh, sheldon, tree-sitter など) は `nix/home.nix` の `home.packages` に書き、`make switch` で反映する。版は `flake.lock` で固定され、`make nix-update` で上げる。
 - macOS の GUI アプリ・フォントなどは `nix/darwin.nix` の `homebrew.brews` / `homebrew.casks` に書き、`make switch` で反映する。
-- node と cpanm は Nix に入れず、apt / brew に残す。Nix の store は読み取り専用で、`npm -g` や cpanm が書き込めないため。
+- node（v22）・pnpm・bun・codex・rustup も `nix/home.nix` で入れる。`npm -g` は `.zshenv` の `NPM_CONFIG_PREFIX` で `~/.local/share/npm-global` に入る。Rust のツールチェーンは rustup が `~/.rustup` に入れる。
+- perl（cpanm）と ruby（gem）は Nix に入れず、apt / brew に残す。Nix の store は読み取り専用で、cpanm や gem install が書き込めないため。
 - `packages.txt` を編集 → `make setup` で反映。
 - 追加で手動インストールしたものを把握するには `make packages-diff`。
   - `packages.txt にない手動インストール済` と `packages.txt にあるが未インストール` の差分を出す。

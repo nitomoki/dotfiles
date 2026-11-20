@@ -18,11 +18,10 @@ make
 pkg-config
 
 # --- Language runtimes ---
-# Rust は rustup で入れる。apt の cargo は古いうえ、PATH で ~/.cargo/bin より先に見つかって rustup 版を隠す。
-# node / perl / ruby は Nix にしない。store が読み取り専用で npm -g、cpanm、gem install が書けないため。
+# node / pnpm / rustup は nix/home.nix で入れる。apt の cargo は入れない（古いうえ、PATH で
+# Nix の rustup のプロキシより先に見つかる）。
+# perl / ruby は Nix にしない。store が読み取り専用で cpanm、gem install が書けないため。
 # python3 は OS のツールと Claude の hook（標準ライブラリだけ）が使う。pip は使わず uv にする。
-nodejs
-npm
 perl
 python3
 ruby

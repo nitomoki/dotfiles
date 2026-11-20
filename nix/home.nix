@@ -102,8 +102,8 @@ in
 
   # 共通の CLI ツールとフォント。GUI アプリ、OS に密着したもの（mozc、tailscale、
   # Linux のコンパイラ一式など）は nix/darwin.nix の homebrew / packages.txt に残す。
-  # node / perl（cpanm）は残す。Nix の store は読み取り専用で、npm -g や cpanm が
-  # 自分の prefix に書き込めないため。
+  # perl（cpanm）と ruby（gem）は残す。Nix の store は読み取り専用で、cpanm や gem install が
+  # 自分の prefix に書き込めないため（npm -g は .zshenv の NPM_CONFIG_PREFIX で ~ に向けている）。
   # markdown-reader は私用フォークが private リポジトリにあり、switch（Mac では root で動く）
   # から取得できないので、make markdown-reader（etc/markdown-reader.sh）で ~/.local/bin に入れる。
   home.packages =
@@ -133,6 +133,16 @@ in
       # gdate / gtimeout（Claude の hook が使う）。接頭辞なしの coreutils は ls や cp を
       # GNU 版で上書きしてしまう。
       coreutils-prefixed
+    ]
+    # 言語の実行環境。rustup はツールチェーン（stable / nightly、musl などの target）を
+    # ~/.rustup に入れる今の使い方のまま、rustup 本体だけを Nix で入れる。ツールチェーン
+    # ごと Nix にする rust-overlay / fenix は、プロジェクトごとの切り替えに合わない。
+    ++ [
+      bun
+      codex
+      nodejs_22
+      pnpm
+      rustup
     ]
     ++ lib.optionals isLinux [
       xclip # X11 のクリップボード（nvim の "+ レジスタなど）
