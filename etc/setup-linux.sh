@@ -7,11 +7,28 @@ cd "$(dirname "$0")/.."
 
 # --- apt パッケージ（packages.txt） ---
 if grep -q 'Ubuntu' /etc/os-release; then
-    mapfile -t packages < <(grep -vE '^\s*(#|$)' packages.txt)
+    mapfile -t listed < <(grep -vE '^\s*(#|$)' packages.txt)
     sudo apt update -y
+    # apt install は 1 つでも候補の無いパッケージがあると全体を止める。obsidian や
+    # steam-launcher は .deb や追加の apt source で入れるもので、それを入れていない
+    # マシン（WSL2 など）には候補が無い。候補のあるものだけ入れ、残りは名前を出す。
+    # 判定は Candidate の行で見るので、訳語にならないよう LC_ALL=C にする。
+    packages=()
+    missing=()
+    for pkg in "${listed[@]}"; do
+        candidate=$(LC_ALL=C apt-cache policy "$pkg" | awk '/Candidate:/ {print $2}')
+        if [[ -n "$candidate" && "$candidate" != "(none)" ]]; then
+            packages+=("$pkg")
+        else
+            missing+=("$pkg")
+        fi
+    done
     sudo apt install -y "${packages[@]}"
     sudo apt upgrade -y
     sudo apt autoremove -y
+    if ((${#missing[@]})); then
+        echo "apt に候補が無いので入れなかったもの（.deb / 追加の apt source / snap で入れる）: ${missing[*]}"
+    fi
 else
     echo "Ubuntu ではないので apt のパッケージは入れない。"
 fi
