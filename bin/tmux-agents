@@ -19,6 +19,8 @@
 #   tmux-agents peer ensure THEME [NAME] [--reuse]
 #                                移管先の名前を確保する。既定は spawn。--reuse を
 #                                付けたときだけ既存セッションへの相乗りを試す。
+#   tmux-agents restart-all      全ペインの Claude Code に /restart を送り、最後に
+#                                呼び出し元のペインも再起動する（/restart-all 用）。
 #
 # ── なぜこれが要るか ──────────────────────────────────────────────
 # Claude Code の分類軸はディレクトリで、バックグラウンドジョブは
@@ -53,6 +55,12 @@ SESSIONIZER=$(command -v tmux-sessionizer 2>/dev/null) \
 HANDOFF_TIMEOUT=${TMUX_AGENTS_HANDOFF_TIMEOUT:-25}
 # peer spawn が「起動した claude がレジストリに載る」のを待つ上限。
 PEER_TIMEOUT=${CC_PEER_TIMEOUT:-30}
+# restart-all: 作業中のペインが空くのを待つ上限 / 再起動の完了を待つ上限 /
+# 呼び出し元が応答を終えるのを待つ上限。前の 2 つの合計は、Bash ツールの
+# タイムアウト（既定 120 秒）に収まるようにしておく。
+RESTART_WAIT=${CC_RESTART_WAIT:-30}
+RESTART_CONFIRM=${CC_RESTART_CONFIRM:-20}
+RESTART_SELF_WAIT=${CC_RESTART_SELF_WAIT:-180}
 # Claude Code がセッション情報を書く場所。テストで差し替えられるようにしておく
 # （実物を触らずに handoff の待ち合わせを検証するため）。
 CLAUDE_SESSIONS_DIR=${CLAUDE_SESSIONS_DIR:-$HOME/.claude/sessions}
@@ -215,7 +223,7 @@ peer_warn() {
 }
 
 # レジストリ (~/.claude/sessions/<pid>.json) を TSV に潰す。
-#   pid \t name \t cwd \t theme \t pane \t kind \t status \t updatedAt
+#   pid \t name \t cwd \t theme \t pane \t kind \t status \t updatedAt \t startedAt
 # updatedAt の降順。tmux フィールドは "<theme>:@<window>.%<pane>" 形式で、
 # tmux はセッション名の '.' ':' を '_' にするため最初の ':' で割れば足りる。
 #
@@ -258,6 +266,7 @@ for fn in names:
         s.get("kind") or "",
         s.get("status") or "",
         str(s.get("updatedAt") or 0),
+        str(s.get("startedAt") or 0),
     ])
 
 rows.sort(key=lambda r: int(r[7] or 0), reverse=True)
@@ -327,7 +336,7 @@ cmd_peer_list() {
     # shellcheck disable=SC2059
     printf "$fmt" THEME NAME PID STATUS CC_STATE ACCEPT
     local pid name cwd theme pane kind status upd st accept
-    while IFS=$'\t' read -r pid name cwd theme pane kind status upd; do
+    while IFS=$'\t' read -r pid name cwd theme pane kind status upd _; do
         st=$(lookup_state "$pane" "$states")
         if [ "$kind" != interactive ]; then
             accept=job
@@ -471,10 +480,204 @@ cmd_peer() {
     esac
 }
 
+# ── restart-all ──────────────────────────────────────────────────
+#
+# Claude Code の /restart は、入力欄から送信されたときしか動かない（フックや
+# SendMessage 経由だと "Can't restart automatically" で断られる）。そのため
+# send-keys で打ち込む。打ち込む先を誤ると、承認ダイアログに答えたり書きかけの
+# 下書きを送信したりするので、Enter の前に画面を読んで確かめる。
+
+# レジストリの pane が今の tmux サーバのペインを指しているか。ペイン ID は
+# サーバごとに振られるため、-L で立てた別サーバの claude と番号が衝突する。
+pane_owns_pid() {
+    local root p="$2" hops=0
+    root=$(tmux display-message -p -t "$1" '#{pane_pid}' 2> /dev/null)
+    [ -z "$root" ] && return 1
+    while [ -n "$p" ] && [ "$p" -gt 1 ] && [ "$hops" -lt 20 ]; do
+        [ "$p" = "$root" ] && return 0
+        p=$(ps -o ppid= -p "$p" 2> /dev/null | tr -d ' ')
+        hops=$((hops + 1))
+    done
+    return 1
+}
+
+# 入力欄の状態を出力する。
+#   none          入力欄が見えない（ダイアログ・複数行の下書き・別画面）
+#   empty         空（薄字のプレースホルダだけの場合を含む）
+#   text          何か書かれている
+#   restart-ok    "/restart" だけが書かれ、補完候補の先頭も /restart
+#   restart-other "/restart" だけが書かれているが、候補の先頭が別物。
+#                 Enter は候補の先頭を実行するので、/restart の無い版では
+#                 無関係なコマンドが走る
+prompt_state() {
+    tmux capture-pane -pe -t "$1" 2> /dev/null | python3 -c '
+import re, sys
+
+raw = sys.stdin.buffer.read().decode("utf-8", "replace").split("\n")
+sgr = r"\x1b\[[0-9;]*m"
+plain = [re.sub(sgr, "", l) for l in raw]
+RULE, MARK = "─", "❯"
+at = None
+for i in range(1, len(plain) - 1):
+    if (plain[i].startswith(MARK) and plain[i - 1].startswith(RULE)
+            and plain[i + 1].startswith(RULE)):
+        at = i
+if at is None:
+    print("none")
+    sys.exit()
+text = plain[at][1:].strip(" \xa0")
+dim = re.match(r"(?:%s)*%s[ \xa0]*(?:%s)*?(?:\x1b\[7m.)?\x1b\[(?:0;)?2m" % (sgr, MARK, sgr), raw[at])
+if not text or dim:
+    print("empty")
+elif text == "/restart":
+    # 会話履歴の "❯ /restart" は行頭から始まり、補完候補は字下げされている
+    menu = [l for l in plain[max(0, at - 16):at] if re.match(r"\s+%s\s" % MARK, l)]
+    ok = menu and re.match(r"\s+%s\s+/restart(\s|$)" % MARK, menu[-1])
+    print("restart-ok" if ok else "restart-other")
+else:
+    print("text")
+'
+}
+
+# ペインの claude の startedAt。/restart は pid を変えずに exec し直すので、
+# 再起動したかどうかはこの値の変化でしか分からない。
+pane_started() {
+    registry_tsv | awk -F'\t' -v p="$1" -v pid="$2" '$5 == p && $1 == pid { print $9; exit }'
+}
+
+# 打ち込んでよいか。だめなら理由を出力して 1 を返す。
+restart_ready() {
+    local pane="$1" pid="$2" status
+    status=$(registry_tsv | awk -F'\t' -v p="$pid" '$1 == p { print $7; exit }')
+    [ -z "$status" ] && { printf '終了済み'; return 1; }
+    [ "$status" = idle ] || { printf '作業中 (%s)' "$status"; return 1; }
+    [ "$(lookup_state "$pane" "$(pane_states)")" = waiting ] && { printf '承認待ち'; return 1; }
+    [ "$(tmux display-message -p -t "$pane" '#{pane_in_mode}' 2> /dev/null)" = 0 ] \
+        || { printf 'コピーモード中'; return 1; }
+    case "$(prompt_state "$pane")" in
+        empty) return 0 ;;
+        none) printf '入力欄が見えない'; return 1 ;;
+        *) printf '入力欄に下書きがある'; return 1 ;;
+    esac
+}
+
+# /restart を打ち込んで再起動を見届ける。失敗したら理由を出力して 1 を返す。
+restart_pane() {
+    local pane="$1" pid="$2" before now state i
+    before=$(pane_started "$pane" "$pid")
+    tmux send-keys -t "$pane" -l '/restart' || { printf '送信できない'; return 1; }
+    # 補完候補が描かれるまで待つ
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+        sleep 0.3
+        state=$(prompt_state "$pane")
+        [ "$state" = restart-ok ] && break
+    done
+    case "$state" in
+        restart-ok) ;;
+        restart-other)
+            # 打った 8 文字だけを消す。C-u だと、直後に人が打った字まで消える
+            tmux send-keys -t "$pane" -N 8 BSpace
+            printf '/restart が使えない版'
+            return 1
+            ;;
+        *) printf '入力が割り込んだので中止（/restart の字が残っているかもしれない）'; return 1 ;;
+    esac
+    tmux send-keys -t "$pane" Enter
+    i=0
+    while [ "$i" -lt "$RESTART_CONFIRM" ]; do
+        sleep 1
+        now=$(pane_started "$pane" "$pid")
+        [ -n "$now" ] && [ "$now" != "$before" ] && return 0
+        i=$((i + 1))
+    done
+    printf '再起動を確認できない（バックグラウンドの作業が残っている等。ペインの表示を参照）'
+    return 1
+}
+
+cmd_restart_all() {
+    [ -n "${TMUX:-}" ] || { note "tmux の中で実行してください"; return 1; }
+
+    local self="${TMUX_PANE:-}" self_pid="" pending="" next line
+    local pid name cwd theme pane kind status rest label reason
+    local ok=0 ng=0 deadline
+    while IFS=$'\t' read -r pid name cwd theme pane kind status rest; do
+        [ "$kind" = interactive ] && [ -n "$pane" ] || continue
+        pane_owns_pid "$pane" "$pid" || continue
+        if [ "$pane" = "$self" ]; then
+            self_pid=$pid
+        else
+            pending="$pending$pane $pid ${name:--}"$'\n'
+        fi
+    done < <(registry_tsv)
+
+    deadline=$((SECONDS + RESTART_WAIT))
+    while [ -n "$pending" ]; do
+        next=""
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            IFS=' ' read -r pane pid name <<< "$line"
+            if ! reason=$(restart_ready "$pane" "$pid"); then
+                if [ "$SECONDS" -lt "$deadline" ]; then
+                    next="$next$line"$'\n'
+                    continue
+                fi
+                reason="スキップ: $reason"
+            elif reason=$(restart_pane "$pane" "$pid"); then
+                reason=""
+            else
+                reason="失敗: $reason"
+            fi
+            label=$(tmux display-message -p -t "$pane" '#{session_name}:#{window_index}.#{pane_index}' 2> /dev/null)
+            if [ -z "$reason" ]; then
+                ok=$((ok + 1))
+                printf '%-16s %-22s 再起動した\n' "$label" "$name"
+            else
+                ng=$((ng + 1))
+                printf '%-16s %-22s %s\n' "$label" "$name" "$reason"
+            fi
+        done <<< "$pending"
+        pending=$next
+        [ -n "$pending" ] && sleep 1
+    done
+    printf '他のペイン: 再起動 %d / 未実施 %d\n' "$ok" "$ng"
+
+    if [ -z "$self_pid" ]; then
+        printf '自分のペインの Claude Code は見つからないので再起動しない\n'
+        return 0
+    fi
+    # 自分は応答が終わるまで busy なので、後から打ち込む役を tmux サーバに預ける。
+    # Bash ツールの子や nohup にすると「バックグラウンドの作業」と数えられたり、
+    # 再起動に巻き込まれたりする。run-shell は出力があるとペインを覆うので捨てる。
+    tmux run-shell -b "$(printf 'CLAUDE_SESSIONS_DIR=%q CC_RESTART_SELF_WAIT=%q CC_RESTART_CONFIRM=%q %q restart-self %q %q > /dev/null 2>&1' \
+        "$CLAUDE_SESSIONS_DIR" "$RESTART_SELF_WAIT" "$RESTART_CONFIRM" \
+        "$(readlink -f -- "$0")" "$self" "$self_pid")"
+    printf 'このペインは応答が終わりしだい再起動する\n'
+}
+
+# restart-all が tmux サーバに預ける後半。直接は使わない。
+cmd_restart_self() {
+    local pane="$1" pid="$2" reason deadline=$((SECONDS + RESTART_SELF_WAIT))
+    while :; do
+        if reason=$(restart_ready "$pane" "$pid"); then
+            # ターンの切れ目で一瞬だけ idle になることがあるので、続いているか見る
+            sleep 1
+            reason=$(restart_ready "$pane" "$pid") && break
+        fi
+        if [ "$SECONDS" -ge "$deadline" ]; then
+            note "自分のペインは再起動しませんでした: $reason"
+            return 1
+        fi
+        sleep 1
+    done
+    reason=$(restart_pane "$pane" "$pid") || { note "自分のペイン: $reason"; return 1; }
+}
+
 case "${1:-open}" in
     open) shift 2> /dev/null; cmd_open "${1:-}" ;;
     handoff) shift; cmd_handoff "${1:-}" ;;
     peer) shift; cmd_peer "$@" ;;
+    restart-all) cmd_restart_all ;;
+    restart-self) cmd_restart_self "${2:-}" "${3:-}" ;;
     -h | --help | help)
         awk '
             NR == 1 { next }
