@@ -5,7 +5,8 @@
     "codex@openai-codex": true
   },
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_SHELL": "/bin/bash"
   },
   "extraKnownMarketplaces": {
     "claude-obsidian-marketplace": {

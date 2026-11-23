@@ -30,7 +30,7 @@
 
 コマンドは **bash** で実行し、スクリプトも bash で書く。ユーザーのログインシェルは zsh だが、Claude は zsh の文法に頼らない。
 
-- Bash ツールの名前に反して、中身はログインシェル（zsh）で動いていることがある。`$BASH_VERSION` が空なら bash ではない。
+- Bash ツールは `settings.json` の `CLAUDE_CODE_SHELL` で bash にしてある。設定が届いていないマシンや指定先が無い場合は、黙ってログインシェル（zsh）で動く。`$BASH_VERSION` が空なら bash ではない。
 - bash で動いていないときに、単語分割・glob・配列など bash と zsh で挙動が違う書き方をするなら、`bash -c '...'` で包む。どちらでも同じに動く単純なコマンドは包まなくてよい。
 - `bash <<'EOF'` で包まない。grep 禁止の hook はヒアドキュメントの本文を検査しないため、すり抜けてしまう。
 - 長い処理はファイルに書き、shebang を `#!/usr/bin/env bash` にして実行する。
