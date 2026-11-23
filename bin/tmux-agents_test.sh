@@ -376,6 +376,133 @@ check "成功で終わる" "0" "$rc"
 check "新規起動した名前を返す" "fallback-wait" "$out"
 tmux -L "$SOCK" set -p -t "$themed_pane" -u @cc_state
 
+
+# ── restart-all ──────────────────────────────────────────────────
+export CC_RESTART_WAIT=2
+export CC_RESTART_CONFIRM=4
+export CC_RESTART_SELF_WAIT=15
+
+# 入力欄だけを真似た TUI。自分をレジストリに載せ、/restart + Enter で startedAt を
+# 進める。mode: normal / draft（下書きあり）/ dialog（入力欄なし）/
+# nomenu（候補の先頭が別物）/ refuse（Enter しても再起動しない）
+cat > "$TMPDIR_T/fake-tui.py" <<'EOF'
+import json, os, sys, tty
+
+mode, name, status = sys.argv[1:4]
+path = os.path.join(os.environ["CLAUDE_SESSIONS_DIR"], "%d.json" % os.getpid())
+started, sent = 1, 0
+text = "my draft" if mode == "draft" else ""
+
+
+def save():
+    rec = {"pid": os.getpid(), "cwd": "/tmp", "kind": "interactive", "name": name,
+           "tmux": "themed:@0." + os.environ["TMUX_PANE"], "status": status,
+           "updatedAt": 1, "startedAt": started}
+    with open(path + ".tmp", "w") as fh:
+        json.dump(rec, fh)
+    os.rename(path + ".tmp", path)
+
+
+def draw():
+    out = ["\x1b[2J\x1b[H❯ /restart", "  sent=%d" % sent]
+    if text.startswith("/"):
+        out.append("  ❯ %s   menu" % ("/other" if mode == "nomenu" else "/restart"))
+    if mode == "dialog":
+        out.append("❯ 1. Yes")
+    else:
+        body = text or "\x1b[2mTry something\x1b[0m"
+        out += ["─" * 20, "❯\xa0" + body, "─" * 20]
+    out.append("  footer")
+    sys.stdout.write("\r\n".join(out))
+    sys.stdout.flush()
+
+
+tty.setraw(0)
+save()
+draw()
+while True:
+    for ch in os.read(0, 64).decode("utf-8", "replace"):
+        if ch == "\r":
+            sent += 1
+            if text == "/restart" and mode != "refuse":
+                started += 1
+            text = ""
+            save()
+        elif ch == "\x7f":
+            text = text[:-1]
+        else:
+            text += ch
+    draw()
+EOF
+
+# fake_tui NAME MODE STATUS — 起動してペイン ID を出力する
+fake_tui() {
+    tmux -L "$SOCK" new-window -d -P -F '#{pane_id}' -t '=themed:' -n "$1" \
+        "CLAUDE_SESSIONS_DIR='$CLAUDE_SESSIONS_DIR' PYTHONIOENCODING=utf-8 python3 '$TMPDIR_T/fake-tui.py' $2 $1 $3"
+    sleep 1
+}
+
+reg_of() {
+    rg -lF "\"name\": \"$1\"" "$CLAUDE_SESSIONS_DIR"
+}
+
+started_of() {
+    jq -r .startedAt "$(reg_of "$1")"
+}
+
+screen_of() {
+    tmux -L "$SOCK" capture-pane -p -t "$1"
+}
+
+# restart-all の出力から NAME の行の結果だけを取り出す
+result_of() {
+    printf '%s\n' "$out" | awk -v n="$1" '$2 == n { $1 = $2 = ""; sub(/^ +/, ""); print }'
+}
+
+echo "=== restart-all: 打ち込める相手だけを再起動する ==="
+clear_reg
+fake_tui ra-ok normal idle > /dev/null
+p_draft=$(fake_tui ra-draft draft idle)
+p_dialog=$(fake_tui ra-dialog dialog idle)
+fake_tui ra-busy normal busy > /dev/null
+p_wait=$(fake_tui ra-wait normal idle)
+tmux -L "$SOCK" set -p -t "$p_wait" @cc_state waiting
+p_copy=$(fake_tui ra-copy normal idle)
+tmux -L "$SOCK" copy-mode -t "$p_copy"
+p_nomenu=$(fake_tui ra-nomenu nomenu idle)
+fake_tui ra-refuse refuse idle > /dev/null
+# 別の tmux サーバの claude: 同じペイン ID を名乗るが、プロセスはこのペインに居ない
+p=$(live_pid); reg_json "$p" ra-foreign /tmp "x:@0.$p_draft" interactive idle 1
+self=$(fake_tui ra-self normal idle)
+out=$(TA_PANE="$self" ta restart-all)
+check "空の入力欄なら再起動する" "再起動した" "$(result_of ra-ok)"
+check "再起動が実際に起きている" "2" "$(started_of ra-ok)"
+check "下書きがあればスキップ" "スキップ: 入力欄に下書きがある" "$(result_of ra-draft)"
+check "下書きは残る" "1" "$(screen_of "$p_draft" | rg -c 'my draft$')"
+check "ダイアログ表示中はスキップ" "スキップ: 入力欄が見えない" "$(result_of ra-dialog)"
+check "ダイアログに Enter を送らない" "1" "$(screen_of "$p_dialog" | rg -c 'sent=0')"
+check "作業中はスキップ" "スキップ: 作業中 (busy)" "$(result_of ra-busy)"
+check "@cc_state が waiting ならスキップ" "スキップ: 承認待ち" "$(result_of ra-wait)"
+check "コピーモード中はスキップ" "スキップ: コピーモード中" "$(result_of ra-copy)"
+check "候補の先頭が別物なら中止" "失敗: /restart が使えない版" "$(result_of ra-nomenu)"
+check "中止したら Enter を送らない" "1" "$(screen_of "$p_nomenu" | rg -c 'sent=0')"
+check "中止したら打った字を消す" "1" "$(screen_of "$p_nomenu" | rg -c 'Try something')"
+check "startedAt が進まなければ失敗" "失敗: 再起動を確認できない" "$(result_of ra-refuse | sed 's/（.*//')"
+check "別サーバの claude は対象外" "" "$(result_of ra-foreign)"
+check "自分は一覧に出ない" "" "$(result_of ra-self)"
+sleep 6
+check "自分は最後に再起動する" "2" "$(started_of ra-self)"
+
+echo "=== restart-all: 自分が作業中なら終わるまで待つ ==="
+clear_reg
+self=$(fake_tui ra-late normal busy)
+TA_PANE="$self" ta restart-all > /dev/null
+sleep 3
+check "busy の間は送らない" "1" "$(started_of ra-late)"
+json=$(reg_of ra-late)
+sed 's/"busy"/"idle"/' "$json" > "$json.new" && mv "$json.new" "$json"
+sleep 6
+check "idle になったら再起動する" "2" "$(started_of ra-late)"
 echo
 if [ "$fail" -eq 0 ]; then
     echo "全 $pass 件 成功"
