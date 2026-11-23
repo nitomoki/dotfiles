@@ -26,6 +26,21 @@
 - Windows 経由で使うとき、WezTerm GUI 本体は Windows 上で動いている。Nucbox / WSL2 側で `~/dotfiles/.config/wezterm/` を編集しても**手元の表示には即反映されない**（dotfiles を Windows 側にデプロイして初めて効く）。
 - IME（Windows IME / Mozc）も Windows 側にある。Nucbox など遠隔の Linux マシンから IME を制御したい場合は OSC エスケープシーケンス経由でローカル WezTerm に通知する構成になる（`im-select.exe` 等は Linux マシンには無い）。
 
+# シェルは bash を使う
+
+コマンドは **bash** で実行し、スクリプトも bash で書く。ユーザーのログインシェルは zsh だが、Claude は zsh の文法に頼らない。
+
+- Bash ツールは `settings.json` の `CLAUDE_CODE_SHELL` で bash にしてある。設定が届いていないマシンや指定先が無い場合は、黙ってログインシェル（zsh）で動く。`$BASH_VERSION` が空なら bash ではない。
+- bash で動いていないときに、単語分割・glob・配列など bash と zsh で挙動が違う書き方をするなら、`bash -c '...'` で包む。どちらでも同じに動く単純なコマンドは包まなくてよい。
+- `bash <<'EOF'` で包まない。grep 禁止の hook はヒアドキュメントの本文を検査しないため、すり抜けてしまう。
+- 長い処理はファイルに書き、shebang を `#!/usr/bin/env bash` にして実行する。
+- Mac 標準の `/bin/bash` は 3.2。連想配列・`mapfile`・`${var,,}` など bash 4 以降の機能は、バージョンを確認してから使う。
+
+## 例外
+
+- `.zshrc` / `.zshenv` など zsh の設定の編集と動作確認には zsh を使う（`zsh -ic '...'` など）。
+- 既存のスクリプトは、その shebang に従う。
+
 # grep 禁止（ripgrep / ag を使う）
 
 シェルから `grep` / `egrep` / `fgrep` / `zgrep` 系を **実行してはいけない**。
